@@ -72,6 +72,13 @@ routes/             ← web routes
 tests/              ← Pest (Unit & Feature)
 ```
 
+## Akun Demo (hasil seeder)
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Pemilik (owner) | `owner@kulakan.com` | `password` |
+| Kasir (staff) | `staff@kulakan.com` | `password` |
+
 ## Status & Live Site
 
 - Repository: **publik**.
