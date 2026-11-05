@@ -1,5 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { ArrowDownLeft, ArrowUpRight, Package, Receipt, TrendingUp, TriangleAlert } from 'lucide-react';
+import { FxButton } from '@/components/fx/fx-button';
+import { FxCard, FxSoft } from '@/components/fx/fx-card';
+import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import { formatRupiah } from '@/lib/format';
 import { dashboard } from '@/routes';
@@ -42,7 +45,7 @@ export default function Dashboard() {
 
                 <Reveal delay={0.05}>
                     <section className="grid gap-5 lg:grid-cols-[1.05fr_1fr_1.05fr]">
-                        <div className="fx-card p-5">
+                        <FxCard className="p-5">
                             <div className="flex items-start justify-between">
                                 <span className="text-sm text-muted-foreground">Kas untuk belanja</span>
                                 <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold">
@@ -61,17 +64,17 @@ export default function Dashboard() {
                             </div>
 
                             <div className="mt-4 grid grid-cols-2 gap-3">
-                                <button className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#1C1B18] text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">
+                                <FxButton variant="coral" className="w-full">
                                     <ArrowUpRight className="size-4" />
                                     Catat pesanan
-                                </button>
-                                <button className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-secondary text-sm font-semibold transition-colors hover:bg-[#EBEBE8]">
+                                </FxButton>
+                                <FxButton variant="soft" className="w-full">
                                     <ArrowDownLeft className="size-4" />
                                     Rencana belanja
-                                </button>
+                                </FxButton>
                             </div>
 
-                            <div className="fx-soft mt-4 p-4">
+                            <FxSoft className="mt-4 p-4">
                                 <div className="mb-3 flex items-center justify-between text-xs font-semibold">
                                     <span>Sumber kas</span>
                                     <span className="font-medium text-muted-foreground">3 akun</span>
@@ -91,10 +94,10 @@ export default function Dashboard() {
                                         </div>
                                     ))}
                                 </div>
-                            </div>
-                        </div>
+                            </FxSoft>
+                        </FxCard>
 
-                        <div className="fx-card grid grid-cols-2 grid-rows-2 gap-3 p-3.5">
+                        <FxCard className="grid grid-cols-2 grid-rows-2 gap-3 p-3.5">
                             {kpis.map((k) => (
                                 <div
                                     key={k.label}
@@ -106,13 +109,7 @@ export default function Dashboard() {
                                         <span className={`text-sm font-medium ${k.highlight ? 'text-white' : ''}`}>
                                             {k.label}
                                         </span>
-                                        <span
-                                            className={`flex size-8 items-center justify-center rounded-full ${
-                                                k.highlight ? 'bg-white/20 text-white' : 'bg-[rgba(22,22,21,0.05)]'
-                                            }`}
-                                        >
-                                            <k.icon className="size-4" />
-                                        </span>
+                                        <IconCircle icon={k.icon} tone={k.highlight ? 'white' : 'soft'} size="sm" />
                                     </div>
                                     <div>
                                         <p
@@ -132,12 +129,12 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             ))}
-                        </div>
+                        </FxCard>
 
-                        <div className="fx-card flex flex-col p-5">
+                        <FxCard className="flex flex-col p-5">
                             <h2 className="text-base font-semibold">Penjualan 7 hari</h2>
                             <p className="text-xs text-muted-foreground">Tren harian</p>
-                            <div className="fx-soft mt-3 flex h-44 items-end gap-2 p-4">
+                            <FxSoft className="mt-3 flex h-44 items-end gap-2 p-4">
                                 {bars.map((h, i) => (
                                     <div key={i} className="flex h-full flex-1 flex-col justify-end gap-[3px]">
                                         <div
@@ -150,14 +147,14 @@ export default function Dashboard() {
                                         />
                                     </div>
                                 ))}
-                            </div>
-                        </div>
+                            </FxSoft>
+                        </FxCard>
                     </section>
                 </Reveal>
 
                 <Reveal delay={0.1}>
                     <section className="grid gap-5 lg:grid-cols-[1.05fr_2.05fr]">
-                        <div className="fx-card p-5">
+                        <FxCard className="p-5">
                             <h2 className="text-base font-semibold">Anggaran belanja</h2>
                             <p className="mt-0.5 text-xs text-muted-foreground">Terpakai dari rencana terakhir</p>
                             <div className="fx-hatch mt-4 h-3 w-full overflow-hidden rounded-full bg-[#EBEBE8]">
@@ -173,9 +170,9 @@ export default function Dashboard() {
                                 <span className="font-bold tabular-nums">Rp 310.000</span>
                                 <span className="text-muted-foreground">dari Rp 500.000</span>
                             </div>
-                        </div>
+                        </FxCard>
 
-                        <div className="fx-card p-5">
+                        <FxCard className="p-5">
                             <div className="mb-4 flex items-center justify-between">
                                 <h2 className="text-base font-semibold">Aktivitas terbaru</h2>
                                 <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">Hari ini</span>
@@ -205,7 +202,7 @@ export default function Dashboard() {
                                     ))}
                                 </tbody>
                             </table>
-                        </div>
+                        </FxCard>
                     </section>
                 </Reveal>
             </div>

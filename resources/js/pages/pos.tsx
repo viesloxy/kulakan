@@ -1,7 +1,10 @@
 import { Head } from '@inertiajs/react';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { Coffee, CupSoda, Minus, Plus, Sandwich, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { FxButton } from '@/components/fx/fx-button';
+import { FxCard, FxSoft } from '@/components/fx/fx-card';
+import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageHeader from '@/components/page-header';
 import { formatRupiah } from '@/lib/format';
@@ -9,7 +12,7 @@ import { formatRupiah } from '@/lib/format';
 type Menu = {
     id: number;
     name: string;
-    category: string;
+    category: 'Kopi' | 'Non-Kopi' | 'Makanan';
     price: number;
     stockLeft: number;
 };
@@ -23,6 +26,8 @@ const menus: Menu[] = [
     { id: 5, name: 'Cokelat Panas', category: 'Non-Kopi', price: 20000, stockLeft: 5 },
     { id: 6, name: 'Roti Bakar Keju', category: 'Makanan', price: 18000, stockLeft: 9 },
 ];
+
+const categoryIcon = { Kopi: Coffee, 'Non-Kopi': CupSoda, Makanan: Sandwich };
 
 export default function Pos() {
     const [cart, setCart] = useState<Record<number, number>>({});
@@ -87,17 +92,16 @@ export default function Pos() {
                     <Reveal delay={0.05}>
                         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             {menus.map((m) => {
+                                const Icon = categoryIcon[m.category];
                                 const low = m.stockLeft <= 3;
                                 return (
                                     <button
                                         key={m.id}
                                         onClick={() => add(m)}
-                                        className="fx-card flex flex-col gap-2 p-4 text-left transition-transform duration-200 hover:-translate-y-1"
+                                        className="fx-card flex flex-col gap-3 p-4 text-left transition-transform duration-200 hover:-translate-y-1"
                                     >
-                                        <div className="flex w-full items-center justify-between">
-                                            <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                                                {m.category}
-                                            </span>
+                                        <div className="flex items-center justify-between">
+                                            <IconCircle icon={Icon} tone="coral" />
                                             <span
                                                 className={`text-[11px] font-semibold ${
                                                     low ? 'text-[#D93829]' : 'text-[#1D9E53]'
@@ -106,8 +110,11 @@ export default function Pos() {
                                                 Sisa {m.stockLeft}
                                             </span>
                                         </div>
-                                        <span className="mt-1 font-semibold">{m.name}</span>
-                                        <span className="mt-1 text-sm font-bold tabular-nums">{formatRupiah(m.price)}</span>
+                                        <div>
+                                            <p className="font-semibold">{m.name}</p>
+                                            <p className="text-xs text-muted-foreground">{m.category}</p>
+                                        </div>
+                                        <p className="mt-auto text-sm font-bold tabular-nums">{formatRupiah(m.price)}</p>
                                     </button>
                                 );
                             })}
@@ -115,7 +122,7 @@ export default function Pos() {
                     </Reveal>
 
                     <Reveal delay={0.1}>
-                        <aside className="fx-card sticky top-4 flex flex-col gap-4 p-5">
+                        <FxCard className="sticky top-4 flex flex-col gap-4 p-5">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-base font-semibold">Pesanan</h2>
                                 <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold">
@@ -169,10 +176,10 @@ export default function Pos() {
                                 </div>
                             )}
 
-                            <div className="fx-soft flex items-center justify-between p-4">
+                            <FxSoft className="flex items-center justify-between p-4">
                                 <span className="text-sm text-muted-foreground">Total</span>
                                 <span className="text-xl font-bold tabular-nums">{formatRupiah(total)}</span>
-                            </div>
+                            </FxSoft>
 
                             <div className="grid grid-cols-2 gap-2">
                                 {(['cash', 'qris'] as const).map((p) => (
@@ -190,13 +197,10 @@ export default function Pos() {
                                 ))}
                             </div>
 
-                            <button
-                                onClick={submit}
-                                className="inline-flex h-12 items-center justify-center rounded-full bg-[#EC582A] text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
-                            >
+                            <FxButton variant="coral" size="lg" onClick={submit} className="w-full">
                                 Simpan pesanan
-                            </button>
-                        </aside>
+                            </FxButton>
+                        </FxCard>
                     </Reveal>
                 </div>
             </div>

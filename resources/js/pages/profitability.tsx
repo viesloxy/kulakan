@@ -1,7 +1,12 @@
 import { Head } from '@inertiajs/react';
+import { Coins, TrendingUp, TriangleAlert, XCircle } from 'lucide-react';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import StatusBadge, { type MenuStatus } from '@/components/status-badge';
+import { FxButton } from '@/components/fx/fx-button';
+import { FxCard, FxSoft } from '@/components/fx/fx-card';
+import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
+import PageHeader from '@/components/page-header';
+import StatusBadge, { type MenuStatus } from '@/components/status-badge';
 import { formatPercent, formatRupiah } from '@/lib/format';
 
 type MenuProfit = {
@@ -13,8 +18,7 @@ type MenuProfit = {
     status: MenuStatus;
 };
 
-// Mock data untuk pengembangan UI. Angka tetap mengikuti contoh kanonik
-// (Es Kopi Susu Aren: HPP Rp 11.244, margin 48,89%).
+// Mock data. Angka mengikuti contoh kanonik (Es Kopi Susu Aren: HPP Rp 11.244, margin 48,89%).
 const menus: MenuProfit[] = [
     { id: 1, name: 'Kopi Hitam', sellingPrice: 15000, hpp: 5200, marginPct: 65.33, status: 'profitable' },
     { id: 2, name: 'Roti Bakar Keju', sellingPrice: 18000, hpp: 9000, marginPct: 50.0, status: 'profitable' },
@@ -36,10 +40,12 @@ export default function Profitability() {
         counts[m.status] += 1;
     }
 
-    const summary = [
-        { key: 'profitable' as const, label: 'Profitable', value: counts.profitable },
-        { key: 'watchlist' as const, label: 'Watchlist', value: counts.watchlist },
-        { key: 'loss' as const, label: 'Loss', value: counts.loss },
+    const avgMargin = menus.reduce((sum, m) => sum + m.marginPct, 0) / menus.length;
+
+    const statusCards = [
+        { label: 'Profitable', value: counts.profitable, icon: TrendingUp, tone: 'success' as const },
+        { label: 'Watchlist', value: counts.watchlist, icon: TriangleAlert, tone: 'warning' as const },
+        { label: 'Loss', value: counts.loss, icon: XCircle, tone: 'danger' as const },
     ];
 
     return (
@@ -47,33 +53,49 @@ export default function Profitability() {
             <Head title="Profitabilitas" />
             <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <Reveal>
-                    <div>
-                        <h1 className="text-3xl font-semibold tracking-tight">Profitabilitas</h1>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Margin dan status tiap menu, dihitung dari HPP terkini.
-                        </p>
+                    <div className="flex flex-wrap items-end justify-between gap-3">
+                        <PageHeader
+                            title="Profitabilitas"
+                            description="Margin dan status tiap menu, dihitung dari HPP terkini."
+                        />
+                        <FxButton variant="coral">
+                            <Coins className="size-4" />
+                            Simulasi harga
+                        </FxButton>
                     </div>
                 </Reveal>
 
                 <Reveal delay={0.05}>
-                    <div className="grid gap-4 sm:grid-cols-3">
-                        {summary.map((s) => (
-                            <div key={s.key} className="fx-card p-4">
-                                <div className="flex items-center gap-2">
-                                    <span className="size-2 rounded-full" style={{ backgroundColor: statusColor[s.key] }} />
-                                    <p className="text-sm text-muted-foreground">{s.label}</p>
-                                </div>
-                                <p className="mt-1 text-2xl font-semibold tabular-nums">{s.value}</p>
+                    <div className="grid gap-4 md:grid-cols-4">
+                        <FxCard className="fx-coral flex flex-col justify-between p-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-white">Margin rata-rata</span>
+                                <IconCircle icon={Coins} tone="white" size="sm" />
                             </div>
+                            <p className="mt-3 text-2xl font-bold tracking-tight text-white tabular-nums">
+                                {formatPercent(avgMargin, 1)}
+                            </p>
+                            <p className="mt-1 text-[11px] font-semibold text-white/85">dari {menus.length} menu</p>
+                        </FxCard>
+
+                        {statusCards.map((s) => (
+                            <FxCard key={s.label} className="flex flex-col justify-between p-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">{s.label}</span>
+                                    <IconCircle icon={s.icon} tone={s.tone} size="sm" />
+                                </div>
+                                <p className="mt-3 text-2xl font-bold tracking-tight tabular-nums">{s.value}</p>
+                                <p className="mt-1 text-[11px] font-semibold text-muted-foreground">menu</p>
+                            </FxCard>
                         ))}
                     </div>
                 </Reveal>
 
                 <Reveal delay={0.1}>
-                    <div className="fx-card p-4 md:p-5">
+                    <FxCard className="p-4 md:p-5">
                         <h2 className="text-base font-semibold">Margin per menu</h2>
                         <p className="mb-4 text-xs text-muted-foreground">Persentase margin kotor terhadap harga jual.</p>
-                        <div className="fx-soft h-72 w-full p-4">
+                        <FxSoft className="h-72 w-full p-4">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={menus} layout="vertical" margin={{ top: 0, right: 28, bottom: 0, left: 8 }}>
                                     <XAxis
@@ -104,12 +126,12 @@ export default function Profitability() {
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
-                        </div>
-                    </div>
+                        </FxSoft>
+                    </FxCard>
                 </Reveal>
 
                 <Reveal delay={0.15}>
-                    <div className="fx-card overflow-hidden">
+                    <FxCard className="overflow-hidden">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-secondary text-left text-xs text-muted-foreground">
@@ -134,7 +156,7 @@ export default function Profitability() {
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                    </FxCard>
                 </Reveal>
             </div>
         </>
