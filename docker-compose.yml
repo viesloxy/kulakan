@@ -1,4 +1,4 @@
-# Kulakan — docker-compose (dev)  ·  GTNIC 2026
+# Kulakan docker-compose (dev) - GTNIC 2026
 #
 # Dev lokal: PostgreSQL 16 via Docker, aplikasi dijalankan native dengan
 # `php artisan serve` + `npm run dev` (lihat README).
@@ -14,7 +14,7 @@ services:
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
       # dev only: nonaktifkan password auth (kompatibilitas pdo_pgsql Windows vs scram PG16).
-      # Produksi wajib pakai password sungguhan — jangan pakai trust.
+      # Produksi wajib pakai password sungguhan, jangan pakai trust.
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       # host 5433 (5432 dipakai PostgreSQL bawaan Laragon di mesin dev)

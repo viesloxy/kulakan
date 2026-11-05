@@ -2,10 +2,10 @@ import { Head } from '@inertiajs/react';
 import { dashboard } from '@/routes';
 
 const stats = [
-    { label: 'Kas untuk belanja', value: 'Rp —' },
-    { label: 'Nilai persediaan', value: 'Rp —' },
-    { label: 'Menu profitable', value: '—' },
-    { label: 'Alert aktif', value: '—' },
+    { label: 'Kas untuk belanja', value: 'Rp 0' },
+    { label: 'Nilai persediaan', value: 'Rp 0' },
+    { label: 'Menu profitable', value: '0' },
+    { label: 'Alert aktif', value: '0' },
 ];
 
 export default function Dashboard() {
@@ -14,9 +14,9 @@ export default function Dashboard() {
             <Head title="Dashboard" />
             <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
                 <div>
-                    <h1 className="text-2xl font-semibold tracking-tight">Selamat datang di Kulakan 👋</h1>
+                    <h1 className="text-2xl font-semibold tracking-tight">Selamat datang di Kulakan</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Resep, stok, biaya, profit, dan kas — dalam satu alur untuk dapur UMKM-mu.
+                        Resep, stok, biaya, profit, dan kas dalam satu alur untuk dapur UMKM-mu.
                     </p>
                 </div>
 
