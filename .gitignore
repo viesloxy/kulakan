@@ -1,38 +1,49 @@
-# Dependencies
-/vendor
+/.phpunit.cache
+/bootstrap/ssr
 /node_modules
-
-# Laravel / build artifacts
 /public/build
+/public/fonts-manifest.dev.json
 /public/hot
 /public/storage
 /storage/*.key
-
-# Environment & secrets
+/storage/pail
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
+/vendor
+.DS_Store
 .env
 .env.backup
 .env.production
-auth.json
-
-# Testing
-/.phpunit.result.cache
-/.phpunit.cache
-
-# Homestead
+.phpactor.json
+.phpunit.result.cache
 Homestead.json
 Homestead.yaml
-
-# Logs
-*.log
 npm-debug.log
 yarn-error.log
-
-# IDE & OS
+/auth.json
+/.fleet
 /.idea
+/.nova
 /.vscode
-.DS_Store
-Thumbs.db
+/.zed
+/.agents
+/.amp
+/.claude
+/.codex
+/.cursor
+/.factory
+/.grok
+/.junie
+/.kiro
+/.pi
+/.mcp.json
+/AGENTS.md
+/CLAUDE.md
+/boost.json
+/opencode.json
+/opencode.jsonc
 
-# Internal team docs & brand specs (kept local only, NOT pushed to public repo)
+# Internal team docs (local only, not pushed)
 /docs
 /brand
