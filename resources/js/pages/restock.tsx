@@ -6,8 +6,7 @@ import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import Reveal from '@/components/motion/reveal';
 import PageHeader from '@/components/page-header';
 import { formatRupiah } from '@/lib/format';
-
-type Abc = 'A' | 'B' | 'C';
+import { ingredientById, purchasePrice, type Abc } from '@/lib/mock-data';
 
 type Item = {
     id: number;
@@ -20,14 +19,21 @@ type Item = {
     priority: number;
 };
 
-// Mock data sesuai contoh kanonik: kas Rp 500.000 -> total Rp 483.000, sisa Rp 17.000.
-const items: Item[] = [
-    { id: 1, name: 'Cup 22 oz', abc: 'A', urgent: true, packagePrice: 18000, qmin: 3, qtarget: 9, priority: 9.5 },
-    { id: 2, name: 'Biji Kopi Arabika', abc: 'A', urgent: true, packagePrice: 120000, qmin: 1, qtarget: 1, priority: 9.0 },
-    { id: 3, name: 'Susu UHT', abc: 'A', urgent: true, packagePrice: 33500, qmin: 2, qtarget: 6, priority: 8.7 },
-    { id: 4, name: 'Gula Aren', abc: 'B', urgent: false, packagePrice: 25000, qmin: 2, qtarget: 4, priority: 5.0 },
-    { id: 5, name: 'Sirup Hazelnut', abc: 'C', urgent: false, packagePrice: 45000, qmin: 1, qtarget: 2, priority: 2.0 },
+// Parameter kas-aware reorder (BL §8.5–8.7). Harga beli memakai harga penawaran terbaru bila ada.
+const configs: Array<Omit<Item, 'name' | 'packagePrice'>> = [
+    { id: 5, abc: 'A', urgent: true, qmin: 5, qtarget: 9, priority: 11.25 },
+    { id: 1, abc: 'A', urgent: true, qmin: 1, qtarget: 3, priority: 8.0 },
+    { id: 3, abc: 'A', urgent: true, qmin: 1, qtarget: 7, priority: 4.5 },
+    { id: 4, abc: 'B', urgent: false, qmin: 0, qtarget: 1, priority: 1.33 },
+    { id: 8, abc: 'C', urgent: false, qmin: 0, qtarget: 1, priority: 0.75 },
 ];
+
+// Contoh kanonik: kas Rp 500.000 -> total Rp 483.000, sisa Rp 17.000.
+const items: Item[] = configs.map((c) => ({
+    ...c,
+    name: ingredientById(c.id).name,
+    packagePrice: purchasePrice(ingredientById(c.id)),
+}));
 
 function plan(cash: number) {
     let remaining = cash;

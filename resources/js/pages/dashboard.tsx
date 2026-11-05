@@ -5,6 +5,7 @@ import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import { formatRupiah } from '@/lib/format';
+import { alerts, inventoryValue, menuStatus, menus } from '@/lib/mock-data';
 import { dashboard } from '@/routes';
 
 const wallets = [
@@ -13,10 +14,12 @@ const wallets = [
     { label: 'Cadangan', value: 0, active: false },
 ];
 
+const profitableCount = menus.filter((m) => menuStatus(m) === 'profitable').length;
+
 const kpis = [
-    { label: 'Nilai persediaan', value: formatRupiah(1485000), icon: Package, trend: '+4%', highlight: true },
-    { label: 'Menu profitable', value: '3', icon: TrendingUp, trend: '+1', highlight: false },
-    { label: 'Alert aktif', value: '2', icon: TriangleAlert, trend: '0', highlight: false },
+    { label: 'Nilai persediaan', value: formatRupiah(inventoryValue()), icon: Package, trend: '+4%', highlight: true },
+    { label: 'Menu profitable', value: String(profitableCount), icon: TrendingUp, trend: '+1', highlight: false },
+    { label: 'Alert aktif', value: String(alerts.length), icon: TriangleAlert, trend: '0', highlight: false },
     { label: 'Pesanan hari ini', value: '18', icon: Receipt, trend: '+6', highlight: false },
 ];
 
@@ -44,7 +47,7 @@ export default function Dashboard() {
                 </Reveal>
 
                 <Reveal delay={0.05}>
-                    <section className="grid gap-5 lg:grid-cols-[1.05fr_1fr_1.05fr]">
+                    <section className="grid gap-5 lg:grid-cols-[1fr_1.3fr_1fr]">
                         <FxCard className="p-5">
                             <div className="flex items-start justify-between">
                                 <span className="text-sm text-muted-foreground">Kas untuk belanja</span>
@@ -63,7 +66,7 @@ export default function Dashboard() {
                                 dari kemarin
                             </div>
 
-                            <div className="mt-4 grid grid-cols-2 gap-3">
+                            <div className="mt-4 flex flex-col gap-2">
                                 <FxButton variant="coral" className="w-full">
                                     <ArrowUpRight className="size-4" />
                                     Catat pesanan
@@ -83,7 +86,9 @@ export default function Dashboard() {
                                     {wallets.map((w) => (
                                         <div key={w.label} className="rounded-2xl bg-card p-3">
                                             <p className="text-[11px] font-semibold text-muted-foreground">{w.label}</p>
-                                            <p className="mt-1 text-sm font-bold tabular-nums">{formatRupiah(w.value)}</p>
+                                            <p className="mt-1 text-xs font-bold tabular-nums whitespace-nowrap">
+                                                {formatRupiah(w.value)}
+                                            </p>
                                             <p
                                                 className={`mt-1 text-[11px] font-semibold ${
                                                     w.active ? 'text-[#1D9E53]' : 'text-[#D93829]'
@@ -97,38 +102,38 @@ export default function Dashboard() {
                             </FxSoft>
                         </FxCard>
 
-                        <FxCard className="grid grid-cols-2 grid-rows-2 gap-3 p-3.5">
-                            {kpis.map((k) => (
-                                <div
-                                    key={k.label}
-                                    className={`flex flex-col justify-between rounded-2xl p-4 ${
-                                        k.highlight ? 'fx-coral' : 'fx-soft'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between gap-2">
-                                        <span className={`text-sm font-medium ${k.highlight ? 'text-white' : ''}`}>
-                                            {k.label}
-                                        </span>
-                                        <IconCircle icon={k.icon} tone={k.highlight ? 'white' : 'soft'} size="sm" />
-                                    </div>
-                                    <div>
-                                        <p
-                                            className={`mt-3 text-2xl font-bold tracking-tight tabular-nums ${
-                                                k.highlight ? 'text-white' : ''
-                                            }`}
-                                        >
-                                            {k.value}
-                                        </p>
-                                        <p
-                                            className={`mt-1 text-[11px] font-semibold ${
-                                                k.highlight ? 'text-white/85' : 'text-muted-foreground'
-                                            }`}
-                                        >
-                                            {k.trend} dari kemarin
-                                        </p>
-                                    </div>
+                        <FxCard className="flex flex-col gap-3 p-3.5">
+                            <div className="fx-coral flex flex-[1.3] flex-col justify-between rounded-2xl p-4">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-sm font-medium text-white">{kpis[0].label}</span>
+                                    <IconCircle icon={kpis[0].icon} tone="white" size="sm" />
                                 </div>
-                            ))}
+                                <div className="mt-3">
+                                    <p className="text-[1.75rem] font-bold tracking-tight text-white tabular-nums whitespace-nowrap">
+                                        {kpis[0].value}
+                                    </p>
+                                    <p className="mt-1 text-[11px] font-semibold text-white/85">
+                                        {kpis[0].trend} dari kemarin
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="grid flex-1 grid-cols-3 gap-3">
+                                {kpis.slice(1).map((k) => (
+                                    <div key={k.label} className="fx-soft flex flex-col justify-between rounded-2xl p-4">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-sm font-medium">{k.label}</span>
+                                            <IconCircle icon={k.icon} tone="soft" size="sm" />
+                                        </div>
+                                        <div className="mt-3">
+                                            <p className="text-xl font-bold tracking-tight tabular-nums">{k.value}</p>
+                                            <p className="mt-1 text-[11px] font-semibold text-muted-foreground">
+                                                {k.trend} dari kemarin
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </FxCard>
 
                         <FxCard className="flex flex-col p-5">
@@ -159,7 +164,7 @@ export default function Dashboard() {
                             <p className="mt-0.5 text-xs text-muted-foreground">Terpakai dari rencana terakhir</p>
                             <div className="fx-hatch mt-4 h-3 w-full overflow-hidden rounded-full bg-[#EBEBE8]">
                                 <div
-                                    className="h-full w-[62%] rounded-full bg-[#EC582A]"
+                                    className="h-full w-[97%] rounded-full bg-[#EC582A]"
                                     style={{
                                         backgroundImage:
                                             'repeating-linear-gradient(-45deg, rgba(255,255,255,0.18) 0 3px, transparent 3px 6px)',
@@ -167,7 +172,7 @@ export default function Dashboard() {
                                 />
                             </div>
                             <div className="mt-3 flex items-center justify-between text-sm">
-                                <span className="font-bold tabular-nums">Rp 310.000</span>
+                                <span className="font-bold tabular-nums">Rp 483.000</span>
                                 <span className="text-muted-foreground">dari Rp 500.000</span>
                             </div>
                         </FxCard>

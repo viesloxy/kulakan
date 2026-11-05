@@ -8,25 +8,7 @@ import Reveal from '@/components/motion/reveal';
 import PageHeader from '@/components/page-header';
 import StatusBadge, { type MenuStatus } from '@/components/status-badge';
 import { formatPercent, formatRupiah } from '@/lib/format';
-
-type MenuProfit = {
-    id: number;
-    name: string;
-    sellingPrice: number;
-    hpp: number;
-    marginPct: number;
-    status: MenuStatus;
-};
-
-// Mock data. Angka mengikuti contoh kanonik (Es Kopi Susu Aren: HPP Rp 11.244, margin 48,89%).
-const menus: MenuProfit[] = [
-    { id: 1, name: 'Kopi Hitam', sellingPrice: 15000, hpp: 5200, marginPct: 65.33, status: 'profitable' },
-    { id: 2, name: 'Roti Bakar Keju', sellingPrice: 18000, hpp: 9000, marginPct: 50.0, status: 'profitable' },
-    { id: 3, name: 'Es Kopi Susu Aren', sellingPrice: 22000, hpp: 11244, marginPct: 48.89, status: 'profitable' },
-    { id: 4, name: 'Hazelnut Latte', sellingPrice: 25000, hpp: 17500, marginPct: 30.0, status: 'watchlist' },
-    { id: 5, name: 'Matcha Latte', sellingPrice: 26000, hpp: 19500, marginPct: 25.0, status: 'watchlist' },
-    { id: 6, name: 'Cokelat Panas', sellingPrice: 20000, hpp: 15800, marginPct: 21.0, status: 'loss' },
-];
+import { marginPct, menuHpp, menuStatus, menus } from '@/lib/mock-data';
 
 const statusColor: Record<MenuStatus, string> = {
     profitable: '#1D9E53',
@@ -35,12 +17,19 @@ const statusColor: Record<MenuStatus, string> = {
 };
 
 export default function Profitability() {
+    const rows = menus.map((m) => ({
+        ...m,
+        hpp: menuHpp(m),
+        margin: marginPct(m),
+        status: menuStatus(m),
+    }));
+
     const counts = { profitable: 0, watchlist: 0, loss: 0 };
-    for (const m of menus) {
-        counts[m.status] += 1;
+    for (const r of rows) {
+        counts[r.status] += 1;
     }
 
-    const avgMargin = menus.reduce((sum, m) => sum + m.marginPct, 0) / menus.length;
+    const avgMargin = rows.reduce((sum, r) => sum + r.margin, 0) / rows.length;
 
     const statusCards = [
         { label: 'Profitable', value: counts.profitable, icon: TrendingUp, tone: 'success' as const },
@@ -97,7 +86,7 @@ export default function Profitability() {
                         <p className="mb-4 text-xs text-muted-foreground">Persentase margin kotor terhadap harga jual.</p>
                         <FxSoft className="h-72 w-full p-4">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={menus} layout="vertical" margin={{ top: 0, right: 28, bottom: 0, left: 8 }}>
+                                <BarChart data={rows} layout="vertical" margin={{ top: 0, right: 28, bottom: 0, left: 8 }}>
                                     <XAxis
                                         type="number"
                                         domain={[0, 100]}
@@ -116,12 +105,12 @@ export default function Profitability() {
                                     />
                                     <Tooltip
                                         cursor={{ fill: 'rgba(22,22,21,0.04)' }}
-                                        formatter={(value) => [`${value}%`, 'Margin']}
+                                        formatter={(value) => [`${Number(value).toFixed(2)}%`, 'Margin']}
                                         contentStyle={{ borderRadius: 12, border: 'none', fontSize: 12 }}
                                     />
-                                    <Bar dataKey="marginPct" radius={[0, 6, 6, 0]} barSize={18}>
-                                        {menus.map((m) => (
-                                            <Cell key={m.id} fill={statusColor[m.status]} />
+                                    <Bar dataKey="margin" radius={[0, 6, 6, 0]} barSize={18}>
+                                        {rows.map((r) => (
+                                            <Cell key={r.id} fill={statusColor[r.status]} />
                                         ))}
                                     </Bar>
                                 </BarChart>
@@ -143,14 +132,14 @@ export default function Profitability() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {menus.map((m) => (
-                                    <tr key={m.id} className="border-b border-border/60 last:border-0">
-                                        <td className="px-4 py-3 font-medium">{m.name}</td>
-                                        <td className="px-4 py-3 text-right tabular-nums">{formatRupiah(m.sellingPrice)}</td>
-                                        <td className="px-4 py-3 text-right tabular-nums">{formatRupiah(m.hpp)}</td>
-                                        <td className="px-4 py-3 text-right tabular-nums">{formatPercent(m.marginPct)}</td>
+                                {rows.map((r) => (
+                                    <tr key={r.id} className="border-b border-border/60 last:border-0">
+                                        <td className="px-4 py-3 font-medium">{r.name}</td>
+                                        <td className="px-4 py-3 text-right tabular-nums">{formatRupiah(r.price)}</td>
+                                        <td className="px-4 py-3 text-right tabular-nums">{formatRupiah(r.hpp)}</td>
+                                        <td className="px-4 py-3 text-right tabular-nums">{formatPercent(r.margin)}</td>
                                         <td className="px-4 py-3">
-                                            <StatusBadge status={m.status} />
+                                            <StatusBadge status={r.status} />
                                         </td>
                                     </tr>
                                 ))}

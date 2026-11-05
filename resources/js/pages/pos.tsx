@@ -8,24 +8,10 @@ import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageHeader from '@/components/page-header';
 import { formatRupiah } from '@/lib/format';
+import { menus as allMenus, type Menu } from '@/lib/mock-data';
 
-type Menu = {
-    id: number;
-    name: string;
-    category: 'Kopi' | 'Non-Kopi' | 'Makanan';
-    price: number;
-    stockLeft: number;
-};
-
-// Mock data: stockLeft = perkiraan porsi tersedia dari stok bahan / BOM.
-const menus: Menu[] = [
-    { id: 1, name: 'Es Kopi Susu Aren', category: 'Kopi', price: 22000, stockLeft: 8 },
-    { id: 2, name: 'Kopi Hitam', category: 'Kopi', price: 15000, stockLeft: 14 },
-    { id: 3, name: 'Hazelnut Latte', category: 'Kopi', price: 25000, stockLeft: 3 },
-    { id: 4, name: 'Matcha Latte', category: 'Non-Kopi', price: 26000, stockLeft: 6 },
-    { id: 5, name: 'Cokelat Panas', category: 'Non-Kopi', price: 20000, stockLeft: 5 },
-    { id: 6, name: 'Roti Bakar Keju', category: 'Makanan', price: 18000, stockLeft: 9 },
-];
+// Menu yang tampil di POS: aktif dan punya minimal satu item BOM (FR-012).
+const menus: Menu[] = allMenus.filter((m) => m.active && m.bom.length > 0);
 
 const categoryIcon = { Kopi: Coffee, 'Non-Kopi': CupSoda, Makanan: Sandwich };
 
@@ -64,9 +50,9 @@ export default function Pos() {
             toast.error('Belum ada item di pesanan.');
             return;
         }
-        const insufficient = items.find((x) => x.qty > x.menu.stockLeft);
+        const insufficient = items.find((x) => x.qty > x.menu.portionsLeft);
         if (insufficient) {
-            toast.error(`${insufficient.menu.name} kurang ${insufficient.qty - insufficient.menu.stockLeft} porsi`, {
+            toast.error(`${insufficient.menu.name} kurang ${insufficient.qty - insufficient.menu.portionsLeft} porsi`, {
                 description: 'Stok bahan tidak mencukupi. Pesanan tidak disimpan.',
             });
             return;
@@ -93,7 +79,7 @@ export default function Pos() {
                         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             {menus.map((m) => {
                                 const Icon = categoryIcon[m.category];
-                                const low = m.stockLeft <= 3;
+                                const low = m.portionsLeft <= 3;
                                 return (
                                     <button
                                         key={m.id}
@@ -107,7 +93,7 @@ export default function Pos() {
                                                     low ? 'text-[#D93829]' : 'text-[#1D9E53]'
                                                 }`}
                                             >
-                                                Sisa {m.stockLeft}
+                                                Sisa {m.portionsLeft}
                                             </span>
                                         </div>
                                         <div>
