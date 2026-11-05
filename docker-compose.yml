@@ -1,0 +1,27 @@
+# Kulakan — docker-compose (dev)  ·  GTNIC 2026
+#
+# Dev lokal: PostgreSQL 16 via Docker, aplikasi dijalankan native dengan
+# `php artisan serve` + `npm run dev` (lihat README).
+# Layanan app/web (Nginx/Caddy), queue, scheduler, dan node untuk parity
+# produksi ditambahkan disini nanti bersama tim Ops.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-kulakan}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
