@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { Bell, Box, FolderGit2, LayoutGrid, Receipt, ShoppingBasket, TrendingUp, Utensils } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -22,18 +22,43 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
+    {
+        title: 'Bahan Baku',
+        href: '/bahan-baku',
+        icon: Box,
+    },
+    {
+        title: 'Menu & Resep',
+        href: '/menu',
+        icon: Utensils,
+    },
+    {
+        title: 'POS Kasir',
+        href: '/pos',
+        icon: Receipt,
+    },
+    {
+        title: 'Profitabilitas',
+        href: '/profitabilitas',
+        icon: TrendingUp,
+    },
+    {
+        title: 'Restock Planner',
+        href: '/restock',
+        icon: ShoppingBasket,
+    },
+    {
+        title: 'Alert',
+        href: '/alert',
+        icon: Bell,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
     {
         title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
+        href: 'https://github.com/viesloxy/kulakan',
         icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
     },
 ];
 

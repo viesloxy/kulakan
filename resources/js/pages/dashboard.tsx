@@ -1,25 +1,32 @@
 import { Head } from '@inertiajs/react';
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { dashboard } from '@/routes';
+
+const stats = [
+    { label: 'Kas untuk belanja', value: 'Rp —' },
+    { label: 'Nilai persediaan', value: 'Rp —' },
+    { label: 'Menu profitable', value: '—' },
+    { label: 'Alert aktif', value: '—' },
+];
 
 export default function Dashboard() {
     return (
         <>
             <Head title="Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
+            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+                <div>
+                    <h1 className="text-2xl font-semibold tracking-tight">Selamat datang di Kulakan 👋</h1>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Resep, stok, biaya, profit, dan kas — dalam satu alur untuk dapur UMKM-mu.
+                    </p>
                 </div>
-                <div className="relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
-                    <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {stats.map((s) => (
+                        <div key={s.label} className="rounded-2xl border border-sidebar-border/70 bg-card p-4">
+                            <p className="text-sm text-muted-foreground">{s.label}</p>
+                            <p className="mt-1 text-2xl font-semibold tabular-nums">{s.value}</p>
+                        </div>
+                    ))}
                 </div>
             </div>
         </>
