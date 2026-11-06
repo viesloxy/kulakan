@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrderController;
@@ -13,7 +14,7 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     // Modul khusus Owner (matriks akses SAD §9 - staff menerima 403).
     Route::middleware('role:owner')->group(function () {
-        Route::inertia('dashboard', 'dashboard')->name('dashboard');
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('profitabilitas', [ProfitabilityController::class, 'index'])->name('profitability');
         Route::get('restock', [RestockController::class, 'index'])->name('restock');
         Route::post('restock/plans', [RestockController::class, 'store'])->name('restock.store');
