@@ -6,13 +6,20 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $created_at
+ * @property Carbon|null $purchased_at
+ */
 #[Fillable(['user_id', 'cash_amount', 'total_cost', 'remaining_cash', 'status', 'purchased_at'])]
 class RestockPlan extends Model
 {
     protected function casts(): array
     {
         return [
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
             'purchased_at' => 'datetime',
         ];
     }

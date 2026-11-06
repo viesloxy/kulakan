@@ -6,6 +6,7 @@ use App\Exceptions\InsufficientStockException;
 use App\Http\Requests\Pos\StoreOrderRequest;
 use App\Models\Ingredient;
 use App\Models\Menu;
+use App\Services\AlertService;
 use App\Services\CostingService;
 use App\Services\InventoryService;
 use Illuminate\Http\RedirectResponse;
@@ -17,6 +18,7 @@ class OrderController extends Controller
     public function __construct(
         private readonly CostingService $costing,
         private readonly InventoryService $inventory,
+        private readonly AlertService $alerts,
     ) {}
 
     public function index(): Response
@@ -62,6 +64,8 @@ class OrderController extends Controller
 
             return back()->withErrors(['order' => 'Stok tidak cukup: '.$detail.'. Pesanan tidak disimpan.']);
         }
+
+        $this->alerts->syncAll();
 
         return back()->with('success', 'Pesanan '.$order->order_number.' tersimpan. Stok bahan terpotong otomatis.');
     }

@@ -1,69 +1,70 @@
-import { Head } from '@inertiajs/react';
-import { Lightbulb, Save, SlidersHorizontal } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Head, router } from '@inertiajs/react';
+import { CheckCircle2, Lightbulb, Save, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import Reveal from '@/components/motion/reveal';
 import PageHeader from '@/components/page-header';
 import { formatRupiah } from '@/lib/format';
-import { ingredientById, purchasePrice, type Abc } from '@/lib/mock-data';
 
-type Item = {
-    id: number;
+type Abc = 'A' | 'B' | 'C';
+type BaseUnit = 'gram' | 'ml' | 'pcs';
+type Label =
+    | 'beli_sekarang'
+    | 'beli_sekarang_parsial'
+    | 'beli_opsional'
+    | 'tahan_dulu'
+    | 'kas_tidak_cukup';
+
+type RestockItem = {
+    ingredient_id: number;
     name: string;
-    abc: Abc;
-    urgent: boolean;
-    packagePrice: number;
-    qmin: number;
-    qtarget: number;
-    priority: number;
+    base_unit: BaseUnit;
+    abc_class: Abc;
+    is_urgent: boolean;
+    urgency: string;
+    priority_score: string;
+    qmin_packages: number;
+    qtarget_packages: number;
+    recommended_packages: number;
+    package_size: string;
+    package_price: number;
+    estimated_cost: number;
+    label: Label;
 };
 
-// Parameter kas-aware reorder (BL §8.5–8.7). Harga beli memakai harga penawaran terbaru bila ada.
-const configs: Array<Omit<Item, 'name' | 'packagePrice'>> = [
-    { id: 5, abc: 'A', urgent: true, qmin: 5, qtarget: 9, priority: 11.25 },
-    { id: 1, abc: 'A', urgent: true, qmin: 1, qtarget: 3, priority: 8.0 },
-    { id: 3, abc: 'A', urgent: true, qmin: 1, qtarget: 7, priority: 4.5 },
-    { id: 4, abc: 'B', urgent: false, qmin: 0, qtarget: 1, priority: 1.33 },
-    { id: 8, abc: 'C', urgent: false, qmin: 0, qtarget: 1, priority: 0.75 },
-];
+type Plan = {
+    cash_amount: number;
+    total_cost: number;
+    remaining_cash: number;
+    items: RestockItem[];
+};
 
-// Contoh kanonik: kas Rp 500.000 -> total Rp 483.000, sisa Rp 17.000.
-const items: Item[] = configs.map((c) => ({
-    ...c,
-    name: ingredientById(c.id).name,
-    packagePrice: purchasePrice(ingredientById(c.id)),
-}));
+type LastPlan = {
+    id: number;
+    status: 'draft' | 'approved' | 'purchased';
+    cash_amount: number;
+    total_cost: number;
+    remaining_cash: number;
+    created_at: string | null;
+    purchased_at: string | null;
+    items: {
+        ingredient_id: number;
+        recommended_packages: number;
+        estimated_cost: number;
+        label: string | null;
+        purchased_packages: number | null;
+    }[];
+};
 
-function plan(cash: number) {
-    let remaining = cash;
-    const rec: Record<number, number> = {};
-    const sorted = [...items].sort((a, b) => b.priority - a.priority);
-
-    const fund = (it: Item, count: number) => {
-        for (let k = 0; k < count; k++) {
-            if (remaining >= it.packagePrice) {
-                remaining -= it.packagePrice;
-                rec[it.id] = (rec[it.id] ?? 0) + 1;
-            } else {
-                break;
-            }
-        }
-    };
-
-    for (const it of sorted.filter((i) => i.urgent)) {
-        fund(it, it.qmin);
-    }
-    for (const it of sorted.filter((i) => i.urgent)) {
-        fund(it, it.qtarget - (rec[it.id] ?? 0));
-    }
-    for (const it of sorted.filter((i) => !i.urgent)) {
-        fund(it, it.qtarget);
-    }
-
-    return { rec, remaining };
-}
+type Props = {
+    default_cash_amount: number;
+    max_days_lead_time: number;
+    presets: number[];
+    plan: Plan;
+    last_plan: LastPlan | null;
+};
 
 const abcTone: Record<Abc, { bg: string; text: string }> = {
     A: { bg: 'bg-[#FDECE7]', text: 'text-[#EC582A]' },
@@ -71,33 +72,106 @@ const abcTone: Record<Abc, { bg: string; text: string }> = {
     C: { bg: 'bg-secondary', text: 'text-muted-foreground' },
 };
 
-function label(it: Item, got: number) {
-    if (got <= 0) {
-        return it.urgent
-            ? { text: 'Kas tidak cukup', cls: 'bg-[#FCEAE8] text-[#D93829]' }
-            : { text: 'Tahan dulu', cls: 'bg-secondary text-muted-foreground' };
-    }
-    if (got >= it.qtarget) {
-        return it.urgent
-            ? { text: 'Beli sekarang', cls: 'bg-[#E6F5EC] text-[#1D9E53]' }
-            : { text: 'Beli opsional', cls: 'bg-[#E7EEFC] text-[#2B6BE6]' };
-    }
-    return { text: 'Beli sebagian', cls: 'bg-[#FEF3D6] text-[#9A6B00]' };
-}
+const labelConfig: Record<Label, { text: string; cls: string }> = {
+    beli_sekarang: {
+        text: 'Beli sekarang',
+        cls: 'bg-[#E6F5EC] text-[#1D9E53]',
+    },
+    beli_sekarang_parsial: {
+        text: 'Beli sebagian',
+        cls: 'bg-[#FEF3D6] text-[#9A6B00]',
+    },
+    beli_opsional: {
+        text: 'Beli opsional',
+        cls: 'bg-[#E7EEFC] text-[#2B6BE6]',
+    },
+    tahan_dulu: {
+        text: 'Tahan dulu',
+        cls: 'bg-secondary text-muted-foreground',
+    },
+    kas_tidak_cukup: {
+        text: 'Kas tidak cukup',
+        cls: 'bg-[#FCEAE8] text-[#D93829]',
+    },
+};
 
-const presets = [300000, 500000, 750000, 1000000];
+const statusLabel: Record<LastPlan['status'], string> = {
+    draft: 'Draft',
+    approved: 'Disetujui',
+    purchased: 'Dibeli',
+};
 
-export default function Restock() {
-    const [cash, setCash] = useState(500000);
-    const { rec, remaining } = useMemo(() => plan(cash), [cash]);
-    const total = cash - remaining;
+export default function Restock({
+    default_cash_amount,
+    max_days_lead_time,
+    presets,
+    plan,
+    last_plan,
+}: Props) {
+    const [cash, setCash] = useState(default_cash_amount);
+    const firstRun = useRef(true);
+
+    useEffect(() => {
+        if (firstRun.current) {
+            firstRun.current = false;
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            router.get(
+                '/restock',
+                { cash },
+                {
+                    only: ['plan'],
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                },
+            );
+        }, 250);
+
+        return () => window.clearTimeout(timer);
+    }, [cash]);
+
+    const total = plan.total_cost;
+    const remaining = plan.remaining_cash;
     const usedPct = cash > 0 ? Math.min(100, (total / cash) * 100) : 0;
+    const boughtCount = plan.items.filter(
+        (it) => it.recommended_packages > 0,
+    ).length;
 
     function savePlan() {
-        const bought = items.filter((it) => (rec[it.id] ?? 0) > 0).length;
-        toast.success('Rencana belanja tersimpan (draft)', {
-            description: `${bought} bahan, total ${formatRupiah(total)}, sisa kas ${formatRupiah(remaining)}.`,
-        });
+        router.post(
+            '/restock/plans',
+            { cash_amount: cash, max_days_lead_time },
+            {
+                preserveScroll: true,
+                onSuccess: () =>
+                    toast.success('Rencana belanja tersimpan (draft)'),
+                onError: (errors) =>
+                    toast.error(
+                        Object.values(errors)[0] ?? 'Gagal menyimpan rencana.',
+                    ),
+            },
+        );
+    }
+
+    function purchase(planId: number) {
+        router.post(
+            `/restock/plans/${planId}/purchase`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () =>
+                    toast.success('Rencana ditandai dibeli', {
+                        description: 'Stok bahan bertambah sesuai rekomendasi.',
+                    }),
+                onError: (errors) =>
+                    toast.error(
+                        Object.values(errors)[0] ?? 'Gagal menandai dibeli.',
+                    ),
+            },
+        );
     }
 
     return (
@@ -178,6 +252,48 @@ export default function Restock() {
                                     </span>
                                 </div>
                             </FxSoft>
+
+                            {last_plan ? (
+                                <FxSoft className="mt-4 flex flex-col gap-3 p-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm font-semibold">
+                                            Rencana #{last_plan.id}
+                                        </span>
+                                        <span className="rounded-full bg-card px-2.5 py-1 text-[11px] font-semibold">
+                                            {statusLabel[last_plan.status]}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                        <span>
+                                            Total{' '}
+                                            {formatRupiah(last_plan.total_cost)}
+                                        </span>
+                                        <span>
+                                            Sisa{' '}
+                                            {formatRupiah(
+                                                last_plan.remaining_cash,
+                                            )}
+                                        </span>
+                                    </div>
+                                    {last_plan.status !== 'purchased' ? (
+                                        <FxButton
+                                            variant="soft"
+                                            className="w-full"
+                                            onClick={() =>
+                                                purchase(last_plan.id)
+                                            }
+                                        >
+                                            <CheckCircle2 className="size-4" />
+                                            Tandai dibeli
+                                        </FxButton>
+                                    ) : (
+                                        <p className="inline-flex items-center gap-2 text-xs font-semibold text-[#1D9E53]">
+                                            <CheckCircle2 className="size-4" />
+                                            Sudah dibeli, stok bertambah.
+                                        </p>
+                                    )}
+                                </FxSoft>
+                            ) : null}
                         </FxCard>
 
                         <FxCard className="flex flex-col p-5">
@@ -186,7 +302,7 @@ export default function Restock() {
                                     Rekomendasi belanja
                                 </h2>
                                 <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
-                                    {items.length} bahan
+                                    {plan.items.length} bahan
                                 </span>
                             </div>
                             <div className="overflow-x-auto">
@@ -211,13 +327,12 @@ export default function Restock() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {items.map((it) => {
-                                            const got = rec[it.id] ?? 0;
-                                            const lb = label(it, got);
-                                            const tone = abcTone[it.abc];
+                                        {plan.items.map((it) => {
+                                            const tone = abcTone[it.abc_class];
+                                            const lb = labelConfig[it.label];
                                             return (
                                                 <tr
-                                                    key={it.id}
+                                                    key={it.ingredient_id}
                                                     className="border-b border-border/60 last:border-0"
                                                 >
                                                     <td className="px-3 py-3">
@@ -225,24 +340,32 @@ export default function Restock() {
                                                             {it.name}
                                                         </p>
                                                         <p className="text-xs text-muted-foreground">
-                                                            target {it.qtarget}{' '}
-                                                            pack
+                                                            target{' '}
+                                                            {
+                                                                it.qtarget_packages
+                                                            }{' '}
+                                                            pack · prioritas{' '}
+                                                            {Number(
+                                                                it.priority_score,
+                                                            ).toFixed(2)}
                                                         </p>
                                                     </td>
                                                     <td className="px-3 py-3">
                                                         <span
                                                             className={`inline-flex size-6 items-center justify-center rounded-full text-xs font-bold ${tone.bg} ${tone.text}`}
                                                         >
-                                                            {it.abc}
+                                                            {it.abc_class}
                                                         </span>
                                                     </td>
                                                     <td className="px-3 py-3 text-right font-semibold tabular-nums">
-                                                        {got} pack
+                                                        {
+                                                            it.recommended_packages
+                                                        }{' '}
+                                                        pack
                                                     </td>
                                                     <td className="px-3 py-3 text-right tabular-nums">
                                                         {formatRupiah(
-                                                            got *
-                                                                it.packagePrice,
+                                                            it.estimated_cost,
                                                         )}
                                                     </td>
                                                     <td className="px-3 py-3">
@@ -262,7 +385,8 @@ export default function Restock() {
                             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                                 <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                                     <Lightbulb className="size-4 text-[#EC582A]" />
-                                    Total tidak pernah melebihi kas.
+                                    Total tidak pernah melebihi kas.{' '}
+                                    {boughtCount} bahan direkomendasikan dibeli.
                                 </span>
                                 <FxButton variant="coral" onClick={savePlan}>
                                     <Save className="size-4" />

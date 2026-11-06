@@ -9,6 +9,7 @@ use App\Http\Requests\Ingredient\UpdateIngredientQuoteRequest;
 use App\Http\Requests\Ingredient\UpdateIngredientRequest;
 use App\Models\Ingredient;
 use App\Models\PriceHistory;
+use App\Services\AlertService;
 use App\Services\CostingService;
 use App\Services\InventoryService;
 use App\Services\RestockService;
@@ -24,6 +25,7 @@ class IngredientController extends Controller
         private readonly InventoryService $inventory,
         private readonly CostingService $costing,
         private readonly RestockService $restock,
+        private readonly AlertService $alerts,
     ) {}
 
     public function index(Request $request): Response
@@ -132,6 +134,8 @@ class IngredientController extends Controller
             $data['reason'] ?? 'purchase',
         );
 
+        $this->alerts->syncAll();
+
         return back()->with('success', 'Stock-in '.$ingredient->name.' tersimpan.');
     }
 
@@ -157,6 +161,8 @@ class IngredientController extends Controller
         // Rekalkulasi HPP proyeksi menu terkait (BL §6.4-6.5).
         $this->costing->recalculateForIngredient($ingredient);
 
+        $this->alerts->syncAll();
+
         return back()->with('success', 'Harga penawaran '.$ingredient->name.' diperbarui.');
     }
 
@@ -169,6 +175,8 @@ class IngredientController extends Controller
             $request->validated('reason'),
             $request->user(),
         );
+
+        $this->alerts->syncAll();
 
         return back()->with('success', 'Penyesuaian stok '.$ingredient->name.' tercatat.');
     }

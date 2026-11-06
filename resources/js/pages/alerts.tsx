@@ -1,11 +1,40 @@
-import { Head } from '@inertiajs/react';
-import { Bell, PackageMinus, TrendingDown, TrendingUp } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import {
+    Bell,
+    Check,
+    PackageMinus,
+    TrendingDown,
+    TrendingUp,
+} from 'lucide-react';
+import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageHeader from '@/components/page-header';
-import { alerts, type AlertType } from '@/lib/mock-data';
+
+type AlertType = 'low_stock' | 'margin_drop' | 'price_hike';
+
+type AlertRow = {
+    id: number;
+    type: AlertType;
+    subject_type: string;
+    subject_id: number;
+    status: string;
+    title: string;
+    description: string;
+    payload: Record<string, unknown>;
+    created_at: string | null;
+};
+
+type Counts = {
+    active: number;
+    low_stock: number;
+    margin_drop: number;
+    price_hike: number;
+};
+
+type Props = { alerts: AlertRow[]; counts: Counts };
 
 const typeConfig: Record<
     AlertType,
@@ -14,62 +43,82 @@ const typeConfig: Record<
         tone: 'danger' | 'warning' | 'coral';
         label: string;
         action: string;
+        href: string;
     }
 > = {
-    stock: {
+    low_stock: {
         icon: PackageMinus,
         tone: 'danger',
         label: 'Stok rendah',
         action: 'Susun restock',
+        href: '/restock',
     },
-    margin: {
+    margin_drop: {
         icon: TrendingDown,
         tone: 'warning',
         label: 'Margin turun',
         action: 'Lihat menu',
+        href: '/menu',
     },
-    price: {
+    price_hike: {
         icon: TrendingUp,
         tone: 'coral',
         label: 'Harga naik',
         action: 'Lihat bahan',
+        href: '/bahan-baku',
     },
 };
 
-export default function Alerts() {
-    const counts = {
-        stock: alerts.filter((a) => a.type === 'stock').length,
-        margin: alerts.filter((a) => a.type === 'margin').length,
-        price: alerts.filter((a) => a.type === 'price').length,
-    };
+function timeLabel(iso: string | null): string {
+    if (!iso) {
+        return '-';
+    }
 
+    const date = new Date(iso);
+
+    return `${String(date.getHours()).padStart(2, '0')}.${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+export default function Alerts({ alerts, counts }: Props) {
     const kpis = [
         {
             label: 'Alert aktif',
-            value: String(alerts.length),
+            value: String(counts.active),
             icon: Bell,
             tone: 'coral' as const,
             highlight: true,
         },
         {
             label: 'Stok rendah',
-            value: String(counts.stock),
+            value: String(counts.low_stock),
             icon: PackageMinus,
             tone: 'danger' as const,
         },
         {
             label: 'Margin turun',
-            value: String(counts.margin),
+            value: String(counts.margin_drop),
             icon: TrendingDown,
             tone: 'warning' as const,
         },
         {
             label: 'Harga naik',
-            value: String(counts.price),
+            value: String(counts.price_hike),
             icon: TrendingUp,
             tone: 'soft' as const,
         },
     ];
+
+    function resolve(id: number) {
+        router.post(
+            `/alert/${id}/resolve`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => toast.success('Alert ditandai selesai'),
+                onError: () => toast.error('Gagal menandai alert.'),
+            },
+        );
+    }
 
     return (
         <>
@@ -102,16 +151,14 @@ export default function Alerts() {
                                     />
                                 </div>
                                 <p
-                                    className={`mt-3 text-2xl font-bold tracking-tight tabular-nums ${
-                                        k.highlight ? 'text-white' : ''
-                                    }`}
+                                    className={`mt-3 text-2xl font-bold tracking-tight tabular-nums ${k.highlight ? 'text-white' : ''}`}
                                 >
                                     {k.value}
                                 </p>
                                 <p
                                     className={`mt-1 text-[11px] font-semibold ${k.highlight ? 'text-white/85' : 'text-muted-foreground'}`}
                                 >
-                                    hari ini
+                                    aktif
                                 </p>
                             </FxCard>
                         ))}
@@ -129,41 +176,67 @@ export default function Alerts() {
                             </span>
                         </div>
 
-                        <div className="flex flex-col gap-3">
-                            {alerts.map((a) => {
-                                const cfg = typeConfig[a.type];
-                                return (
-                                    <FxSoft
-                                        key={a.id}
-                                        className="flex flex-wrap items-center gap-3 p-4"
-                                    >
-                                        <IconCircle
-                                            icon={cfg.icon}
-                                            tone={cfg.tone}
-                                        />
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <p className="font-semibold">
-                                                    {a.title}
+                        {alerts.length === 0 ? (
+                            <FxSoft className="flex flex-col items-center gap-2 p-10 text-center">
+                                <IconCircle icon={Check} tone="success" />
+                                <p className="text-sm text-muted-foreground">
+                                    Tidak ada alert aktif. Semua aman.
+                                </p>
+                            </FxSoft>
+                        ) : (
+                            <div className="flex flex-col gap-3">
+                                {alerts.map((a) => {
+                                    const cfg = typeConfig[a.type];
+                                    return (
+                                        <FxSoft
+                                            key={a.id}
+                                            className="flex flex-wrap items-center gap-3 p-4"
+                                        >
+                                            <IconCircle
+                                                icon={cfg.icon}
+                                                tone={cfg.tone}
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <p className="font-semibold">
+                                                        {a.title}
+                                                    </p>
+                                                    <span className="rounded-full bg-card px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                        {cfg.label}
+                                                    </span>
+                                                </div>
+                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                    {a.description}
                                                 </p>
-                                                <span className="rounded-full bg-card px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                                                    {cfg.label}
-                                                </span>
+                                                <p className="mt-1 text-[11px] text-muted-foreground">
+                                                    AL-{a.id} ·{' '}
+                                                    {timeLabel(a.created_at)}
+                                                </p>
                                             </div>
-                                            <p className="mt-1 text-sm text-muted-foreground">
-                                                {a.description}
-                                            </p>
-                                            <p className="mt-1 text-[11px] text-muted-foreground">
-                                                {a.id} · {a.time}
-                                            </p>
-                                        </div>
-                                        <FxButton variant="soft">
-                                            {cfg.action}
-                                        </FxButton>
-                                    </FxSoft>
-                                );
-                            })}
-                        </div>
+                                            <div className="flex items-center gap-2">
+                                                <FxButton
+                                                    variant="soft"
+                                                    onClick={() =>
+                                                        router.visit(cfg.href)
+                                                    }
+                                                >
+                                                    {cfg.action}
+                                                </FxButton>
+                                                <FxButton
+                                                    variant="soft"
+                                                    onClick={() =>
+                                                        resolve(a.id)
+                                                    }
+                                                >
+                                                    <Check className="size-4" />
+                                                    Selesai
+                                                </FxButton>
+                                            </div>
+                                        </FxSoft>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </FxCard>
                 </Reveal>
             </div>
