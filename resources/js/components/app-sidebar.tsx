@@ -1,5 +1,14 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Bell, Box, FolderGit2, LayoutGrid, Receipt, ShoppingBasket, TrendingUp, Utensils } from 'lucide-react';
+import {
+    Bell,
+    Box,
+    FolderGit2,
+    LayoutGrid,
+    Receipt,
+    ShoppingBasket,
+    TrendingUp,
+    Utensils,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -79,7 +88,9 @@ export function AppSidebar() {
     const { auth } = usePage().props;
     const role: UserRole = auth.user?.role ?? 'staff';
 
-    const mainNavItems = allNavItems.filter((item) => item.roles.includes(role));
+    const mainNavItems = allNavItems.filter((item) =>
+        item.roles.includes(role),
+    );
     const homeHref = role === 'owner' ? dashboard() : '/pos';
 
     return (

@@ -1,6 +1,9 @@
 export type MenuStatus = 'profitable' | 'watchlist' | 'loss';
 
-const config: Record<MenuStatus, { label: string; className: string; dot: string }> = {
+const config: Record<
+    MenuStatus,
+    { label: string; className: string; dot: string }
+> = {
     profitable: {
         label: 'Profitable',
         className: 'bg-[#E6F5EC] text-[#1D9E53]',
