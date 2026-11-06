@@ -28,5 +28,7 @@ class DatabaseSeeder extends Seeder
         foreach ($users as $user) {
             User::factory()->create($user);
         }
+
+        $this->call(DemoSeeder::class);
     }
 }
