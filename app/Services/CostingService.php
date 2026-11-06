@@ -93,6 +93,40 @@ class CostingService
     }
 
     /**
+     * Perkiraan porsi tersedia dari stok bahan / BOM (BL §4.2).
+     * yield_portions membagi kuantitas per porsi.
+     */
+    public function portionsAvailable(Menu $menu): int
+    {
+        $menu->loadMissing('recipe.items.ingredient');
+
+        $items = $menu->recipe?->items;
+        if ($items === null || $items->isEmpty()) {
+            return 0;
+        }
+
+        $yield = max(1, (int) $menu->recipe->yield_portions);
+        $minimum = null;
+
+        foreach ($items as $item) {
+            $perPortion = bcdiv(
+                $this->effectiveQty((string) $item->quantity_needed, (string) $item->waste_factor),
+                (string) $yield,
+                6
+            );
+
+            if (bccomp($perPortion, '0', 6) <= 0) {
+                continue;
+            }
+
+            $available = (int) bcdiv(Number::str($item->ingredient->current_stock), $perPortion, 0);
+            $minimum = $minimum === null ? $available : min($minimum, $available);
+        }
+
+        return $minimum ?? 0;
+    }
+
+    /**
      * Klasifikasi status menu (BL §7.3): profitable > 45%, watchlist 25-45% inklusif, loss < 25%.
      */
     public function statusForMargin(string $marginPct): string
