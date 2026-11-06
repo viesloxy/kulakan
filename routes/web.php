@@ -3,6 +3,7 @@
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ProfitabilityController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -11,7 +12,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Modul khusus Owner (matriks akses SAD §9 - staff menerima 403).
     Route::middleware('role:owner')->group(function () {
         Route::inertia('dashboard', 'dashboard')->name('dashboard');
-        Route::inertia('profitabilitas', 'profitability')->name('profitability');
+        Route::get('profitabilitas', [ProfitabilityController::class, 'index'])->name('profitability');
         Route::inertia('restock', 'restock')->name('restock');
         Route::inertia('alert', 'alerts')->name('alerts');
 

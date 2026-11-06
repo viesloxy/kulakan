@@ -1,6 +1,6 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Coins, TrendingUp, TriangleAlert, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Bar,
     BarChart,
@@ -18,15 +18,51 @@ import Reveal from '@/components/motion/reveal';
 import PageHeader from '@/components/page-header';
 import StatusBadge, { type MenuStatus } from '@/components/status-badge';
 import { formatPercent, formatRupiah } from '@/lib/format';
-import {
-    ingredientById,
-    ingredients,
-    marginPct,
-    menuHpp,
-    menuStatus,
-    menus,
-    type Menu,
-} from '@/lib/mock-data';
+
+type Category = 'Kopi' | 'Non-Kopi' | 'Makanan';
+type BaseUnit = 'gram' | 'ml' | 'pcs';
+
+type ProfitRow = {
+    id: number;
+    name: string;
+    category: Category;
+    selling_price: number | string;
+    current_hpp: string;
+    margin_rupiah: string;
+    margin_pct: string;
+    status: MenuStatus;
+    projected_hpp: string | null;
+    projected_margin_pct: string | null;
+    projected_status: MenuStatus | null;
+};
+
+type SimRow = {
+    menu_id: number;
+    name: string;
+    old_hpp: string;
+    old_margin: string;
+    old_status: MenuStatus;
+    new_hpp: string;
+    new_margin: string;
+    new_status: MenuStatus;
+};
+
+type IngredientOption = {
+    id: number;
+    name: string;
+    base_unit: BaseUnit;
+    cost_per_unit: string;
+};
+
+type Counts = { profitable: number; watchlist: number; loss: number };
+
+type Props = {
+    menus: ProfitRow[];
+    summary: { total: number; avg_margin: string; counts: Counts };
+    ingredients: IngredientOption[];
+    filters: { sim_ingredient: number | null; sim_price: string };
+    simulation: SimRow[] | null;
+};
 
 const statusColor: Record<MenuStatus, string> = {
     profitable: '#1D9E53',
@@ -34,39 +70,37 @@ const statusColor: Record<MenuStatus, string> = {
     loss: '#D93829',
 };
 
-export default function Profitability() {
+export default function Profitability({
+    menus,
+    summary,
+    ingredients,
+    filters,
+    simulation,
+}: Props) {
     const [simOpen, setSimOpen] = useState(false);
 
-    const rows = menus.map((m) => ({
-        ...m,
-        hpp: menuHpp(m),
-        margin: marginPct(m),
-        status: menuStatus(m),
+    const chartData = menus.map((m) => ({
+        name: m.name,
+        margin: Number(m.margin_pct),
+        status: m.status,
     }));
-
-    const counts = { profitable: 0, watchlist: 0, loss: 0 };
-    for (const r of rows) {
-        counts[r.status] += 1;
-    }
-
-    const avgMargin = rows.reduce((sum, r) => sum + r.margin, 0) / rows.length;
 
     const statusCards = [
         {
             label: 'Profitable',
-            value: counts.profitable,
+            value: summary.counts.profitable,
             icon: TrendingUp,
             tone: 'success' as const,
         },
         {
             label: 'Watchlist',
-            value: counts.watchlist,
+            value: summary.counts.watchlist,
             icon: TriangleAlert,
             tone: 'warning' as const,
         },
         {
             label: 'Loss',
-            value: counts.loss,
+            value: summary.counts.loss,
             icon: XCircle,
             tone: 'danger' as const,
         },
@@ -106,10 +140,10 @@ export default function Profitability() {
                                 />
                             </div>
                             <p className="mt-3 text-2xl font-bold tracking-tight text-white tabular-nums">
-                                {formatPercent(avgMargin, 1)}
+                                {formatPercent(summary.avg_margin, 1)}
                             </p>
                             <p className="mt-1 text-[11px] font-semibold text-white/85">
-                                dari {menus.length} menu
+                                dari {summary.total} menu
                             </p>
                         </FxCard>
 
@@ -150,7 +184,7 @@ export default function Profitability() {
                         <FxSoft className="h-72 w-full p-4">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
-                                    data={rows}
+                                    data={chartData}
                                     layout="vertical"
                                     margin={{
                                         top: 0,
@@ -192,9 +226,9 @@ export default function Profitability() {
                                         radius={[0, 6, 6, 0]}
                                         barSize={18}
                                     >
-                                        {rows.map((r) => (
+                                        {chartData.map((r, index) => (
                                             <Cell
-                                                key={r.id}
+                                                key={`${r.name}-${index}`}
                                                 fill={statusColor[r.status]}
                                             />
                                         ))}
@@ -220,6 +254,9 @@ export default function Profitability() {
                                         HPP
                                     </th>
                                     <th className="px-4 py-3 text-right font-medium">
+                                        Margin Rp
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
                                         Margin
                                     </th>
                                     <th className="px-4 py-3 font-medium">
@@ -228,7 +265,7 @@ export default function Profitability() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {rows.map((r) => (
+                                {menus.map((r) => (
                                     <tr
                                         key={r.id}
                                         className="border-b border-border/60 last:border-0"
@@ -237,13 +274,16 @@ export default function Profitability() {
                                             {r.name}
                                         </td>
                                         <td className="px-4 py-3 text-right tabular-nums">
-                                            {formatRupiah(r.price)}
+                                            {formatRupiah(r.selling_price)}
                                         </td>
                                         <td className="px-4 py-3 text-right tabular-nums">
-                                            {formatRupiah(r.hpp)}
+                                            {formatRupiah(r.current_hpp)}
                                         </td>
                                         <td className="px-4 py-3 text-right tabular-nums">
-                                            {formatPercent(r.margin)}
+                                            {formatRupiah(r.margin_rupiah)}
+                                        </td>
+                                        <td className="px-4 py-3 text-right tabular-nums">
+                                            {formatPercent(r.margin_pct)}
                                         </td>
                                         <td className="px-4 py-3">
                                             <StatusBadge status={r.status} />
@@ -257,53 +297,92 @@ export default function Profitability() {
             </div>
 
             {simOpen ? (
-                <SimulateModal onClose={() => setSimOpen(false)} />
+                <SimulateModal
+                    ingredients={ingredients}
+                    initialIngredientId={filters.sim_ingredient}
+                    initialPrice={filters.sim_price}
+                    simulation={simulation}
+                    onClose={() => {
+                        setSimOpen(false);
+                        router.get(
+                            '/profitabilitas',
+                            {},
+                            {
+                                only: ['simulation'],
+                                preserveState: true,
+                                preserveScroll: true,
+                                replace: true,
+                            },
+                        );
+                    }}
+                />
             ) : null}
         </>
     );
 }
 
-function statusFromMargin(margin: number): MenuStatus {
-    if (margin > 45) {
-        return 'profitable';
+function SimulateModal({
+    ingredients,
+    initialIngredientId,
+    initialPrice,
+    simulation,
+    onClose,
+}: {
+    ingredients: IngredientOption[];
+    initialIngredientId: number | null;
+    initialPrice: string;
+    simulation: SimRow[] | null;
+    onClose: () => void;
+}) {
+    const first = ingredients[0];
+    const startId = initialIngredientId ?? first?.id ?? 0;
+    const startIngredient = ingredients.find((i) => i.id === startId) ?? first;
+
+    const [ingredientId, setIngredientId] = useState(startId);
+    const [price, setPrice] = useState(
+        initialPrice !== ''
+            ? initialPrice
+            : (startIngredient?.cost_per_unit ?? '0'),
+    );
+
+    const target = ingredients.find((i) => i.id === ingredientId) ?? first;
+    const rows = simulation ?? [];
+
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            router.get(
+                '/profitabilitas',
+                { sim_ingredient: ingredientId, sim_price: price },
+                {
+                    only: ['simulation'],
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                },
+            );
+        }, 300);
+
+        return () => window.clearTimeout(timer);
+    }, [ingredientId, price]);
+
+    if (!first || !target) {
+        return (
+            <FxModal
+                open
+                onOpenChange={(o) => !o && onClose()}
+                title="Simulasi harga bahan"
+                footer={
+                    <FxButton variant="soft" onClick={onClose}>
+                        Tutup
+                    </FxButton>
+                }
+            >
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                    Belum ada bahan aktif untuk disimulasikan.
+                </p>
+            </FxModal>
+        );
     }
-    if (margin >= 25) {
-        return 'watchlist';
-    }
-
-    return 'loss';
-}
-
-function SimulateModal({ onClose }: { onClose: () => void }) {
-    const [ingredientId, setIngredientId] = useState(ingredients[0].id);
-    const [price, setPrice] = useState(String(ingredients[0].costPerUnit));
-
-    const target = ingredientById(ingredientId);
-    const newPrice = Number(price) || 0;
-
-    const affected = menus
-        .filter((m) => m.bom.some((b) => b.ingredientId === ingredientId))
-        .map((m: Menu) => {
-            const oldHpp = menuHpp(m);
-            const simBahan = m.bom.reduce((sum, b) => {
-                const ing = ingredientById(b.ingredientId);
-                const cost =
-                    b.ingredientId === ingredientId
-                        ? newPrice
-                        : ing.costPerUnit;
-                return sum + b.qty * (1 + b.wastePct / 100) * cost;
-            }, 0);
-            const simHpp = simBahan + m.overhead;
-            const simMargin = ((m.price - simHpp) / m.price) * 100;
-            return {
-                menu: m,
-                oldHpp,
-                simHpp,
-                simMargin,
-                oldStatus: menuStatus(m),
-                simStatus: statusFromMargin(simMargin),
-            };
-        });
 
     return (
         <FxModal
@@ -325,20 +404,21 @@ function SimulateModal({ onClose }: { onClose: () => void }) {
                         onChange={(e) => {
                             const id = Number(e.target.value);
                             setIngredientId(id);
-                            setPrice(String(ingredientById(id).costPerUnit));
+                            const next = ingredients.find((i) => i.id === id);
+                            setPrice(next?.cost_per_unit ?? '0');
                         }}
                     >
                         {ingredients.map((i) => (
                             <option key={i.id} value={i.id}>
-                                {i.name} (WAC {formatRupiah(i.costPerUnit)}/
-                                {i.unit})
+                                {i.name} (WAC {formatRupiah(i.cost_per_unit)}/
+                                {i.base_unit})
                             </option>
                         ))}
                     </FxSelect>
                 </FxField>
                 <FxField
-                    label={`Harga simulasi (per ${target.unit})`}
-                    hint={`WAC saat ini ${formatRupiah(target.costPerUnit)}`}
+                    label={`Harga simulasi (per ${target.base_unit})`}
+                    hint={`WAC saat ini ${formatRupiah(target.cost_per_unit)}`}
                 >
                     <FxInput
                         type="number"
@@ -349,7 +429,7 @@ function SimulateModal({ onClose }: { onClose: () => void }) {
                 </FxField>
             </div>
 
-            {affected.length === 0 ? (
+            {rows.length === 0 ? (
                 <p className="py-4 text-center text-sm text-muted-foreground">
                     Bahan ini belum dipakai di menu mana pun.
                 </p>
@@ -376,33 +456,35 @@ function SimulateModal({ onClose }: { onClose: () => void }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {affected.map((a) => (
+                            {rows.map((a) => (
                                 <tr
-                                    key={a.menu.id}
+                                    key={a.menu_id}
                                     className="border-b border-border/60 last:border-0"
                                 >
                                     <td className="px-3 py-3 font-medium">
-                                        {a.menu.name}
+                                        {a.name}
                                     </td>
                                     <td className="px-3 py-3 text-right text-muted-foreground tabular-nums">
-                                        {formatRupiah(a.oldHpp)}
+                                        {formatRupiah(a.old_hpp)}
                                     </td>
                                     <td className="px-3 py-3 text-right tabular-nums">
-                                        {formatRupiah(a.simHpp)}
+                                        {formatRupiah(a.new_hpp)}
                                     </td>
                                     <td className="px-3 py-3 text-right tabular-nums">
-                                        {formatPercent(a.simMargin)}
+                                        {formatPercent(a.new_margin)}
                                     </td>
                                     <td className="px-3 py-3">
                                         <span className="inline-flex items-center gap-2">
-                                            <StatusBadge status={a.oldStatus} />
-                                            {a.oldStatus !== a.simStatus ? (
+                                            <StatusBadge
+                                                status={a.old_status}
+                                            />
+                                            {a.old_status !== a.new_status ? (
                                                 <>
                                                     <span className="text-muted-foreground">
                                                         →
                                                     </span>
                                                     <StatusBadge
-                                                        status={a.simStatus}
+                                                        status={a.new_status}
                                                     />
                                                 </>
                                             ) : null}
@@ -416,8 +498,8 @@ function SimulateModal({ onClose }: { onClose: () => void }) {
             )}
 
             <FxSoft className="p-4 text-xs text-muted-foreground">
-                Simulasi tidak mengubah data apa pun. Keluar dari dialog
-                mengembalikan semua nilai.
+                Simulasi tidak mengubah data apa pun. Menutup dialog
+                mengembalikan nilai asli.
             </FxSoft>
         </FxModal>
     );
