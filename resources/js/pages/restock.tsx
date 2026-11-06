@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { Lightbulb, Save, SlidersHorizontal } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import Reveal from '@/components/motion/reveal';
@@ -92,6 +93,13 @@ export default function Restock() {
     const total = cash - remaining;
     const usedPct = cash > 0 ? Math.min(100, (total / cash) * 100) : 0;
 
+    function savePlan() {
+        const bought = items.filter((it) => (rec[it.id] ?? 0) > 0).length;
+        toast.success('Rencana belanja tersimpan (draft)', {
+            description: `${bought} bahan, total ${formatRupiah(total)}, sisa kas ${formatRupiah(remaining)}.`,
+        });
+    }
+
     return (
         <>
             <Head title="Restock Planner" />
@@ -120,7 +128,9 @@ export default function Restock() {
                                 max={1500000}
                                 step={10000}
                                 value={cash}
-                                onChange={(e) => setCash(Number(e.target.value))}
+                                onChange={(e) =>
+                                    setCash(Number(e.target.value))
+                                }
                                 className="mt-4 w-full accent-[#EC582A]"
                             />
 
@@ -135,17 +145,21 @@ export default function Restock() {
                                                 : 'bg-secondary text-foreground hover:bg-[#EBEBE8]'
                                         }`}
                                     >
-                                        {(p / 1000) + 'rb'}
+                                        {p / 1000 + 'rb'}
                                     </button>
                                 ))}
                             </div>
 
                             <FxSoft className="mt-4 p-4">
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-muted-foreground">Terpakai</span>
-                                    <span className="font-bold tabular-nums">{formatRupiah(total)}</span>
+                                    <span className="text-muted-foreground">
+                                        Terpakai
+                                    </span>
+                                    <span className="font-bold tabular-nums">
+                                        {formatRupiah(total)}
+                                    </span>
                                 </div>
-                                <div className="fx-hatch mt-2 h-3 w-full overflow-hidden rounded-full bg-[#EBEBE8]">
+                                <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-[#EBEBE8] fx-hatch">
                                     <div
                                         className="h-full rounded-full bg-[#EC582A]"
                                         style={{
@@ -156,7 +170,9 @@ export default function Restock() {
                                     />
                                 </div>
                                 <div className="mt-2 flex items-center justify-between text-xs">
-                                    <span className="text-muted-foreground">Sisa kas</span>
+                                    <span className="text-muted-foreground">
+                                        Sisa kas
+                                    </span>
                                     <span className="font-semibold text-[#1D9E53] tabular-nums">
                                         {formatRupiah(remaining)}
                                     </span>
@@ -166,7 +182,9 @@ export default function Restock() {
 
                         <FxCard className="flex flex-col p-5">
                             <div className="mb-3 flex items-center justify-between">
-                                <h2 className="text-base font-semibold">Rekomendasi belanja</h2>
+                                <h2 className="text-base font-semibold">
+                                    Rekomendasi belanja
+                                </h2>
                                 <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
                                     {items.length} bahan
                                 </span>
@@ -175,11 +193,21 @@ export default function Restock() {
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="bg-secondary text-left text-xs text-muted-foreground">
-                                            <th className="rounded-l-xl px-3 py-2.5 font-medium">Bahan</th>
-                                            <th className="px-3 py-2.5 font-medium">Kelas</th>
-                                            <th className="px-3 py-2.5 text-right font-medium">Beli</th>
-                                            <th className="px-3 py-2.5 text-right font-medium">Estimasi</th>
-                                            <th className="rounded-r-xl px-3 py-2.5 font-medium">Label</th>
+                                            <th className="rounded-l-xl px-3 py-2.5 font-medium">
+                                                Bahan
+                                            </th>
+                                            <th className="px-3 py-2.5 font-medium">
+                                                Kelas
+                                            </th>
+                                            <th className="px-3 py-2.5 text-right font-medium">
+                                                Beli
+                                            </th>
+                                            <th className="px-3 py-2.5 text-right font-medium">
+                                                Estimasi
+                                            </th>
+                                            <th className="rounded-r-xl px-3 py-2.5 font-medium">
+                                                Label
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -188,11 +216,17 @@ export default function Restock() {
                                             const lb = label(it, got);
                                             const tone = abcTone[it.abc];
                                             return (
-                                                <tr key={it.id} className="border-b border-border/60 last:border-0">
+                                                <tr
+                                                    key={it.id}
+                                                    className="border-b border-border/60 last:border-0"
+                                                >
                                                     <td className="px-3 py-3">
-                                                        <p className="font-medium">{it.name}</p>
+                                                        <p className="font-medium">
+                                                            {it.name}
+                                                        </p>
                                                         <p className="text-xs text-muted-foreground">
-                                                            target {it.qtarget} pack
+                                                            target {it.qtarget}{' '}
+                                                            pack
                                                         </p>
                                                     </td>
                                                     <td className="px-3 py-3">
@@ -206,7 +240,10 @@ export default function Restock() {
                                                         {got} pack
                                                     </td>
                                                     <td className="px-3 py-3 text-right tabular-nums">
-                                                        {formatRupiah(got * it.packagePrice)}
+                                                        {formatRupiah(
+                                                            got *
+                                                                it.packagePrice,
+                                                        )}
                                                     </td>
                                                     <td className="px-3 py-3">
                                                         <span
@@ -227,7 +264,7 @@ export default function Restock() {
                                     <Lightbulb className="size-4 text-[#EC582A]" />
                                     Total tidak pernah melebihi kas.
                                 </span>
-                                <FxButton variant="coral">
+                                <FxButton variant="coral" onClick={savePlan}>
                                     <Save className="size-4" />
                                     Simpan rencana
                                 </FxButton>
