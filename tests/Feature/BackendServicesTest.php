@@ -12,6 +12,27 @@ use App\Services\CostingService;
 use App\Services\InventoryService;
 use App\Services\RestockService;
 
+if (! function_exists('restockParam')) {
+    /**
+     * @return array<string, mixed>
+     */
+    function restockParam(int $id, string $name, string $stock, string $daily, int $lead, int $size, int $price, string $abc, int $moq = 1): array
+    {
+        $service = new RestockService;
+        $urgency = $service->urgency($stock, $daily, $lead);
+
+        return array_merge([
+            'ingredient_id' => $id,
+            'name' => $name,
+            'is_urgent' => bccomp($urgency, '1', 4) >= 0,
+            'priority_score' => $service->priorityScore($urgency, $abc),
+            'package_price' => $price,
+            'revenue_impact' => '0',
+            'moq_packages' => $moq,
+        ], $service->packageQuantities($stock, $daily, $lead, 2, (string) $size, $moq));
+    }
+}
+
 beforeEach(function () {
     $this->costing = new CostingService;
     $this->inventory = new InventoryService($this->costing);
@@ -183,4 +204,41 @@ it('mengklasifikasikan ABC dari kontribusi kumulatif (BL 8.3)', function () {
     expect($abc[1])->toBe('A')
         ->and($abc[2])->toBe('B')
         ->and($abc[3])->toBe('C');
+});
+
+it('menandai "kas tidak cukup" saat Qmin tidak terjangkau (BL 8.6 fase 1)', function () {
+    $params = [
+        restockParam(1, 'Cup + Lid', '80', '100', 3, 50, 25000, 'A'),
+        restockParam(2, 'Biji Kopi', '300', '400', 2, 500, 150000, 'A'),
+        restockParam(3, 'Susu UHT', '2000', '3000', 1, 1000, 18000, 'A'),
+        restockParam(4, 'Gula Aren', '1500', '500', 2, 1000, 40000, 'B'),
+        restockParam(5, 'Sirup Hazelnut', '200', '50', 3, 750, 95000, 'C'),
+    ];
+
+    $plan = $this->restock->planRestock('100000', $params);
+    $labels = collect($plan['items'])->mapWithKeys(fn ($i) => [$i['ingredient_id'] => [$i['recommended_packages'], $i['label']]]);
+
+    expect($labels[1])->toBe([0, 'kas_tidak_cukup'])
+        ->and($labels[2])->toBe([0, 'kas_tidak_cukup'])
+        ->and($labels[3])->toBe([5, 'beli_sekarang_parsial'])
+        ->and($plan['total_cost'])->toBe(90000)
+        ->and($plan['remaining_cash'])->toBe(10000);
+});
+
+it('membeli bahan non-urgen sebagai opsional bila kas cukup (BL 8.6 fase 3)', function () {
+    $params = [
+        restockParam(1, 'Cup + Lid', '80', '100', 3, 50, 25000, 'A'),
+        restockParam(2, 'Biji Kopi', '300', '400', 2, 500, 150000, 'A'),
+        restockParam(3, 'Susu UHT', '2000', '3000', 1, 1000, 18000, 'A'),
+        restockParam(4, 'Gula Aren', '1500', '500', 2, 1000, 40000, 'B'),
+        restockParam(5, 'Sirup Hazelnut', '200', '50', 3, 750, 95000, 'C'),
+    ];
+
+    $plan = $this->restock->planRestock('1000000', $params);
+    $labels = collect($plan['items'])->mapWithKeys(fn ($i) => [$i['ingredient_id'] => [$i['recommended_packages'], $i['label']]]);
+
+    expect($labels[4])->toBe([1, 'beli_opsional'])
+        ->and($labels[5])->toBe([1, 'beli_opsional'])
+        ->and($plan['total_cost'])->toBe(936000)
+        ->and($plan['remaining_cash'])->toBe(64000);
 });
