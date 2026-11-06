@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Coffee, CupSoda, Minus, Plus, Sandwich, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -8,14 +8,22 @@ import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageHeader from '@/components/page-header';
 import { formatRupiah } from '@/lib/format';
-import { menus as allMenus, type Menu } from '@/lib/mock-data';
 
-// Menu yang tampil di POS: aktif dan punya minimal satu item BOM (FR-012).
-const menus: Menu[] = allMenus.filter((m) => m.active && m.bom.length > 0);
+type Category = 'Kopi' | 'Non-Kopi' | 'Makanan';
+
+type PosMenu = {
+    id: number;
+    name: string;
+    category: Category;
+    selling_price: number | string;
+    portions_available: number;
+};
+
+type Props = { menus: PosMenu[] };
 
 const categoryIcon = { Kopi: Coffee, 'Non-Kopi': CupSoda, Makanan: Sandwich };
 
-export default function Pos() {
+export default function Pos({ menus }: Props) {
     const [cart, setCart] = useState<Record<number, number>>({});
     const [payment, setPayment] = useState<'cash' | 'qris'>('cash');
 
@@ -26,13 +34,16 @@ export default function Pos() {
                     menu: menus.find((m) => m.id === Number(id))!,
                     qty,
                 }))
-                .filter((x) => x.qty > 0),
-        [cart],
+                .filter((x) => x.menu && x.qty > 0),
+        [cart, menus],
     );
 
-    const total = items.reduce((sum, x) => sum + x.menu.price * x.qty, 0);
+    const total = items.reduce(
+        (sum, x) => sum + Number(x.menu.selling_price) * x.qty,
+        0,
+    );
 
-    function add(menu: Menu) {
+    function add(menu: PosMenu) {
         setCart((c) => ({ ...c, [menu.id]: (c[menu.id] ?? 0) + 1 }));
     }
 
@@ -53,21 +64,29 @@ export default function Pos() {
             toast.error('Belum ada item di pesanan.');
             return;
         }
-        const insufficient = items.find((x) => x.qty > x.menu.portionsLeft);
-        if (insufficient) {
-            toast.error(
-                `${insufficient.menu.name} kurang ${insufficient.qty - insufficient.menu.portionsLeft} porsi`,
-                {
-                    description:
-                        'Stok bahan tidak mencukupi. Pesanan tidak disimpan.',
+        router.post(
+            '/pos',
+            {
+                lines: items.map(({ menu, qty }) => ({
+                    menu_id: menu.id,
+                    quantity: qty,
+                })),
+                payment_method: payment,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setCart({});
+                    toast.success('Pesanan tersimpan', {
+                        description: `${items.length} item, total ${formatRupiah(total)}. Stok bahan terpotong otomatis.`,
+                    });
                 },
-            );
-            return;
-        }
-        toast.success('Pesanan tersimpan', {
-            description: `${items.length} item, total ${formatRupiah(total)}. Stok bahan terpotong otomatis.`,
-        });
-        setCart({});
+                onError: (errors) =>
+                    toast.error(
+                        Object.values(errors)[0] ?? 'Gagal menyimpan pesanan.',
+                    ),
+            },
+        );
     }
 
     return (
@@ -86,7 +105,7 @@ export default function Pos() {
                         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             {menus.map((m) => {
                                 const Icon = categoryIcon[m.category];
-                                const low = m.portionsLeft <= 3;
+                                const low = m.portions_available <= 3;
                                 return (
                                     <button
                                         key={m.id}
@@ -99,13 +118,9 @@ export default function Pos() {
                                                 tone="coral"
                                             />
                                             <span
-                                                className={`text-[11px] font-semibold ${
-                                                    low
-                                                        ? 'text-[#D93829]'
-                                                        : 'text-[#1D9E53]'
-                                                }`}
+                                                className={`text-[11px] font-semibold ${low ? 'text-[#D93829]' : 'text-[#1D9E53]'}`}
                                             >
-                                                Sisa {m.portionsLeft}
+                                                Sisa {m.portions_available}
                                             </span>
                                         </div>
                                         <div>
@@ -117,7 +132,7 @@ export default function Pos() {
                                             </p>
                                         </div>
                                         <p className="mt-auto text-sm font-bold tabular-nums">
-                                            {formatRupiah(m.price)}
+                                            {formatRupiah(m.selling_price)}
                                         </p>
                                     </button>
                                 );
@@ -152,7 +167,9 @@ export default function Pos() {
                                                     {menu.name}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground tabular-nums">
-                                                    {formatRupiah(menu.price)}
+                                                    {formatRupiah(
+                                                        menu.selling_price,
+                                                    )}
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-1.5 rounded-full bg-secondary p-1">
@@ -179,7 +196,10 @@ export default function Pos() {
                                                 </button>
                                             </div>
                                             <span className="w-20 text-right text-sm font-semibold tabular-nums">
-                                                {formatRupiah(menu.price * qty)}
+                                                {formatRupiah(
+                                                    Number(menu.selling_price) *
+                                                        qty,
+                                                )}
                                             </span>
                                             <button
                                                 onClick={() =>

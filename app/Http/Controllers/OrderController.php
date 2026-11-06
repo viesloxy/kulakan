@@ -1,0 +1,79 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Exceptions\InsufficientStockException;
+use App\Http\Requests\Pos\StoreOrderRequest;
+use App\Models\Ingredient;
+use App\Models\Menu;
+use App\Services\CostingService;
+use App\Services\InventoryService;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class OrderController extends Controller
+{
+    public function __construct(
+        private readonly CostingService $costing,
+        private readonly InventoryService $inventory,
+    ) {}
+
+    public function index(): Response
+    {
+        $menus = Menu::with('recipe.items.ingredient')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (Menu $m) => $m->recipe !== null && $m->recipe->items->isNotEmpty())
+            ->map(fn (Menu $m) => [
+                'id' => $m->id,
+                'name' => $m->name,
+                'category' => $m->category ?? 'Kopi',
+                'selling_price' => $m->selling_price,
+                'portions_available' => $this->costing->portionsAvailable($m),
+            ])->values();
+
+        return Inertia::render('pos', ['menus' => $menus]);
+    }
+
+    public function store(StoreOrderRequest $request): RedirectResponse
+    {
+        $lines = [];
+        foreach ((array) $request->validated('lines') as $line) {
+            $line = (array) $line;
+            $lines[] = [
+                'menu_id' => (int) ($line['menu_id'] ?? 0),
+                'quantity' => (int) ($line['quantity'] ?? 0),
+            ];
+        }
+
+        try {
+            $order = $this->inventory->processOrder(
+                $lines,
+                (string) $request->validated('payment_method'),
+                null,
+                $request->user(),
+            );
+        } catch (InsufficientStockException $e) {
+            $detail = collect($e->shortages)
+                ->map(fn (array $s) => $s['name'].' kurang '.$s['shortage'].' '.$this->unitFor($s['ingredient_id']))
+                ->implode(', ');
+
+            return back()->withErrors(['order' => 'Stok tidak cukup: '.$detail.'. Pesanan tidak disimpan.']);
+        }
+
+        return back()->with('success', 'Pesanan '.$order->order_number.' tersimpan. Stok bahan terpotong otomatis.');
+    }
+
+    private function unitFor(int $ingredientId): string
+    {
+        $units = [
+            'gram' => 'g', 'ml' => 'ml', 'pcs' => 'pcs',
+        ];
+
+        $unit = Ingredient::whereKey($ingredientId)->value('base_unit');
+
+        return $units[(string) $unit] ?? '';
+    }
+}
