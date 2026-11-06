@@ -103,58 +103,106 @@ class RestockService
     /**
      * Greedy 3 fase dengan jaminan total <= kas (BL §8.6, INV-05/06).
      *
+     * Fase 1 danai Qmin bahan urgen (all-or-nothing, else "kas tidak cukup"),
+     * fase 2 top-up ke Qtarget, fase 3 bahan non-urgen bila >= MOQ.
+     *
      * @param  array<int, array<string, mixed>>  $params
      * @return array{total_cost:int, remaining_cash:int, items:array<int, array<string, mixed>>}
      */
     public function planRestock(string $cash, array $params): array
     {
-        usort(
-            $params,
-            fn ($a, $b) => bccomp(Number::str($b['priority_score']), Number::str($a['priority_score']), 4)
-        );
-
-        $remaining = bcadd(Number::str($cash), '0', 2);
-        $recommended = [];
-
-        $fund = function (array $param, int $count) use (&$remaining, &$recommended): void {
-            $price = Number::str($param['package_price']);
-            for ($i = 0; $i < $count; $i++) {
-                if (bccomp($remaining, $price, 2) >= 0) {
-                    $remaining = bcsub($remaining, $price, 2);
-                    $recommended[$param['ingredient_id']] = ($recommended[$param['ingredient_id']] ?? 0) + 1;
-                } else {
-                    break;
-                }
+        // Urut prioritas desc, tie-break revenue desc, lalu nama asc (BL §8.6).
+        usort($params, function (array $a, array $b): int {
+            $byPriority = bccomp(Number::str($b['priority_score']), Number::str($a['priority_score']), 4);
+            if ($byPriority !== 0) {
+                return $byPriority;
             }
-        };
 
-        $urgent = array_values(array_filter($params, fn ($p) => (bool) $p['is_urgent']));
-        $optional = array_values(array_filter($params, fn ($p) => ! (bool) $p['is_urgent']));
+            $byRevenue = bccomp(Number::str($b['revenue_impact'] ?? '0'), Number::str($a['revenue_impact'] ?? '0'), 4);
+            if ($byRevenue !== 0) {
+                return $byRevenue;
+            }
 
-        // Fase 1: penuhi Qmin seluruh bahan urgen.
+            return strcmp((string) $a['name'], (string) $b['name']);
+        });
+
+        $remaining = Number::str($cash);
+        $bought = [];
+        $labels = [];
+
+        $urgent = array_values(array_filter(
+            $params,
+            fn (array $p) => (bool) $p['is_urgent'] && (int) $p['qtarget_packages'] > 0
+        ));
+        $nonUrgent = array_values(array_filter(
+            $params,
+            fn (array $p) => ! (bool) $p['is_urgent'] && (int) $p['qtarget_packages'] > 0
+        ));
+
+        // Fase 1 - bertahan hidup: danai Qmin bahan urgen (all-or-nothing).
         foreach ($urgent as $param) {
-            $fund($param, (int) $param['qmin_packages']);
+            $id = $param['ingredient_id'];
+            $kmin = (int) $param['qmin_packages'];
+            $cost = bcmul(Number::str($kmin), Number::str($param['package_price']), 2);
+
+            if (bccomp($cost, $remaining, 2) <= 0) {
+                $bought[$id] = $kmin;
+                $remaining = bcsub($remaining, $cost, 2);
+            } else {
+                $bought[$id] = 0;
+                $labels[$id] = 'kas_tidak_cukup';
+            }
         }
-        // Fase 2: lanjutkan ke Qtarget untuk bahan urgen.
+
+        // Fase 2 - top-up bahan urgen ke Qtarget.
         foreach ($urgent as $param) {
-            $fund($param, (int) $param['qtarget_packages'] - ($recommended[$param['ingredient_id']] ?? 0));
+            $id = $param['ingredient_id'];
+
+            if (($labels[$id] ?? null) === 'kas_tidak_cukup') {
+                continue;
+            }
+
+            $have = $bought[$id] ?? 0;
+            $need = (int) $param['qtarget_packages'] - $have;
+            $price = Number::str($param['package_price']);
+            $extra = min($need, $this->affordable($remaining, $price));
+
+            $bought[$id] = $have + $extra;
+            $remaining = bcsub($remaining, bcmul(Number::str($extra), $price, 2), 2);
+            $labels[$id] = $bought[$id] >= (int) $param['qtarget_packages']
+                ? 'beli_sekarang'
+                : 'beli_sekarang_parsial';
         }
-        // Fase 3: bahan non-urgen bila kas masih ada.
-        foreach ($optional as $param) {
-            $fund($param, (int) $param['qtarget_packages']);
+
+        // Fase 3 - bahan non-urgen bila kas tersisa dan memenuhi MOQ.
+        foreach ($nonUrgent as $param) {
+            $id = $param['ingredient_id'];
+            $price = Number::str($param['package_price']);
+            $moq = (int) ($param['moq_packages'] ?? 1);
+            $k = min((int) $param['qtarget_packages'], $this->affordable($remaining, $price));
+
+            if ($k > 0 && $k >= $moq) {
+                $bought[$id] = $k;
+                $remaining = bcsub($remaining, bcmul(Number::str($k), $price, 2), 2);
+                $labels[$id] = 'beli_opsional';
+            } else {
+                $bought[$id] = 0;
+                $labels[$id] = 'tahan_dulu';
+            }
         }
 
         $items = [];
         $total = '0';
         foreach ($params as $param) {
-            $got = $recommended[$param['ingredient_id']] ?? 0;
+            $id = $param['ingredient_id'];
+            $got = $bought[$id] ?? 0;
             $cost = bcmul(Number::str($got), Number::str($param['package_price']), 0);
             $total = bcadd($total, $cost, 0);
 
             $items[] = array_merge($param, [
                 'recommended_packages' => $got,
                 'estimated_cost' => (int) $cost,
-                'label' => $this->label((bool) $param['is_urgent'], $got, (int) $param['qtarget_packages']),
+                'label' => $labels[$id] ?? 'tahan_dulu',
             ]);
         }
 
@@ -166,21 +214,31 @@ class RestockService
     }
 
     /**
-     * Bangun parameter planner dari data aktual (konsumsi 7 hari, ABC, urgensi, kemasan).
+     * Bangun parameter planner dari data aktual (BL §8.2, §8.3, §8.5, §8.9).
+     *
+     * D_i = sum|sale + waste| 7 hari / N_effective (hari berdata, maks 7);
+     * bila riwayat < 3 hari maka D_i = 0 (tanpa estimasi manual).
      *
      * @return array<int, array<string, mixed>>
      */
-    public function buildParams(int $consumptionDays = 7, int $reviewPeriodDays = 2): array
+    public function buildParams(int $consumptionDays = 7, int $reviewPeriodDays = 2, ?int $maxDaysLeadTime = null): array
     {
         $since = now()->subDays($consumptionDays);
 
-        $consumption = DB::table('stock_movements')
-            ->where('type', 'sale')
+        $sums = DB::table('stock_movements')
+            ->whereIn('type', ['sale', 'waste'])
             ->where('created_at', '>=', $since)
-            ->selectRaw('ingredient_id, SUM(-qty_change) as total')
+            ->selectRaw('ingredient_id, SUM(ABS(qty_change)) as total')
             ->groupBy('ingredient_id')
             ->pluck('total', 'ingredient_id')
             ->all();
+
+        $effectiveDays = (int) DB::table('stock_movements')
+            ->whereIn('type', ['sale', 'waste'])
+            ->where('created_at', '>=', $since)
+            ->selectRaw('COUNT(DISTINCT DATE(created_at)) as days')
+            ->value('days');
+        $effectiveDays = min($consumptionDays, $effectiveDays);
 
         $revenue = DB::table('sales_items')
             ->join('sales_orders', 'sales_orders.id', '=', 'sales_items.sales_order_id')
@@ -196,8 +254,15 @@ class RestockService
         $abc = $this->abcClasses($revenue);
 
         $params = [];
-        foreach (Ingredient::where('is_active', true)->orderBy('id')->get() as $ingredient) {
-            $daily = bcdiv(Number::str($consumption[$ingredient->id] ?? '0'), Number::str($consumptionDays), 6);
+        $query = Ingredient::where('is_active', true)->orderBy('id');
+        if ($maxDaysLeadTime !== null) {
+            $query->where('lead_time_days', '<=', $maxDaysLeadTime);
+        }
+
+        foreach ($query->get() as $ingredient) {
+            $daily = $effectiveDays >= 3
+                ? bcdiv(Number::str($sums[$ingredient->id] ?? '0'), Number::str($effectiveDays), 6)
+                : '0.000000';
 
             $packageSize = Number::str($ingredient->package_size ?? '1');
             $purchasePrice = Number::str($ingredient->last_quote_price ?? $ingredient->cost_per_unit);
@@ -224,7 +289,9 @@ class RestockService
                 'lead_time_days' => $ingredient->lead_time_days,
                 'package_size' => $packageSize,
                 'package_price' => $packagePrice,
+                'moq_packages' => $ingredient->moq_packages,
                 'abc_class' => $abcClass,
+                'revenue_impact' => bcadd(Number::str($revenue[$ingredient->id] ?? '0'), '0', 2),
                 'urgency' => $urgency,
                 'is_urgent' => bccomp($urgency, '1', 4) >= 0,
                 'priority_score' => $this->priorityScore($urgency, $abcClass),
@@ -234,17 +301,18 @@ class RestockService
         return $params;
     }
 
-    private function label(bool $urgent, int $got, int $target): string
+    /**
+     * floor(remaining / price); price 0 = gratis (seluruh kebutuhan terjangkau).
+     */
+    private function affordable(string $remaining, string $price): int
     {
-        if ($got <= 0) {
-            return $urgent ? 'kas_tidak_cukup' : 'tahan_dulu';
+        $price = Number::str($price);
+
+        if (bccomp($price, '0', 2) === 0) {
+            return PHP_INT_MAX;
         }
 
-        if ($got >= $target) {
-            return $urgent ? 'beli_sekarang' : 'beli_opsional';
-        }
-
-        return 'beli_sekarang_parsial';
+        return (int) bcdiv(Number::str($remaining), $price, 0);
     }
 
     private function ceilPackages(string $quantity, string $packageSize, int $moqPackages): int
