@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\AlertController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfitabilityController;
+use App\Http\Controllers\RestockController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -13,8 +15,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:owner')->group(function () {
         Route::inertia('dashboard', 'dashboard')->name('dashboard');
         Route::get('profitabilitas', [ProfitabilityController::class, 'index'])->name('profitability');
-        Route::inertia('restock', 'restock')->name('restock');
-        Route::inertia('alert', 'alerts')->name('alerts');
+        Route::get('restock', [RestockController::class, 'index'])->name('restock');
+        Route::post('restock/plans', [RestockController::class, 'store'])->name('restock.store');
+        Route::post('restock/plans/{restockPlan}/purchase', [RestockController::class, 'purchase'])->name('restock.purchase');
+        Route::get('alert', [AlertController::class, 'index'])->name('alerts');
+        Route::post('alert/{alert}/resolve', [AlertController::class, 'resolve'])->name('alerts.resolve');
 
         // Mutasi bahan baku khusus owner (FR-004/006/008).
         Route::post('bahan-baku', [IngredientController::class, 'store'])->name('ingredients.store');

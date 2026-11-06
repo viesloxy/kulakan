@@ -9,6 +9,7 @@ use App\Models\Ingredient;
 use App\Models\Menu;
 use App\Models\Recipe;
 use App\Models\RecipeIngredient;
+use App\Services\AlertService;
 use App\Services\CostingService;
 use App\Support\Number;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +19,10 @@ use Inertia\Response;
 
 class MenuController extends Controller
 {
-    public function __construct(private readonly CostingService $costing) {}
+    public function __construct(
+        private readonly CostingService $costing,
+        private readonly AlertService $alerts,
+    ) {}
 
     public function index(): Response
     {
@@ -100,6 +104,8 @@ class MenuController extends Controller
         });
 
         $this->costing->recalculateMenu($menu->fresh()->load('recipe.items.ingredient'));
+
+        $this->alerts->syncAll();
 
         return back()->with('success', 'Resep '.$menu->name.' disimpan ('.count($data['items']).' bahan, yield '.$recipe->yield_portions.' porsi).');
     }
