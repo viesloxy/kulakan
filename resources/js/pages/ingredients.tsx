@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     ArrowDownToLine,
     Box,
@@ -19,12 +19,39 @@ import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageHeader from '@/components/page-header';
 import { formatPercent, formatRupiah } from '@/lib/format';
-import {
-    ingredients as seedIngredients,
-    type Abc,
-    type BaseUnit,
-    type Ingredient,
-} from '@/lib/mock-data';
+
+type BaseUnit = 'gram' | 'ml' | 'pcs';
+type Abc = 'A' | 'B' | 'C';
+type StockStatus = 'low' | 'near' | 'safe';
+
+type IngredientRow = {
+    id: number;
+    name: string;
+    base_unit: BaseUnit;
+    current_stock: string;
+    minimum_stock: string;
+    cost_per_unit: string;
+    last_quote_price: string | null;
+    package_size: string | null;
+    package_price: number | null;
+    lead_time_days: number;
+    moq_packages: number;
+    is_active: boolean;
+    abc_class: Abc;
+    stock_status: StockStatus;
+    price_change_pct: string;
+    quote_change_pct: string;
+};
+
+type Props = {
+    ingredients: IngredientRow[];
+    meta: {
+        count: number;
+        inventory_value: number;
+        low_stock_count: number;
+        quote_pending_count: number;
+    };
+};
 
 const abcTone: Record<Abc, string> = {
     A: 'bg-[#FDECE7] text-[#EC582A]',
@@ -32,20 +59,10 @@ const abcTone: Record<Abc, string> = {
     C: 'bg-secondary text-muted-foreground',
 };
 
-const unitLabel: Record<BaseUnit, string> = { g: 'gram', ml: 'ml', pcs: 'pcs' };
-
-function stockState(stock: number, min: number): 'low' | 'near' | 'safe' {
-    if (stock < min) {
-        return 'low';
-    }
-    if (stock < min * 1.25) {
-        return 'near';
-    }
-
-    return 'safe';
-}
-
-const stateConfig = {
+const stateConfig: Record<
+    StockStatus,
+    { label: string; cls: string; dot: string }
+> = {
     low: {
         label: 'Menipis',
         cls: 'bg-[#FCEAE8] text-[#D93829]',
@@ -61,132 +78,118 @@ const stateConfig = {
         cls: 'bg-[#E6F5EC] text-[#1D9E53]',
         dot: 'bg-[#1D9E53]',
     },
-} as const;
+};
 
-const fieldRow = 'grid gap-3 sm:grid-cols-2';
+const unitLabel: Record<BaseUnit, string> = {
+    gram: 'gram',
+    ml: 'ml',
+    pcs: 'pcs',
+};
+const unitShort: Record<BaseUnit, string> = { gram: 'g', ml: 'ml', pcs: 'pcs' };
 
-export default function Ingredients() {
-    const [items, setItems] = useState<Ingredient[]>(seedIngredients);
+const formatQty = (value: string | number): string =>
+    new Intl.NumberFormat('id-ID', { maximumFractionDigits: 3 }).format(
+        Number(value),
+    );
+
+export default function Ingredients({ ingredients, meta }: Props) {
     const [query, setQuery] = useState('');
     const [lowOnly, setLowOnly] = useState(false);
 
     const [createOpen, setCreateOpen] = useState(false);
-    const [stockIn, setStockIn] = useState<Ingredient | null>(null);
-    const [quote, setQuote] = useState<Ingredient | null>(null);
-    const [history, setHistory] = useState<Ingredient | null>(null);
+    const [stockIn, setStockIn] = useState<IngredientRow | null>(null);
+    const [quote, setQuote] = useState<IngredientRow | null>(null);
+    const [history, setHistory] = useState<IngredientRow | null>(null);
 
     const rows = useMemo(
         () =>
-            items.filter((i) => {
+            ingredients.filter((i) => {
                 const matches = i.name
                     .toLowerCase()
                     .includes(query.toLowerCase());
-                const low = stockState(i.stock, i.minStock) !== 'safe';
+                const low = i.stock_status !== 'safe';
                 return matches && (!lowOnly || low);
             }),
-        [items, query, lowOnly],
+        [ingredients, query, lowOnly],
     );
 
-    const inventoryValue = items.reduce(
-        (sum, i) => sum + i.stock * i.costPerUnit,
-        0,
-    );
-    const lowCount = items.filter(
-        (i) => stockState(i.stock, i.minStock) === 'low',
-    ).length;
-    const priceUp = items.filter(
-        (i) => i.quotePrice && i.quotePrice > i.costPerUnit,
-    ).length;
-
-    function handleCreate(data: {
-        name: string;
-        unit: BaseUnit;
-        minStock: number;
-        leadTime: number;
-        packSize: number;
-        packPrice: number;
-        costPerUnit: number;
-    }) {
-        const id = Math.max(0, ...items.map((i) => i.id)) + 1;
-        const next: Ingredient = {
-            id,
-            name: data.name,
-            abc: 'C',
-            unit: data.unit,
-            stock: 0,
-            minStock: data.minStock,
-            leadTime: data.leadTime,
-            packSize: data.packSize,
-            packPrice: data.packPrice,
-            costPerUnit: data.costPerUnit,
-            prevCostPerUnit: data.costPerUnit,
-        };
-        setItems((list) => [...list, next]);
-        toast.success('Bahan ditambahkan', {
-            description: `${data.name} tersimpan dengan stok awal 0.`,
+    function handleCreate(data: Record<string, string | number | boolean>) {
+        router.post('/bahan-baku', data, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setCreateOpen(false);
+                toast.success('Bahan ditambahkan');
+            },
+            onError: (errors) =>
+                toast.error(
+                    Object.values(errors)[0] ?? 'Gagal menyimpan bahan.',
+                ),
         });
     }
 
     function handleStockIn(
-        target: Ingredient,
+        target: IngredientRow,
         packages: number,
         pricePerPackage: number,
     ) {
-        const addedQty = packages * (target.packSize || 1);
-        const unitPrice = pricePerPackage / (target.packSize || 1);
-        const newStock = target.stock + addedQty;
-        const newWac =
-            (target.stock * target.costPerUnit + addedQty * unitPrice) /
-            newStock;
-
-        setItems((list) =>
-            list.map((i) =>
-                i.id === target.id
-                    ? {
-                          ...i,
-                          stock: newStock,
-                          costPerUnit: newWac,
-                          prevCostPerUnit: i.costPerUnit,
-                          packPrice: pricePerPackage,
-                      }
-                    : i,
-            ),
+        router.post(
+            `/bahan-baku/${target.id}/stock-in`,
+            { packages, price_per_package: pricePerPackage },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setStockIn(null);
+                    toast.success('Stock-in tersimpan', {
+                        description: `${target.name}: stok & WAC diperbarui.`,
+                    });
+                },
+                onError: (errors) =>
+                    toast.error(
+                        Object.values(errors)[0] ?? 'Gagal menyimpan stock-in.',
+                    ),
+            },
         );
-        toast.success('Stock-in tersimpan', {
-            description: `${target.name} +${packages} kemasan. WAC ${formatRupiah(target.costPerUnit)} menjadi ${formatRupiah(newWac)}.`,
-        });
     }
 
-    function handleQuote(target: Ingredient, quotePrice: number) {
-        setItems((list) =>
-            list.map((i) => (i.id === target.id ? { ...i, quotePrice } : i)),
+    function handleQuote(target: IngredientRow, quotePrice: number) {
+        router.post(
+            `/bahan-baku/${target.id}/quote`,
+            { quote_price: quotePrice },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setQuote(null);
+                    toast.success('Harga penawaran diperbarui', {
+                        description:
+                            'HPP proyeksi menu terkait dihitung ulang.',
+                    });
+                },
+                onError: (errors) =>
+                    toast.error(
+                        Object.values(errors)[0] ??
+                            'Gagal menyimpan penawaran.',
+                    ),
+            },
         );
-        const change =
-            ((quotePrice - target.costPerUnit) / target.costPerUnit) * 100;
-        const description =
-            change > 10
-                ? `${target.name} naik ${formatPercent(change, 1)}, melewati ambang alert 10%. HPP proyeksi menu terkait dihitung ulang.`
-                : `${target.name} ${formatRupiah(quotePrice)}/${target.unit}. HPP proyeksi menu terkait dihitung ulang.`;
-        toast.success('Harga penawaran diperbarui', { description });
     }
 
     const kpis = [
         {
             label: 'Total bahan',
-            value: String(items.length),
+            value: String(meta.count),
             icon: PackageOpen,
             tone: 'soft' as const,
         },
         {
             label: 'Nilai persediaan',
-            value: formatRupiah(inventoryValue),
+            value: formatRupiah(meta.inventory_value),
             icon: TrendingUp,
             tone: 'coral' as const,
             highlight: true,
         },
         {
             label: 'Stok menipis',
-            value: String(lowCount),
+            value: String(meta.low_stock_count),
             icon: TriangleAlert,
             tone: 'danger' as const,
         },
@@ -232,9 +235,7 @@ export default function Ingredients() {
                                     />
                                 </div>
                                 <p
-                                    className={`mt-3 text-2xl font-bold tracking-tight tabular-nums ${
-                                        k.highlight ? 'text-white' : ''
-                                    }`}
+                                    className={`mt-3 text-2xl font-bold tracking-tight tabular-nums ${k.highlight ? 'text-white' : ''}`}
                                 >
                                     {k.value}
                                 </p>
@@ -242,10 +243,10 @@ export default function Ingredients() {
                                     className={`mt-1 text-[11px] font-semibold ${k.highlight ? 'text-white/85' : 'text-muted-foreground'}`}
                                 >
                                     {k.label === 'Nilai persediaan'
-                                        ? `dari ${items.length} bahan aktif`
+                                        ? `dari ${meta.count} bahan aktif`
                                         : k.label === 'Stok menipis'
                                           ? 'di bawah stok minimum'
-                                          : `${priceUp} bahan dengan harga penawaran baru`}
+                                          : `${meta.quote_pending_count} bahan dengan harga penawaran baru`}
                                 </p>
                             </FxCard>
                         ))}
@@ -316,21 +317,13 @@ export default function Ingredients() {
                                 </thead>
                                 <tbody>
                                     {rows.map((i) => {
-                                        const st = stockState(
-                                            i.stock,
-                                            i.minStock,
+                                        const cfg = stateConfig[i.stock_status];
+                                        const change = Number(
+                                            i.price_change_pct,
                                         );
-                                        const cfg = stateConfig[st];
-                                        const change =
-                                            ((i.costPerUnit -
-                                                i.prevCostPerUnit) /
-                                                i.prevCostPerUnit) *
-                                            100;
-                                        const quoteChange = i.quotePrice
-                                            ? ((i.quotePrice - i.costPerUnit) /
-                                                  i.costPerUnit) *
-                                              100
-                                            : 0;
+                                        const quoteChange = Number(
+                                            i.quote_change_pct,
+                                        );
                                         return (
                                             <tr
                                                 key={i.id}
@@ -349,7 +342,9 @@ export default function Ingredients() {
                                                             </p>
                                                             <p className="text-xs text-muted-foreground">
                                                                 lead time{' '}
-                                                                {i.leadTime}{' '}
+                                                                {
+                                                                    i.lead_time_days
+                                                                }{' '}
                                                                 hari
                                                             </p>
                                                         </div>
@@ -357,36 +352,29 @@ export default function Ingredients() {
                                                 </td>
                                                 <td className="px-3 py-3">
                                                     <span
-                                                        className={`inline-flex size-6 items-center justify-center rounded-full text-xs font-bold ${abcTone[i.abc]}`}
+                                                        className={`inline-flex size-6 items-center justify-center rounded-full text-xs font-bold ${abcTone[i.abc_class]}`}
                                                     >
-                                                        {i.abc}
+                                                        {i.abc_class}
                                                     </span>
                                                 </td>
                                                 <td className="px-3 py-3 text-right tabular-nums">
-                                                    {new Intl.NumberFormat(
-                                                        'id-ID',
-                                                    ).format(i.stock)}{' '}
-                                                    {i.unit}
+                                                    {formatQty(i.current_stock)}{' '}
+                                                    {unitShort[i.base_unit]}
                                                 </td>
                                                 <td className="px-3 py-3 text-right text-muted-foreground tabular-nums">
-                                                    {new Intl.NumberFormat(
-                                                        'id-ID',
-                                                    ).format(i.minStock)}
+                                                    {formatQty(i.minimum_stock)}
                                                 </td>
                                                 <td className="px-3 py-3 text-right tabular-nums">
                                                     <span className="whitespace-nowrap">
                                                         {formatRupiah(
-                                                            i.costPerUnit,
+                                                            i.cost_per_unit,
                                                         )}
-                                                        /{i.unit}
+                                                        /
+                                                        {unitShort[i.base_unit]}
                                                         {Math.abs(change) >=
                                                         0.5 ? (
                                                             <span
-                                                                className={`ml-2 text-[11px] font-semibold ${
-                                                                    change > 0
-                                                                        ? 'text-[#D93829]'
-                                                                        : 'text-[#1D9E53]'
-                                                                }`}
+                                                                className={`ml-2 text-[11px] font-semibold ${change > 0 ? 'text-[#D93829]' : 'text-[#1D9E53]'}`}
                                                             >
                                                                 {change > 0
                                                                     ? '+'
@@ -398,13 +386,20 @@ export default function Ingredients() {
                                                             </span>
                                                         ) : null}
                                                     </span>
-                                                    {quoteChange >= 1 ? (
+                                                    {quoteChange >= 1 &&
+                                                    i.last_quote_price ? (
                                                         <span className="mt-1 block text-[11px] font-semibold text-[#EC582A]">
                                                             penawaran{' '}
                                                             {formatRupiah(
-                                                                i.quotePrice!,
+                                                                i.last_quote_price,
                                                             )}
-                                                            /{i.unit} (+
+                                                            /
+                                                            {
+                                                                unitShort[
+                                                                    i.base_unit
+                                                                ]
+                                                            }{' '}
+                                                            (+
                                                             {formatPercent(
                                                                 quoteChange,
                                                                 0,
@@ -414,11 +409,12 @@ export default function Ingredients() {
                                                     ) : null}
                                                 </td>
                                                 <td className="px-3 py-3 text-right text-muted-foreground">
-                                                    {new Intl.NumberFormat(
-                                                        'id-ID',
-                                                    ).format(i.packSize)}{' '}
-                                                    {i.unit} ·{' '}
-                                                    {formatRupiah(i.packPrice)}
+                                                    {i.package_size
+                                                        ? `${formatQty(i.package_size)} ${unitShort[i.base_unit]}`
+                                                        : '-'}
+                                                    {i.package_price
+                                                        ? ` · ${formatRupiah(i.package_price)}`
+                                                        : ''}
                                                 </td>
                                                 <td className="px-3 py-3">
                                                     <span
@@ -473,8 +469,8 @@ export default function Ingredients() {
 
                         <FxSoft className="flex flex-wrap items-center justify-between gap-2 p-4 text-xs text-muted-foreground">
                             <span>
-                                Menampilkan {rows.length} dari {items.length}{' '}
-                                bahan.
+                                Menampilkan {rows.length} dari{' '}
+                                {ingredients.length} bahan.
                             </span>
                             <span>
                                 WAC = Weighted Average Cost dari pembelian
@@ -485,14 +481,12 @@ export default function Ingredients() {
                 </Reveal>
             </div>
 
-            {/* Tambah bahan */}
             <CreateIngredientModal
                 open={createOpen}
                 onOpenChange={setCreateOpen}
                 onSubmit={handleCreate}
             />
 
-            {/* Stock-in */}
             {stockIn ? (
                 <StockInModal
                     key={stockIn.id}
@@ -502,7 +496,6 @@ export default function Ingredients() {
                 />
             ) : null}
 
-            {/* Update penawaran */}
             {quote ? (
                 <QuoteModal
                     key={quote.id}
@@ -512,7 +505,6 @@ export default function Ingredients() {
                 />
             ) : null}
 
-            {/* Riwayat harga */}
             {history ? (
                 <HistoryModal
                     key={history.id}
@@ -531,18 +523,10 @@ function CreateIngredientModal({
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSubmit: (data: {
-        name: string;
-        unit: BaseUnit;
-        minStock: number;
-        leadTime: number;
-        packSize: number;
-        packPrice: number;
-        costPerUnit: number;
-    }) => void;
+    onSubmit: (data: Record<string, string | number | boolean>) => void;
 }) {
     const [name, setName] = useState('');
-    const [unit, setUnit] = useState<BaseUnit>('g');
+    const [unit, setUnit] = useState<BaseUnit>('gram');
     const [minStock, setMinStock] = useState('0');
     const [leadTime, setLeadTime] = useState('1');
     const [packSize, setPackSize] = useState('1');
@@ -554,20 +538,18 @@ function CreateIngredientModal({
             toast.error('Nama bahan wajib diisi.');
             return;
         }
-        if (Number(costPerUnit) < 0 || Number(minStock) < 0) {
-            toast.error('Nilai negatif tidak diperbolehkan.');
-            return;
-        }
         onSubmit({
             name: name.trim(),
-            unit,
-            minStock: Number(minStock) || 0,
-            leadTime: Number(leadTime) || 0,
-            packSize: Number(packSize) || 1,
-            packPrice: Number(packPrice) || 0,
-            costPerUnit: Number(costPerUnit) || 0,
+            base_unit: unit,
+            minimum_stock: minStock || '0',
+            lead_time_days: Number(leadTime) || 0,
+            review_period_days: 2,
+            package_size: packSize || '1',
+            package_price: Number(packPrice) || 0,
+            moq_packages: 1,
+            cost_per_unit: costPerUnit || '0',
+            is_active: true,
         });
-        onOpenChange(false);
     }
 
     return (
@@ -597,13 +579,13 @@ function CreateIngredientModal({
                     placeholder="Contoh: Sirup Vanilla"
                 />
             </FxField>
-            <div className={fieldRow}>
+            <div className="grid gap-3 sm:grid-cols-2">
                 <FxField label="Satuan dasar">
                     <FxSelect
                         value={unit}
                         onChange={(e) => setUnit(e.target.value as BaseUnit)}
                     >
-                        <option value="g">gram</option>
+                        <option value="gram">gram</option>
                         <option value="ml">ml</option>
                         <option value="pcs">pcs</option>
                     </FxSelect>
@@ -617,7 +599,7 @@ function CreateIngredientModal({
                     />
                 </FxField>
             </div>
-            <div className={fieldRow}>
+            <div className="grid gap-3 sm:grid-cols-2">
                 <FxField label="Stok minimum">
                     <FxInput
                         type="number"
@@ -638,7 +620,7 @@ function CreateIngredientModal({
                     />
                 </FxField>
             </div>
-            <div className={fieldRow}>
+            <div className="grid gap-3 sm:grid-cols-2">
                 <FxField label={`Ukuran kemasan (${unitLabel[unit]})`}>
                     <FxInput
                         type="number"
@@ -665,25 +647,27 @@ function StockInModal({
     onClose,
     onSubmit,
 }: {
-    target: Ingredient;
+    target: IngredientRow;
     onClose: () => void;
     onSubmit: (
-        target: Ingredient,
+        target: IngredientRow,
         packages: number,
         pricePerPackage: number,
     ) => void;
 }) {
     const [packages, setPackages] = useState('1');
-    const [price, setPrice] = useState(String(target.packPrice));
+    const [price, setPrice] = useState(String(target.package_price ?? 0));
 
-    const addedQty = (Number(packages) || 0) * (target.packSize || 1);
-    const unitPrice = (Number(price) || 0) / (target.packSize || 1);
-    const newStock = target.stock + addedQty;
+    const packSize = target.package_size ? Number(target.package_size) : 1;
+    const addedQty = (Number(packages) || 0) * packSize;
+    const unitPrice = (Number(price) || 0) / packSize;
+    const newStock = Number(target.current_stock) + addedQty;
     const newWac =
         newStock > 0
-            ? (target.stock * target.costPerUnit + addedQty * unitPrice) /
+            ? (Number(target.current_stock) * Number(target.cost_per_unit) +
+                  addedQty * unitPrice) /
               newStock
-            : target.costPerUnit;
+            : Number(target.cost_per_unit);
 
     function submit() {
         if (Number(packages) <= 0) {
@@ -691,7 +675,6 @@ function StockInModal({
             return;
         }
         onSubmit(target, Number(packages), Number(price) || 0);
-        onClose();
     }
 
     return (
@@ -699,7 +682,7 @@ function StockInModal({
             open
             onOpenChange={(o) => !o && onClose()}
             title={`Stock-in ${target.name}`}
-            description={`WAC saat ini ${formatRupiah(target.costPerUnit)}/${target.unit}.`}
+            description={`WAC saat ini ${formatRupiah(target.cost_per_unit)}/${unitShort[target.base_unit]}.`}
             footer={
                 <>
                     <FxButton variant="soft" onClick={onClose}>
@@ -711,7 +694,7 @@ function StockInModal({
                 </>
             }
         >
-            <div className={fieldRow}>
+            <div className="grid gap-3 sm:grid-cols-2">
                 <FxField label="Jumlah kemasan">
                     <FxInput
                         type="number"
@@ -735,21 +718,19 @@ function StockInModal({
                         Stok bertambah
                     </span>
                     <span className="font-semibold tabular-nums">
-                        {new Intl.NumberFormat('id-ID').format(addedQty)}{' '}
-                        {target.unit}
+                        {formatQty(addedQty)} {unitShort[target.base_unit]}
                     </span>
                 </div>
                 <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Stok menjadi</span>
                     <span className="font-semibold tabular-nums">
-                        {new Intl.NumberFormat('id-ID').format(newStock)}{' '}
-                        {target.unit}
+                        {formatQty(newStock)} {unitShort[target.base_unit]}
                     </span>
                 </div>
                 <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">WAC baru</span>
                     <span className="font-bold text-[#EC582A] tabular-nums">
-                        {formatRupiah(newWac)}/{target.unit}
+                        {formatRupiah(newWac)}/{unitShort[target.base_unit]}
                     </span>
                 </div>
             </FxSoft>
@@ -762,26 +743,22 @@ function QuoteModal({
     onClose,
     onSubmit,
 }: {
-    target: Ingredient;
+    target: IngredientRow;
     onClose: () => void;
-    onSubmit: (target: Ingredient, quotePrice: number) => void;
+    onSubmit: (target: IngredientRow, quotePrice: number) => void;
 }) {
     const [price, setPrice] = useState(
-        String(target.quotePrice ?? target.costPerUnit),
+        String(target.last_quote_price ?? target.cost_per_unit),
     );
-    const change =
-        target.costPerUnit > 0
-            ? (((Number(price) || 0) - target.costPerUnit) /
-                  target.costPerUnit) *
-              100
-            : 0;
+    const wac = Number(target.cost_per_unit);
+    const change = wac > 0 ? (((Number(price) || 0) - wac) / wac) * 100 : 0;
 
     return (
         <FxModal
             open
             onOpenChange={(o) => !o && onClose()}
             title={`Harga penawaran ${target.name}`}
-            description={`WAC tercatat ${formatRupiah(target.costPerUnit)}/${target.unit}.`}
+            description={`WAC tercatat ${formatRupiah(target.cost_per_unit)}/${unitShort[target.base_unit]}.`}
             footer={
                 <>
                     <FxButton variant="soft" onClick={onClose}>
@@ -789,10 +766,7 @@ function QuoteModal({
                     </FxButton>
                     <FxButton
                         variant="coral"
-                        onClick={() => {
-                            onSubmit(target, Number(price) || 0);
-                            onClose();
-                        }}
+                        onClick={() => onSubmit(target, Number(price) || 0)}
                     >
                         Simpan penawaran
                     </FxButton>
@@ -800,7 +774,7 @@ function QuoteModal({
             }
         >
             <FxField
-                label={`Harga penawaran per ${unitLabel[target.unit]}`}
+                label={`Harga penawaran per ${unitLabel[target.base_unit]}`}
                 hint="Dipakai untuk HPP proyeksi, tanpa mengubah WAC."
             >
                 <FxInput
@@ -833,27 +807,29 @@ function HistoryModal({
     target,
     onClose,
 }: {
-    target: Ingredient;
+    target: IngredientRow;
     onClose: () => void;
 }) {
     const rows = [
         {
             label: 'WAC saat ini',
-            value: `${formatRupiah(target.costPerUnit)}/${target.unit}`,
+            value: `${formatRupiah(target.cost_per_unit)}/${unitShort[target.base_unit]}`,
         },
         {
-            label: 'Harga sebelumnya',
-            value: `${formatRupiah(target.prevCostPerUnit)}/${target.unit}`,
+            label: 'Perubahan harga terakhir',
+            value: `${formatPercent(Number(target.price_change_pct), 1)}`,
         },
         {
             label: 'Harga penawaran terbaru',
-            value: target.quotePrice
-                ? `${formatRupiah(target.quotePrice)}/${target.unit}`
+            value: target.last_quote_price
+                ? `${formatRupiah(target.last_quote_price)}/${unitShort[target.base_unit]}`
                 : 'Belum ada',
         },
         {
             label: 'Harga kemasan terakhir',
-            value: formatRupiah(target.packPrice),
+            value: target.package_price
+                ? formatRupiah(target.package_price)
+                : '-',
         },
     ];
 
