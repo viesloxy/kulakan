@@ -12,6 +12,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        $pgsql = DB::getDriverName() === 'pgsql';
+
         Schema::create('sales_orders', function (Blueprint $table) {
             $table->id();
             $table->string('order_number', 20)->unique();
@@ -24,9 +26,11 @@ return new class extends Migration
             $table->timestamps();
             $table->index('created_at');
         });
-        DB::statement('ALTER TABLE sales_orders ADD CONSTRAINT sales_orders_total_check CHECK (total_amount >= 0)');
-        DB::statement("ALTER TABLE sales_orders ADD CONSTRAINT sales_orders_payment_check CHECK (payment_method IN ('cash','qris'))");
-        DB::statement("ALTER TABLE sales_orders ADD CONSTRAINT sales_orders_status_check CHECK (status IN ('completed','void'))");
+        if ($pgsql) {
+            DB::statement('ALTER TABLE sales_orders ADD CONSTRAINT sales_orders_total_check CHECK (total_amount >= 0)');
+            DB::statement("ALTER TABLE sales_orders ADD CONSTRAINT sales_orders_payment_check CHECK (payment_method IN ('cash','qris'))");
+            DB::statement("ALTER TABLE sales_orders ADD CONSTRAINT sales_orders_status_check CHECK (status IN ('completed','void'))");
+        }
 
         Schema::create('sales_items', function (Blueprint $table) {
             $table->id();
@@ -39,7 +43,9 @@ return new class extends Migration
             $table->index('sales_order_id');
             $table->index('menu_id');
         });
-        DB::statement('ALTER TABLE sales_items ADD CONSTRAINT sales_items_quantity_check CHECK (quantity BETWEEN 1 AND 999)');
+        if ($pgsql) {
+            DB::statement('ALTER TABLE sales_items ADD CONSTRAINT sales_items_quantity_check CHECK (quantity BETWEEN 1 AND 999)');
+        }
     }
 
     public function down(): void

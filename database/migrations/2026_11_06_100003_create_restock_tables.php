@@ -12,6 +12,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        $pgsql = DB::getDriverName() === 'pgsql';
+
         Schema::create('restock_plans', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->restrictOnDelete();
@@ -19,14 +21,16 @@ return new class extends Migration
             $table->integer('total_cost')->default(0);
             $table->integer('remaining_cash');
             $table->string('status', 10)->default('draft');
-            $table->timestamp('purchased_at', 0)->nullable();
+            $table->timestamp('purchased_at')->nullable();
             $table->timestamps();
         });
-        DB::statement('ALTER TABLE restock_plans ADD CONSTRAINT restock_plans_cash_check CHECK (cash_amount >= 0)');
-        DB::statement('ALTER TABLE restock_plans ADD CONSTRAINT restock_plans_total_check CHECK (total_cost >= 0)');
-        DB::statement('ALTER TABLE restock_plans ADD CONSTRAINT restock_plans_remaining_check CHECK (remaining_cash >= 0)');
-        DB::statement('ALTER TABLE restock_plans ADD CONSTRAINT restock_plans_budget_invariant CHECK (total_cost <= cash_amount)');
-        DB::statement("ALTER TABLE restock_plans ADD CONSTRAINT restock_plans_status_check CHECK (status IN ('draft','approved','purchased'))");
+        if ($pgsql) {
+            DB::statement('ALTER TABLE restock_plans ADD CONSTRAINT restock_plans_cash_check CHECK (cash_amount >= 0)');
+            DB::statement('ALTER TABLE restock_plans ADD CONSTRAINT restock_plans_total_check CHECK (total_cost >= 0)');
+            DB::statement('ALTER TABLE restock_plans ADD CONSTRAINT restock_plans_remaining_check CHECK (remaining_cash >= 0)');
+            DB::statement('ALTER TABLE restock_plans ADD CONSTRAINT restock_plans_budget_invariant CHECK (total_cost <= cash_amount)');
+            DB::statement("ALTER TABLE restock_plans ADD CONSTRAINT restock_plans_status_check CHECK (status IN ('draft','approved','purchased'))");
+        }
 
         Schema::create('restock_plan_items', function (Blueprint $table) {
             $table->id();
@@ -45,11 +49,13 @@ return new class extends Migration
             $table->timestamps();
             $table->unique(['restock_plan_id', 'ingredient_id']);
         });
-        DB::statement("ALTER TABLE restock_plan_items ADD CONSTRAINT restock_plan_items_abc_check CHECK (abc_class IS NULL OR abc_class IN ('A','B','C'))");
-        DB::statement('ALTER TABLE restock_plan_items ADD CONSTRAINT restock_plan_items_qmin_check CHECK (qmin_packages >= 0)');
-        DB::statement('ALTER TABLE restock_plan_items ADD CONSTRAINT restock_plan_items_qtarget_check CHECK (qtarget_packages >= 0)');
-        DB::statement('ALTER TABLE restock_plan_items ADD CONSTRAINT restock_plan_items_recommended_check CHECK (recommended_packages >= 0)');
-        DB::statement("ALTER TABLE restock_plan_items ADD CONSTRAINT restock_plan_items_label_check CHECK (label IS NULL OR label IN ('beli_sekarang','beli_sekarang_parsial','beli_opsional','tahan_dulu','kas_tidak_cukup'))");
+        if ($pgsql) {
+            DB::statement("ALTER TABLE restock_plan_items ADD CONSTRAINT restock_plan_items_abc_check CHECK (abc_class IS NULL OR abc_class IN ('A','B','C'))");
+            DB::statement('ALTER TABLE restock_plan_items ADD CONSTRAINT restock_plan_items_qmin_check CHECK (qmin_packages >= 0)');
+            DB::statement('ALTER TABLE restock_plan_items ADD CONSTRAINT restock_plan_items_qtarget_check CHECK (qtarget_packages >= 0)');
+            DB::statement('ALTER TABLE restock_plan_items ADD CONSTRAINT restock_plan_items_recommended_check CHECK (recommended_packages >= 0)');
+            DB::statement("ALTER TABLE restock_plan_items ADD CONSTRAINT restock_plan_items_label_check CHECK (label IS NULL OR label IN ('beli_sekarang','beli_sekarang_parsial','beli_opsional','tahan_dulu','kas_tidak_cukup'))");
+        }
     }
 
     public function down(): void
