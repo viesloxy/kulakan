@@ -11,6 +11,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LoginResponse;
+use Laravel\Fortify\Contracts\RegisterResponse;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
@@ -21,7 +23,26 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Arahkan pengguna setelah login/daftar sesuai perannya (SAD §9).
+        // Owner -> dashboard eksekutif; Staff -> POS (kasir tidak boleh buka dashboard).
+        $this->app->instance(LoginResponse::class, new class implements LoginResponse
+        {
+            public function toResponse($request)
+            {
+                return redirect()->intended(
+                    $request->user()?->role === 'staff' ? '/pos' : '/dashboard'
+                );
+            }
+        });
+
+        $this->app->instance(RegisterResponse::class, new class implements RegisterResponse
+        {
+            public function toResponse($request)
+            {
+                // Akun baru default berperan staff.
+                return redirect()->intended('/pos');
+            }
+        });
     }
 
     /**

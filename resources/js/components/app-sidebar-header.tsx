@@ -10,7 +10,7 @@ export function AppSidebarHeader({
 }) {
     return (
         <header className="flex h-16 shrink-0 items-center gap-3 px-4 md:px-6">
-            <div className="fx-pill flex h-11 items-center gap-2 px-4">
+            <div className="flex h-11 items-center gap-2 fx-pill px-4">
                 <SidebarTrigger className="-ml-2" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
@@ -18,7 +18,7 @@ export function AppSidebarHeader({
             <button
                 type="button"
                 aria-label="Notifikasi"
-                className="fx-pill ml-auto flex size-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                className="ml-auto flex size-11 items-center justify-center fx-pill text-muted-foreground transition-colors hover:text-foreground"
             >
                 <Bell className="size-[18px]" />
             </button>

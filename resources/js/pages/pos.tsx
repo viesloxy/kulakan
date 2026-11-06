@@ -22,7 +22,10 @@ export default function Pos() {
     const items = useMemo(
         () =>
             Object.entries(cart)
-                .map(([id, qty]) => ({ menu: menus.find((m) => m.id === Number(id))!, qty }))
+                .map(([id, qty]) => ({
+                    menu: menus.find((m) => m.id === Number(id))!,
+                    qty,
+                }))
                 .filter((x) => x.qty > 0),
         [cart],
     );
@@ -52,9 +55,13 @@ export default function Pos() {
         }
         const insufficient = items.find((x) => x.qty > x.menu.portionsLeft);
         if (insufficient) {
-            toast.error(`${insufficient.menu.name} kurang ${insufficient.qty - insufficient.menu.portionsLeft} porsi`, {
-                description: 'Stok bahan tidak mencukupi. Pesanan tidak disimpan.',
-            });
+            toast.error(
+                `${insufficient.menu.name} kurang ${insufficient.qty - insufficient.menu.portionsLeft} porsi`,
+                {
+                    description:
+                        'Stok bahan tidak mencukupi. Pesanan tidak disimpan.',
+                },
+            );
             return;
         }
         toast.success('Pesanan tersimpan', {
@@ -84,23 +91,34 @@ export default function Pos() {
                                     <button
                                         key={m.id}
                                         onClick={() => add(m)}
-                                        className="fx-card flex flex-col gap-3 p-4 text-left transition-transform duration-200 hover:-translate-y-1"
+                                        className="flex flex-col gap-3 fx-card p-4 text-left transition-transform duration-200 hover:-translate-y-1"
                                     >
                                         <div className="flex items-center justify-between">
-                                            <IconCircle icon={Icon} tone="coral" />
+                                            <IconCircle
+                                                icon={Icon}
+                                                tone="coral"
+                                            />
                                             <span
                                                 className={`text-[11px] font-semibold ${
-                                                    low ? 'text-[#D93829]' : 'text-[#1D9E53]'
+                                                    low
+                                                        ? 'text-[#D93829]'
+                                                        : 'text-[#1D9E53]'
                                                 }`}
                                             >
                                                 Sisa {m.portionsLeft}
                                             </span>
                                         </div>
                                         <div>
-                                            <p className="font-semibold">{m.name}</p>
-                                            <p className="text-xs text-muted-foreground">{m.category}</p>
+                                            <p className="font-semibold">
+                                                {m.name}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {m.category}
+                                            </p>
                                         </div>
-                                        <p className="mt-auto text-sm font-bold tabular-nums">{formatRupiah(m.price)}</p>
+                                        <p className="mt-auto text-sm font-bold tabular-nums">
+                                            {formatRupiah(m.price)}
+                                        </p>
                                     </button>
                                 );
                             })}
@@ -110,7 +128,9 @@ export default function Pos() {
                     <Reveal delay={0.1}>
                         <FxCard className="sticky top-4 flex flex-col gap-4 p-5">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-base font-semibold">Pesanan</h2>
+                                <h2 className="text-base font-semibold">
+                                    Pesanan
+                                </h2>
                                 <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold">
                                     {items.reduce((n, x) => n + x.qty, 0)} item
                                 </span>
@@ -123,24 +143,35 @@ export default function Pos() {
                             ) : (
                                 <div className="flex flex-col gap-3">
                                     {items.map(({ menu, qty }) => (
-                                        <div key={menu.id} className="flex items-center gap-3">
+                                        <div
+                                            key={menu.id}
+                                            className="flex items-center gap-3"
+                                        >
                                             <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-medium">{menu.name}</p>
+                                                <p className="truncate text-sm font-medium">
+                                                    {menu.name}
+                                                </p>
                                                 <p className="text-xs text-muted-foreground tabular-nums">
                                                     {formatRupiah(menu.price)}
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-1.5 rounded-full bg-secondary p-1">
                                                 <button
-                                                    onClick={() => setQty(menu.id, qty - 1)}
+                                                    onClick={() =>
+                                                        setQty(menu.id, qty - 1)
+                                                    }
                                                     className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-[#EBEBE8]"
                                                     aria-label="Kurangi"
                                                 >
                                                     <Minus className="size-3.5" />
                                                 </button>
-                                                <span className="w-5 text-center text-sm font-semibold tabular-nums">{qty}</span>
+                                                <span className="w-5 text-center text-sm font-semibold tabular-nums">
+                                                    {qty}
+                                                </span>
                                                 <button
-                                                    onClick={() => setQty(menu.id, qty + 1)}
+                                                    onClick={() =>
+                                                        setQty(menu.id, qty + 1)
+                                                    }
                                                     className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-[#EBEBE8]"
                                                     aria-label="Tambah"
                                                 >
@@ -151,7 +182,9 @@ export default function Pos() {
                                                 {formatRupiah(menu.price * qty)}
                                             </span>
                                             <button
-                                                onClick={() => setQty(menu.id, 0)}
+                                                onClick={() =>
+                                                    setQty(menu.id, 0)
+                                                }
                                                 className="text-muted-foreground transition-colors hover:text-[#D93829]"
                                                 aria-label="Hapus"
                                             >
@@ -163,8 +196,12 @@ export default function Pos() {
                             )}
 
                             <FxSoft className="flex items-center justify-between p-4">
-                                <span className="text-sm text-muted-foreground">Total</span>
-                                <span className="text-xl font-bold tabular-nums">{formatRupiah(total)}</span>
+                                <span className="text-sm text-muted-foreground">
+                                    Total
+                                </span>
+                                <span className="text-xl font-bold tabular-nums">
+                                    {formatRupiah(total)}
+                                </span>
                             </FxSoft>
 
                             <div className="grid grid-cols-2 gap-2">
@@ -183,7 +220,12 @@ export default function Pos() {
                                 ))}
                             </div>
 
-                            <FxButton variant="coral" size="lg" onClick={submit} className="w-full">
+                            <FxButton
+                                variant="coral"
+                                size="lg"
+                                onClick={submit}
+                                className="w-full"
+                            >
                                 Simpan pesanan
                             </FxButton>
                         </FxCard>

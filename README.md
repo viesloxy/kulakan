@@ -4,36 +4,36 @@
 **resep, stok, biaya, profit, dan kas** dalam satu alur. Ia membantu pemilik tahu **bahan apa yang harus
 dibeli, menu mana yang paling untung, dan berapa modal yang aman dipakai**, tanpa spreadsheet dan tanpa menebak.
 
-> Dibangun untuk **GTNIC 2026** (*Garda Tech National Innovation Competition*), Kategori **Web Development**,
-> sub-tema *Accelerating Digital Transformation for Business and SMEs*.
+> Dibangun untuk **GTNIC 2026** (_Garda Tech National Innovation Competition_), Kategori **Web Development**,
+> sub-tema _Accelerating Digital Transformation for Business and SMEs_.
 
 ---
 
 ## Masalah & Solusi
 
-| Masalah UMKM F&B | Solusi Kulakan |
-| --- | --- |
-| Kehabisan stok kritis karena belanja telat atau pakai feeling | Rekomendasi restock berbasis urgensi dan dampak pendapatan |
-| Uang kas habis karena belanja berlebihan | Rekomendasi dibatasi kas tersedia (tidak pernah over-budget) |
-| Menu terlaris ternyata merugi (harga bahan naik tanpa sadar) | HPP dihitung ulang otomatis dan alert margin |
-| Stok tidak sinkron dengan penjualan | Pemotongan stok atomik per pesanan (BOM dan waste factor) |
+| Masalah UMKM F&B                                              | Solusi Kulakan                                               |
+| ------------------------------------------------------------- | ------------------------------------------------------------ |
+| Kehabisan stok kritis karena belanja telat atau pakai feeling | Rekomendasi restock berbasis urgensi dan dampak pendapatan   |
+| Uang kas habis karena belanja berlebihan                      | Rekomendasi dibatasi kas tersedia (tidak pernah over-budget) |
+| Menu terlaris ternyata merugi (harga bahan naik tanpa sadar)  | HPP dihitung ulang otomatis dan alert margin                 |
+| Stok tidak sinkron dengan penjualan                           | Pemotongan stok atomik per pesanan (BOM dan waste factor)    |
 
 ## Empat Kapabilitas Inti
 
-- **CAP-A · Cashflow-Aware Reorder Planner**: *"Dengan kas Rp X, bahan apa yang harus saya beli?"*
+- **CAP-A · Cashflow-Aware Reorder Planner**: _"Dengan kas Rp X, bahan apa yang harus saya beli?"_
 - **CAP-B · Recipe-to-Stock Engine**: pemotongan stok otomatis sesuai BOM saat penjualan.
 - **CAP-C · Menu Profitability Dashboard**: margin, status (profitable/watchlist/loss), dan ranking menu.
 - **CAP-D · Smart Recipe Costing**: HPP (WAC) dan proyeksi harga, dihitung ulang otomatis.
 
 ## Tech Stack
 
-| Layer | Teknologi |
-| --- | --- |
-| Backend | Laravel 13 (PHP 8.3+) |
+| Layer    | Teknologi                          |
+| -------- | ---------------------------------- |
+| Backend  | Laravel 13 (PHP 8.3+)              |
 | Frontend | Inertia.js + React 19 + TypeScript |
-| Styling | Tailwind CSS 4 + shadcn/ui |
-| Database | PostgreSQL 16 (Docker) |
-| Testing | Pest |
+| Styling  | Tailwind CSS 4 + shadcn/ui         |
+| Database | PostgreSQL 16 (Docker)             |
+| Testing  | Pest                               |
 
 ## Cara Menjalankan (Development)
 
@@ -52,14 +52,14 @@ php artisan serve               # buka http://localhost:8000
 
 ## Environment Variables
 
-| Var | Keterangan | Default |
-| --- | --- | --- |
-| `APP_NAME` | Nama aplikasi | `Kulakan` |
-| `APP_ENV` | `local` / `production` | `local` |
-| `DB_CONNECTION` | Driver database | `pgsql` |
-| `DB_HOST` / `DB_PORT` | Host & port PostgreSQL | `127.0.0.1` / `5433` |
-| `DB_DATABASE` | Nama database | `kulakan` |
-| `DB_USERNAME` / `DB_PASSWORD` | Kredensial PostgreSQL | `postgres` / `secret` |
+| Var                           | Keterangan             | Default               |
+| ----------------------------- | ---------------------- | --------------------- |
+| `APP_NAME`                    | Nama aplikasi          | `Kulakan`             |
+| `APP_ENV`                     | `local` / `production` | `local`               |
+| `DB_CONNECTION`               | Driver database        | `pgsql`               |
+| `DB_HOST` / `DB_PORT`         | Host & port PostgreSQL | `127.0.0.1` / `5433`  |
+| `DB_DATABASE`                 | Nama database          | `kulakan`             |
+| `DB_USERNAME` / `DB_PASSWORD` | Kredensial PostgreSQL  | `postgres` / `secret` |
 
 ## Struktur Repo (ringkas)
 
@@ -74,12 +74,12 @@ tests/              # Pest (Unit & Feature)
 
 ## Akun Demo (hasil seeder)
 
-| Role | Email | Password |
-| --- | --- | --- |
+| Role            | Email               | Password   |
+| --------------- | ------------------- | ---------- |
 | Pemilik (owner) | `owner@kulakan.com` | `password` |
-| Kasir (staff) | `staff@kulakan.com` | `password` |
+| Kasir (staff)   | `staff@kulakan.com` | `password` |
 
 ## Status & Live Site
 
 - Repository: **publik**.
-- Live: `https://<domain>` *(menyusul, VM dan domain sedang disiapkan)*.
+- Live: `https://<domain>` _(menyusul, VM dan domain sedang disiapkan)_.

@@ -1,6 +1,13 @@
 import type { LucideIcon } from 'lucide-react';
 
-type Tone = 'soft' | 'coral' | 'coralSolid' | 'white' | 'success' | 'warning' | 'danger';
+type Tone =
+    | 'soft'
+    | 'coral'
+    | 'coralSolid'
+    | 'white'
+    | 'success'
+    | 'warning'
+    | 'danger';
 type Size = 'sm' | 'md' | 'lg';
 
 const tones: Record<Tone, string> = {

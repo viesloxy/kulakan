@@ -21,7 +21,10 @@ export function FxButton({
     className = '',
     type = 'button',
     ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: Variant;
+    size?: Size;
+}) {
     return (
         <button
             type={type}

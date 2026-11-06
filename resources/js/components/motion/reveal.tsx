@@ -8,7 +8,12 @@ type Props = {
     className?: string;
 };
 
-export default function Reveal({ children, delay = 0, y = 16, className }: Props) {
+export default function Reveal({
+    children,
+    delay = 0,
+    y = 16,
+    className,
+}: Props) {
     return (
         <motion.div
             className={className}
