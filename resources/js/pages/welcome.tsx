@@ -468,17 +468,15 @@ export default function Welcome() {
         <>
             <Head title="Kulakan · Smart Profit & Inventory for Small F&B" />
             <div className="relative min-h-screen overflow-x-clip bg-background text-foreground">
-                {/* pita gradasi coral gelap dari design system, dengan bentuk abstrak */}
+                {/* gradasi coral yang jelas terlihat di belakang heading, latar tetap terang */}
                 <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 top-0 h-[600px] overflow-hidden rounded-b-[3.5rem]"
+                    className="pointer-events-none absolute inset-x-0 top-0 h-[42rem]"
                 >
-                    <div className="absolute inset-0 fx-coral" />
-                    <div className="absolute -top-24 -left-16 size-96 rounded-full bg-white/10 blur-3xl" />
-                    <div className="absolute top-10 right-[-6rem] size-80 rounded-full bg-white/10 blur-2xl" />
-                    <div className="absolute -bottom-28 left-1/3 size-[26rem] rounded-full bg-[#7F1A00]/45 blur-3xl" />
-                    <div className="absolute inset-y-0 right-16 w-28 fx-hatch-coral opacity-50" />
-                    <div className="absolute inset-y-0 left-10 w-16 fx-hatch-coral opacity-40" />
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(236,88,42,0.32)_0%,rgba(247,148,108,0.20)_42%,rgba(244,244,242,0)_100%)] dark:bg-[linear-gradient(180deg,rgba(236,88,42,0.38)_0%,rgba(236,88,42,0.16)_45%,rgba(18,18,17,0)_100%)]" />
+                    <div className="absolute -top-40 left-1/2 h-[26rem] w-[62rem] max-w-none -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(236,88,42,0.30),transparent_62%)]" />
+                    <div className="absolute top-24 -left-24 size-[22rem] rounded-full bg-[radial-gradient(circle,rgba(247,148,108,0.26),transparent_65%)] blur-2xl" />
+                    <div className="absolute top-10 -right-20 size-[20rem] rounded-full bg-[radial-gradient(circle,rgba(236,88,42,0.24),transparent_65%)] blur-2xl" />
                 </div>
 
                 {/* navbar kapsul */}
@@ -537,13 +535,13 @@ export default function Welcome() {
                     </nav>
                 </div>
 
-                {/* hero di atas pita coral */}
+                {/* hero di atas gradasi coral */}
                 <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-14 text-center md:px-6 lg:pt-20">
                     <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                        className="mx-auto max-w-3xl text-4xl leading-[1.06] font-bold tracking-tight text-balance text-white sm:text-6xl"
+                        className="mx-auto max-w-3xl text-4xl leading-[1.06] font-bold tracking-tight text-balance sm:text-6xl"
                     >
                         Stok, HPP, dan margin warungmu, terhitung otomatis.
                     </motion.h1>
@@ -555,7 +553,7 @@ export default function Welcome() {
                             delay: 0.1,
                             ease: [0.22, 1, 0.36, 1],
                         }}
-                        className="mx-auto mt-5 max-w-2xl text-base text-white/85 sm:text-lg"
+                        className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg"
                     >
                         Kulakan mencatat bahan baku, menyusun resep menjadi
                         stok, menghitung HPP secara akurat, dan menyarankan
@@ -572,9 +570,8 @@ export default function Welcome() {
                         className="mt-8 flex flex-wrap items-center justify-center gap-3"
                     >
                         <FxButton
-                            variant="soft"
+                            variant="coral"
                             size="lg"
-                            className="bg-white! text-[#E84B20]! hover:bg-white/90!"
                             onClick={() => router.visit(login())}
                         >
                             Masuk ke aplikasi
@@ -583,14 +580,13 @@ export default function Welcome() {
                         <FxButton
                             variant="soft"
                             size="lg"
-                            className="bg-white/15! text-white! ring-1! ring-white/30! hover:bg-white/25!"
                             onClick={() => router.visit(register())}
                         >
                             Daftar gratis
                         </FxButton>
                     </motion.div>
 
-                    {/* laptop melayang, menimpa tepi pita */}
+                    {/* laptop melayang di bawah heading */}
                     <motion.div
                         initial={{ opacity: 0, y: 56, scale: 0.97 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
