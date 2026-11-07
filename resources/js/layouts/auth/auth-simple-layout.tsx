@@ -1,5 +1,4 @@
 import { Link } from '@inertiajs/react';
-import AppLogoIcon from '@/components/app-logo-icon';
 import { FxCard } from '@/components/fx/fx-card';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
@@ -28,12 +27,11 @@ export default function AuthSimpleLayout({
                             href={home()}
                             className="flex flex-col items-center gap-2 font-medium"
                         >
-                            <span className="mb-1 flex size-12 items-center justify-center rounded-2xl fx-coral">
-                                <AppLogoIcon className="size-7 fill-current text-white" />
-                            </span>
-                            <span className="text-lg font-bold tracking-tight">
-                                Kulakan
-                            </span>
+                            <img
+                                src="/images/logo.svg"
+                                alt="Logo Kulakan"
+                                className="mb-1 size-14"
+                            />
                             <span className="sr-only">{title}</span>
                         </Link>
 
