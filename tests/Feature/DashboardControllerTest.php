@@ -29,6 +29,25 @@ it('merangkum dashboard eksekutif dari data DB (FR-036)', function () {
             ->has('restock.total_cost'));
 });
 
+it('menyediakan laporan harian penjualan & pembelian (FR-037)', function () {
+    $this->actingAs($this->owner)
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dashboard')
+            ->where('daily_report.date', now()->toDateString())
+            ->where('daily_report.sales.orders', 1)
+            ->where('daily_report.sales.revenue', 708000)
+            ->where('daily_report.sales.items', 35)
+            ->where('daily_report.purchases.count', 0));
+
+    $this->actingAs($this->owner)
+        ->get('/dashboard?report_date=2020-01-01')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('daily_report.sales.orders', 0)
+            ->where('daily_report.sales.revenue', 0));
+});
+
 it('staff tidak boleh mengakses dashboard (owner-only)', function () {
     $this->actingAs($this->staff)->get('/dashboard')->assertForbidden();
 });

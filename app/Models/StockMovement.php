@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Ledger stok append-only (INV-02). Tidak punya updated_at.
+ *
+ * @property Carbon|null $created_at
  */
 #[Fillable([
     'ingredient_id', 'type', 'qty_change', 'unit_price', 'reason',

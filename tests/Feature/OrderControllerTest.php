@@ -3,6 +3,7 @@
 use App\Models\Ingredient;
 use App\Models\Menu;
 use App\Models\SalesOrder;
+use App\Models\StockMovement;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -68,6 +69,26 @@ it('mencegah pemotongan ganda dengan idempotency key (FR-016)', function () {
 
     expect(SalesOrder::count())->toBe(8)
         ->and(bcsub($before, (string) $biji->fresh()->current_stock, 3))->toBe('210.000');
+});
+
+it('void pesanan mengembalikan stok dan dikecualikan dari laporan (FR-018, DEC-13)', function () {
+    $biji = Ingredient::where('name', 'Biji Kopi Arabika')->firstOrFail();
+    $order = SalesOrder::whereDate('created_at', now()->toDateString())->firstOrFail();
+    $before = (string) $biji->current_stock;
+
+    $this->actingAs($this->owner)->post("/pos/{$order->id}/void")->assertRedirect();
+
+    // Order hari ini: Es Kopi x16 (21 g) + Kopi Hitam x10 (16,8 g) + Hazelnut x4 (21 g) = 588 g.
+    expect(bcsub((string) $biji->fresh()->current_stock, $before, 3))->toBe('588.000')
+        ->and($order->fresh()->status)->toBe('void')
+        ->and(StockMovement::where('sales_order_id', $order->id)->where('type', 'sale_reversal')->exists())->toBeTrue();
+
+    // Void kedua ditolak.
+    $this->actingAs($this->owner)->post("/pos/{$order->id}/void")->assertSessionHasErrors('void');
+
+    // Staff tidak boleh void (owner-only).
+    $other = SalesOrder::where('status', 'completed')->firstOrFail();
+    $this->actingAs($this->staff)->post("/pos/{$other->id}/void")->assertForbidden();
 });
 
 it('tamu diarahkan ke halaman login', function () {

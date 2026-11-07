@@ -6,10 +6,12 @@ use App\Exceptions\InsufficientStockException;
 use App\Http\Requests\Pos\StoreOrderRequest;
 use App\Models\Ingredient;
 use App\Models\Menu;
+use App\Models\SalesOrder;
 use App\Services\AlertService;
 use App\Services\CostingService;
 use App\Services\InventoryService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -71,6 +73,18 @@ class OrderController extends Controller
         $this->alerts->syncAll();
 
         return back()->with('success', 'Pesanan '.$order->order_number.' tersimpan. Stok bahan terpotong otomatis.');
+    }
+
+    public function void(Request $request, SalesOrder $salesOrder): RedirectResponse
+    {
+        if ($salesOrder->status !== 'completed') {
+            return back()->withErrors(['void' => 'Pesanan ini sudah dibatalkan.']);
+        }
+
+        $this->inventory->voidOrder($salesOrder, $request->user());
+        $this->alerts->syncAll();
+
+        return back()->with('success', 'Pesanan '.$salesOrder->order_number.' dibatalkan; stok dikembalikan.');
     }
 
     private function unitFor(int $ingredientId): string
