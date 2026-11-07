@@ -898,7 +898,7 @@ export default function Welcome() {
                                 className="absolute inset-y-0 left-0 w-24 fx-hatch-coral opacity-60"
                             />
                             <div className="relative grid items-stretch gap-8 p-8 md:grid-cols-[1.2fr_1fr] md:p-12">
-                                <div className="my-auto text-center md:text-left">
+                                <div className="my-auto text-center">
                                     <h2 className="text-2xl font-bold tracking-tight text-balance text-white md:text-3xl">
                                         Siap mengetahui margin sebenarnya dari
                                         tiap menu?
@@ -907,7 +907,7 @@ export default function Welcome() {
                                         Mulai dari bahan pertama, biarkan
                                         Kulakan yang menghitung sisanya.
                                     </p>
-                                    <div className="mt-6 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+                                    <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                                         <FxButton
                                             variant="soft"
                                             size="lg"
