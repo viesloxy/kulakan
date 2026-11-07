@@ -49,6 +49,20 @@ class ProfitabilityController extends Controller
             }
         }
 
+        // Agregat periode + ranking menu (FR-025, BL §7.2).
+        $period = $request->string('period')->toString();
+        if (! in_array($period, ['today', '7d', '30d'], true)) {
+            $period = '7d';
+        }
+
+        $since = match ($period) {
+            'today' => now()->startOfDay(),
+            '30d' => now()->subDays(29)->startOfDay(),
+            default => now()->subDays(6)->startOfDay(),
+        };
+
+        $aggregates = $this->costing->menuSalesAggregates($since);
+
         return Inertia::render('profitability', [
             'menus' => $rows,
             'summary' => [
@@ -56,6 +70,14 @@ class ProfitabilityController extends Controller
                 'avg_margin' => $this->costing->averageMargin(),
                 'counts' => $counts,
             ],
+            'period' => $period,
+            'periods' => [
+                ['key' => 'today', 'label' => 'Hari ini'],
+                ['key' => '7d', 'label' => '7 hari'],
+                ['key' => '30d', 'label' => '30 hari'],
+            ],
+            'ranking' => $aggregates['rows'],
+            'totals' => $aggregates['totals'],
             'ingredients' => Ingredient::where('is_active', true)->orderBy('name')
                 ->get(['id', 'name', 'base_unit', 'cost_per_unit'])
                 ->map(fn (Ingredient $i) => [

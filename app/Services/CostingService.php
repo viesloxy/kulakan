@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Ingredient;
 use App\Models\Menu;
 use App\Support\Number;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -252,6 +253,73 @@ class CostingService
         );
 
         return $this->round(bcdiv($sum, (string) $menus->count(), 6), 2);
+    }
+
+    /**
+     * Agregat penjualan per menu untuk periode tertentu (BL §7.2).
+     * Hanya pesanan berstatus `completed`. Ranking menurut gross profit (GP) menurun.
+     *
+     * @return array{rows: list<array<string, mixed>>, totals: array<string, int>}
+     */
+    public function menuSalesAggregates(?CarbonInterface $since): array
+    {
+        $query = DB::table('sales_items')
+            ->join('sales_orders', 'sales_orders.id', '=', 'sales_items.sales_order_id')
+            ->join('menus', 'menus.id', '=', 'sales_items.menu_id')
+            ->where('sales_orders.status', 'completed')
+            ->when($since !== null, fn ($q) => $q->where('sales_orders.created_at', '>=', $since))
+            ->groupBy('menus.id', 'menus.name', 'menus.selling_price')
+            ->selectRaw('menus.id as menu_id, menus.name as name, menus.selling_price as selling_price')
+            ->selectRaw('SUM(sales_items.quantity) as quantity_sold')
+            ->selectRaw('SUM(sales_items.quantity * sales_items.unit_price) as revenue')
+            ->selectRaw('SUM(sales_items.quantity * sales_items.unit_hpp_at_sale) as cogs')
+            ->get();
+
+        $rows = [];
+        $totalGp = '0';
+
+        foreach ($query as $row) {
+            $revenue = Number::str($row->revenue);
+            $cogs = Number::str($row->cogs);
+            $gp = bcsub($revenue, $cogs, 2);
+            $totalGp = bcadd($totalGp, $gp, 2);
+
+            $rows[] = [
+                'menu_id' => (int) $row->menu_id,
+                'name' => (string) $row->name,
+                'selling_price' => (int) $row->selling_price,
+                'quantity_sold' => (int) $row->quantity_sold,
+                'revenue' => (int) $revenue,
+                'cogs' => (int) $cogs,
+                'gross_profit' => (int) $gp,
+            ];
+        }
+
+        usort($rows, fn (array $a, array $b): int => $b['gross_profit'] <=> $a['gross_profit']);
+
+        foreach ($rows as &$row) {
+            $revenue = Number::str($row['revenue']);
+            $gp = Number::str($row['gross_profit']);
+
+            $row['gross_margin_pct'] = bccomp($revenue, '0', 2) === 0
+                ? null
+                : $this->round(bcmul(bcdiv($gp, $revenue, 8), '100', 8), 2);
+
+            $row['contribution_pct'] = bccomp($totalGp, '0', 2) > 0
+                ? $this->round(bcmul(bcdiv($gp, $totalGp, 8), '100', 8), 2)
+                : null;
+        }
+        unset($row);
+
+        return [
+            'rows' => $rows,
+            'totals' => [
+                'revenue' => (int) array_sum(array_column($rows, 'revenue')),
+                'cogs' => (int) array_sum(array_column($rows, 'cogs')),
+                'gross_profit' => (int) $totalGp,
+                'quantity_sold' => (int) array_sum(array_column($rows, 'quantity_sold')),
+            ],
+        ];
     }
 
     /**
