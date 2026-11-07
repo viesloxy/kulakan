@@ -34,6 +34,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('menu/{menu}', [MenuController::class, 'update'])->name('menus.update');
         Route::delete('menu/{menu}', [MenuController::class, 'destroy'])->name('menus.destroy');
         Route::post('menu/{menu}/recipe', [MenuController::class, 'saveRecipe'])->name('menus.recipe');
+
+        // Void pesanan khusus owner (FR-018, DEC-13).
+        Route::post('pos/{salesOrder}/void', [OrderController::class, 'void'])->name('orders.void');
     });
 
     // Baca bahan baku: owner & staff.

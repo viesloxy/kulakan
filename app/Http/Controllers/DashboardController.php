@@ -7,6 +7,7 @@ use App\Models\Ingredient;
 use App\Models\Menu;
 use App\Models\RestockPlan;
 use App\Models\SalesOrder;
+use App\Models\StockMovement;
 use App\Services\AlertService;
 use App\Services\RestockService;
 use App\Support\Number;
@@ -55,10 +56,10 @@ class DashboardController extends Controller
         ];
 
         $today = now()->toDateString();
-        $ordersToday = SalesOrder::whereDate('created_at', $today)->count();
-        $salesToday = (int) SalesOrder::whereDate('created_at', $today)->sum('total_amount');
-        $cashToday = (int) SalesOrder::whereDate('created_at', $today)->where('payment_method', 'cash')->sum('total_amount');
-        $qrisToday = (int) SalesOrder::whereDate('created_at', $today)->where('payment_method', 'qris')->sum('total_amount');
+        $ordersToday = SalesOrder::whereDate('created_at', $today)->where('status', 'completed')->count();
+        $salesToday = (int) SalesOrder::whereDate('created_at', $today)->where('status', 'completed')->sum('total_amount');
+        $cashToday = (int) SalesOrder::whereDate('created_at', $today)->where('status', 'completed')->where('payment_method', 'cash')->sum('total_amount');
+        $qrisToday = (int) SalesOrder::whereDate('created_at', $today)->where('status', 'completed')->where('payment_method', 'qris')->sum('total_amount');
 
         $activeAlerts = Alert::where('status', 'active')->count();
 
@@ -68,7 +69,9 @@ class DashboardController extends Controller
             $chart[] = [
                 'date' => $day->toDateString(),
                 'label' => $this->dayLabel((int) $day->dayOfWeek),
-                'total' => (int) SalesOrder::whereDate('created_at', $day->toDateString())->sum('total_amount'),
+                'total' => (int) SalesOrder::whereDate('created_at', $day->toDateString())
+                    ->where('status', 'completed')
+                    ->sum('total_amount'),
             ];
         }
 
@@ -77,24 +80,10 @@ class DashboardController extends Controller
             ->orderByDesc('id')
             ->limit(5)
             ->get()
-            ->map(function (SalesOrder $order): array {
-                $items = $order->items;
-                $first = $items->first();
-                $count = $items->count();
+            ->map(fn (SalesOrder $order): array => $this->orderRow($order))
+            ->values();
 
-                $description = '-';
-                if ($first !== null && $first->menu !== null) {
-                    $description = $first->menu->name.' x'.$first->quantity
-                        .($count > 1 ? ' +'.($count - 1).' lainnya' : '');
-                }
-
-                return [
-                    'id' => $order->order_number,
-                    'description' => $description,
-                    'total' => (int) $order->total_amount,
-                    'status' => $order->status,
-                ];
-            })->values();
+        $dailyReport = $this->dailyReport($request);
 
         [$cashBudget, $restock] = $this->restockSummary();
 
@@ -111,7 +100,93 @@ class DashboardController extends Controller
             'restock' => $restock,
             'chart' => $chart,
             'recent_orders' => $recentOrders,
+            'daily_report' => $dailyReport,
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function orderRow(SalesOrder $order): array
+    {
+        $items = $order->items;
+        $first = $items->first();
+        $count = $items->count();
+
+        $description = '-';
+        if ($first !== null && $first->menu !== null) {
+            $description = $first->menu->name.' x'.$first->quantity
+                .($count > 1 ? ' +'.($count - 1).' lainnya' : '');
+        }
+
+        return [
+            'id' => $order->order_number,
+            'db_id' => $order->id,
+            'description' => $description,
+            'total' => (int) $order->total_amount,
+            'status' => $order->status,
+            'can_void' => $order->status === 'completed',
+        ];
+    }
+
+    /**
+     * Laporan harian penjualan & pembelian (FR-037): Σ pesanan selesai & stock-in pada tanggal.
+     *
+     * @return array<string, mixed>
+     */
+    private function dailyReport(Request $request): array
+    {
+        $reportDate = $request->string('report_date')->toString();
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $reportDate) !== 1) {
+            $reportDate = now()->toDateString();
+        }
+
+        $orders = SalesOrder::with('items.menu')
+            ->whereDate('created_at', $reportDate)
+            ->orderByDesc('id')
+            ->get();
+
+        $completed = $orders->where('status', 'completed');
+
+        $purchases = StockMovement::with('ingredient')
+            ->where('type', 'purchase')
+            ->whereDate('created_at', $reportDate)
+            ->orderByDesc('id')
+            ->get();
+
+        $purchaseValue = $purchases->reduce(
+            fn (string $carry, StockMovement $movement) => bcadd(
+                $carry,
+                bcmul(Number::str($movement->qty_change), Number::str($movement->unit_price ?? '0'), 2),
+                2,
+            ),
+            '0',
+        );
+
+        return [
+            'date' => $reportDate,
+            'sales' => [
+                'orders' => $completed->count(),
+                'revenue' => (int) $completed->sum('total_amount'),
+                'items' => (int) $completed->sum(fn (SalesOrder $order): int => (int) $order->items->sum('quantity')),
+                'cash' => (int) $completed->where('payment_method', 'cash')->sum('total_amount'),
+                'qris' => (int) $completed->where('payment_method', 'qris')->sum('total_amount'),
+            ],
+            'purchases' => [
+                'count' => $purchases->count(),
+                'total_value' => (int) $purchaseValue,
+                'items' => $purchases->map(fn (StockMovement $movement): array => [
+                    'ingredient' => $movement->ingredient->name,
+                    'base_unit' => $movement->ingredient->base_unit,
+                    'quantity' => bcadd(Number::str($movement->qty_change), '0', 3),
+                    'unit_price' => bcadd(Number::str($movement->unit_price ?? '0'), '0', 4),
+                    'total' => (int) bcmul(Number::str($movement->qty_change), Number::str($movement->unit_price ?? '0'), 0),
+                    'reason' => $movement->reason,
+                    'created_at' => $movement->created_at?->toIso8601String(),
+                ])->values(),
+            ],
+            'orders' => $orders->map(fn (SalesOrder $order): array => $this->orderRow($order))->values(),
+        ];
     }
 
     /**

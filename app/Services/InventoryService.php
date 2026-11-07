@@ -218,6 +218,57 @@ class InventoryService
         });
     }
 
+    /**
+     * Void pesanan: kembalikan stok dari ledger konsumsi asli (BL §5.5, DEC-13).
+     * Membuat pergerakan `sale_reversal` per bahan; pesanan `void` dikecualikan dari laporan.
+     *
+     * @throws \InvalidArgumentException bila pesanan bukan berstatus `completed`
+     */
+    public function voidOrder(SalesOrder $order, ?User $user = null): SalesOrder
+    {
+        return DB::transaction(function () use ($order, $user): SalesOrder {
+            $order = SalesOrder::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ($order->status !== 'completed') {
+                throw new \InvalidArgumentException('Pesanan '.$order->order_number.' sudah dibatalkan.');
+            }
+
+            // Konsumsi asli dibaca dari ledger (bukan dihitung ulang dari BOM terkini).
+            $movements = StockMovement::where('sales_order_id', $order->id)
+                ->where('type', 'sale')
+                ->get();
+
+            $ingredients = Ingredient::whereIn('id', $movements->pluck('ingredient_id')->unique()->sort()->values())
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            foreach ($movements as $movement) {
+                /** @var Ingredient $ingredient */
+                $ingredient = $ingredients[$movement->ingredient_id];
+                $restore = bcmul(Number::str($movement->qty_change), '-1', 3);
+
+                $ingredient->forceFill([
+                    'current_stock' => bcadd(Number::str($ingredient->current_stock), $restore, 3),
+                ])->save();
+
+                StockMovement::create([
+                    'ingredient_id' => $ingredient->id,
+                    'type' => 'sale_reversal',
+                    'qty_change' => $restore,
+                    'reason' => 'void '.$order->order_number,
+                    'user_id' => $user?->id,
+                    'sales_order_id' => $order->id,
+                ]);
+            }
+
+            $order->forceFill(['status' => 'void'])->save();
+
+            return $order;
+        });
+    }
+
     private function nextOrderNumber(): string
     {
         $date = now()->format('Ymd');
