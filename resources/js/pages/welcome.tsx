@@ -391,7 +391,7 @@ export default function Welcome() {
                             delay: 0.35,
                             ease: [0.22, 1, 0.36, 1],
                         }}
-                        className="relative z-20 mx-auto mt-8 max-w-4xl"
+                        className="relative z-20 mx-auto mt-4 max-w-4xl"
                     >
                         <motion.div
                             animate={{ y: [0, -12, 0] }}
