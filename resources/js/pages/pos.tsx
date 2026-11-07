@@ -15,6 +15,7 @@ type PosMenu = {
     id: number;
     name: string;
     category: Category;
+    image_url: string | null;
     selling_price: number | string;
     portions_available: number;
 };
@@ -125,10 +126,18 @@ export default function Pos({ menus }: Props) {
                                         className="flex flex-col gap-3 fx-card p-4 text-left transition-colors duration-200 hover:bg-hover-soft"
                                     >
                                         <div className="flex items-center justify-between">
-                                            <IconCircle
-                                                icon={Icon}
-                                                tone="soft"
-                                            />
+                                            {m.image_url ? (
+                                                <img
+                                                    src={m.image_url}
+                                                    alt={m.name}
+                                                    className="size-11 rounded-2xl object-cover"
+                                                />
+                                            ) : (
+                                                <IconCircle
+                                                    icon={Icon}
+                                                    tone="soft"
+                                                />
+                                            )}
                                             <span
                                                 className={`text-[11px] font-semibold ${low ? 'text-danger' : 'text-success'}`}
                                             >

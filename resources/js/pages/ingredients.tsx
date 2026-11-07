@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     ArrowDownToLine,
     Ban,
@@ -23,6 +23,7 @@ import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageHeader from '@/components/page-header';
 import { formatPercent, formatRupiah } from '@/lib/format';
+import { isOwner } from '@/lib/permissions';
 
 type BaseUnit = 'gram' | 'ml' | 'pcs';
 type Abc = 'A' | 'B' | 'C';
@@ -108,6 +109,7 @@ const formatQty = (value: string | number): string =>
     );
 
 export default function Ingredients({ ingredients, meta }: Props) {
+    const owner = isOwner(usePage().props.auth.user);
     const [query, setQuery] = useState('');
     const [lowOnly, setLowOnly] = useState(false);
 
@@ -276,13 +278,15 @@ export default function Ingredients({ ingredients, meta }: Props) {
                             title="Bahan Baku"
                             description="Master bahan, stok, biaya rata-rata (WAC), dan riwayat harga."
                         />
-                        <FxButton
-                            variant="coral"
-                            onClick={() => setCreateOpen(true)}
-                        >
-                            <Plus className="size-4" />
-                            Tambah bahan
-                        </FxButton>
+                        {owner ? (
+                            <FxButton
+                                variant="coral"
+                                onClick={() => setCreateOpen(true)}
+                            >
+                                <Plus className="size-4" />
+                                Tambah bahan
+                            </FxButton>
+                        ) : null}
                     </div>
                 </Reveal>
 
@@ -499,33 +503,41 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                                 </td>
                                                 <td className="px-3 py-3">
                                                     <div className="flex items-center justify-center gap-1">
-                                                        <FxIconButton
-                                                            title="Edit bahan"
-                                                            aria-label="Edit bahan"
-                                                            onClick={() =>
-                                                                setEdit(i)
-                                                            }
-                                                        >
-                                                            <Pencil className="size-4" />
-                                                        </FxIconButton>
-                                                        <FxIconButton
-                                                            title="Stock-in pembelian"
-                                                            aria-label="Stock-in pembelian"
-                                                            onClick={() =>
-                                                                setStockIn(i)
-                                                            }
-                                                        >
-                                                            <ArrowDownToLine className="size-4" />
-                                                        </FxIconButton>
-                                                        <FxIconButton
-                                                            title="Update harga penawaran"
-                                                            aria-label="Update harga penawaran"
-                                                            onClick={() =>
-                                                                setQuote(i)
-                                                            }
-                                                        >
-                                                            <Tag className="size-4" />
-                                                        </FxIconButton>
+                                                        {owner ? (
+                                                            <FxIconButton
+                                                                title="Edit bahan"
+                                                                aria-label="Edit bahan"
+                                                                onClick={() =>
+                                                                    setEdit(i)
+                                                                }
+                                                            >
+                                                                <Pencil className="size-4" />
+                                                            </FxIconButton>
+                                                        ) : null}
+                                                        {owner ? (
+                                                            <FxIconButton
+                                                                title="Stock-in pembelian"
+                                                                aria-label="Stock-in pembelian"
+                                                                onClick={() =>
+                                                                    setStockIn(
+                                                                        i,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <ArrowDownToLine className="size-4" />
+                                                            </FxIconButton>
+                                                        ) : null}
+                                                        {owner ? (
+                                                            <FxIconButton
+                                                                title="Update harga penawaran"
+                                                                aria-label="Update harga penawaran"
+                                                                onClick={() =>
+                                                                    setQuote(i)
+                                                                }
+                                                            >
+                                                                <Tag className="size-4" />
+                                                            </FxIconButton>
+                                                        ) : null}
                                                         <FxIconButton
                                                             title="Sesuaikan stok (waste/opname)"
                                                             aria-label="Sesuaikan stok (waste/opname)"
@@ -544,7 +556,8 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                                         >
                                                             <Clock className="size-4" />
                                                         </FxIconButton>
-                                                        {i.is_active ? (
+                                                        {owner &&
+                                                        i.is_active ? (
                                                             <FxIconButton
                                                                 tone="danger"
                                                                 title="Nonaktifkan bahan"
