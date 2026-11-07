@@ -11,13 +11,13 @@ type Tone =
 type Size = 'sm' | 'md' | 'lg';
 
 const tones: Record<Tone, string> = {
-    soft: 'bg-[rgba(22,22,21,0.05)] text-foreground',
-    coral: 'bg-[#FDECE7] text-[#EC582A]',
-    coralSolid: 'bg-[#EC582A] text-white',
+    soft: 'bg-foreground/5 text-foreground',
+    coral: 'bg-coral-soft text-primary',
+    coralSolid: 'bg-primary text-primary-foreground',
     white: 'bg-white/20 text-white',
-    success: 'bg-[#E6F5EC] text-[#1D9E53]',
-    warning: 'bg-[#FEF3D6] text-[#9A6B00]',
-    danger: 'bg-[#FCEAE8] text-[#D93829]',
+    success: 'bg-success-soft text-success',
+    warning: 'bg-warning-soft text-warning-ink',
+    danger: 'bg-danger-soft text-danger',
 };
 
 const sizes: Record<Size, string> = {

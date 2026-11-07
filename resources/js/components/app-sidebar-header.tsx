@@ -1,5 +1,6 @@
 import { Bell } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
 
@@ -15,13 +16,16 @@ export function AppSidebarHeader({
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
 
-            <button
-                type="button"
-                aria-label="Notifikasi"
-                className="ml-auto flex size-11 items-center justify-center fx-pill text-muted-foreground transition-colors hover:text-foreground"
-            >
-                <Bell className="size-[18px]" />
-            </button>
+            <div className="ml-auto flex items-center gap-2">
+                <ThemeToggle />
+                <button
+                    type="button"
+                    aria-label="Notifikasi"
+                    className="flex size-11 items-center justify-center fx-pill text-muted-foreground transition-colors hover:text-primary"
+                >
+                    <Bell className="size-[18px]" />
+                </button>
+            </div>
         </header>
     );
 }
