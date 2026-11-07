@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 #[Fillable([
-    'name', 'category', 'selling_price', 'overhead',
+    'name', 'category', 'image_path', 'selling_price', 'overhead',
     'current_hpp', 'margin_pct', 'status',
     'projected_hpp', 'projected_margin_pct', 'projected_status', 'is_active',
 ])]

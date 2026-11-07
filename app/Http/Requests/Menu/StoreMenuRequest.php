@@ -20,6 +20,7 @@ class StoreMenuRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:100', $this->uniqueName()],
             'category' => ['required', 'in:Kopi,Non-Kopi,Makanan'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'selling_price' => ['required', 'integer', 'min:1'],
             'overhead' => ['nullable', 'integer', 'min:0'],
         ];
