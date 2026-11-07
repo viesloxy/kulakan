@@ -265,7 +265,7 @@ export default function Welcome() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                        className="mx-auto max-w-3xl text-5xl leading-[1.04] font-bold tracking-tight text-balance sm:text-6xl lg:text-7xl"
+                        className="mx-auto max-w-3xl text-5xl leading-[1.04] font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl"
                     >
                         Stok, HPP, dan margin warungmu, terhitung otomatis.
                     </motion.h1>
@@ -398,7 +398,7 @@ export default function Welcome() {
                             <TriangleAlert className="size-3.5" />
                             Masalah yang diselesaikan
                         </span>
-                        <h2 className="mt-4 text-4xl font-bold tracking-tight text-balance">
+                        <h2 className="mt-4 text-4xl font-semibold tracking-tight text-balance">
                             Tiga hal yang menggerus laba warung
                         </h2>
                         <p className="mt-3 text-muted-foreground">
@@ -437,7 +437,7 @@ export default function Welcome() {
                             <Calculator className="size-3.5" />
                             Empat kapabilitas inti
                         </span>
-                        <h2 className="mt-4 text-4xl font-bold tracking-tight text-balance">
+                        <h2 className="mt-4 text-4xl font-semibold tracking-tight text-balance">
                             Satu aplikasi untuk belanja, resep, dan laba
                         </h2>
                         <p className="mt-3 text-muted-foreground">
@@ -492,7 +492,7 @@ export default function Welcome() {
                                     <Gauge className="size-3.5" />
                                     Untuk operasi harian
                                 </span>
-                                <h2 className="mt-4 text-4xl font-bold tracking-tight text-balance">
+                                <h2 className="mt-4 text-4xl font-semibold tracking-tight text-balance">
                                     Dirancang untuk kenyataan kedai, bukan
                                     laporan ideal
                                 </h2>
@@ -531,7 +531,7 @@ export default function Welcome() {
                                     <CookingPot className="size-3.5" />
                                     Cara kerja
                                 </span>
-                                <h2 className="mt-4 text-4xl font-bold tracking-tight">
+                                <h2 className="mt-4 text-4xl font-semibold tracking-tight">
                                     Tiga langkah, langsung jalan
                                 </h2>
                                 <p className="mt-3 text-muted-foreground">
@@ -588,7 +588,7 @@ export default function Welcome() {
                             <CircleHelp className="size-3.5" />
                             Pertanyaan umum
                         </span>
-                        <h2 className="mt-4 text-4xl font-bold tracking-tight">
+                        <h2 className="mt-4 text-4xl font-semibold tracking-tight">
                             Hal yang sering ditanyakan
                         </h2>
                     </FadeIn>
@@ -623,7 +623,7 @@ export default function Welcome() {
                             />
                             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(26,18,13,0.82)_0%,rgba(58,26,12,0.72)_55%,rgba(127,26,0,0.78)_100%)]" />
                             <div className="relative flex flex-col items-center gap-5 px-6 py-16 text-center md:py-24">
-                                <h2 className="max-w-2xl text-3xl leading-[1.1] font-bold tracking-tight text-balance text-white md:text-5xl">
+                                <h2 className="max-w-2xl text-3xl leading-[1.1] font-semibold tracking-tight text-balance text-white md:text-5xl">
                                     Siap mengetahui margin sebenarnya dari tiap
                                     menu?
                                 </h2>
