@@ -56,9 +56,34 @@ type IngredientOption = {
 
 type Counts = { profitable: number; watchlist: number; loss: number };
 
+type RankingRow = {
+    menu_id: number;
+    name: string;
+    selling_price: number;
+    quantity_sold: number;
+    revenue: number;
+    cogs: number;
+    gross_profit: number;
+    gross_margin_pct: string | null;
+    contribution_pct: string | null;
+};
+
+type Totals = {
+    revenue: number;
+    cogs: number;
+    gross_profit: number;
+    quantity_sold: number;
+};
+
+type PeriodOption = { key: string; label: string };
+
 type Props = {
     menus: ProfitRow[];
     summary: { total: number; avg_margin: string; counts: Counts };
+    period: string;
+    periods: PeriodOption[];
+    ranking: RankingRow[];
+    totals: Totals;
     ingredients: IngredientOption[];
     filters: { sim_ingredient: number | null; sim_price: string };
     simulation: SimRow[] | null;
@@ -73,11 +98,28 @@ const statusColor: Record<MenuStatus, string> = {
 export default function Profitability({
     menus,
     summary,
+    period,
+    periods,
+    ranking,
+    totals,
     ingredients,
     filters,
     simulation,
 }: Props) {
     const [simOpen, setSimOpen] = useState(false);
+
+    function changePeriod(key: string) {
+        router.get(
+            '/profitabilitas',
+            { period: key },
+            {
+                only: ['period', 'ranking', 'totals'],
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    }
 
     const chartData = menus.map((m) => ({
         name: m.name,
@@ -294,6 +336,152 @@ export default function Profitability({
                         </table>
                     </FxCard>
                 </Reveal>
+
+                <Reveal delay={0.2}>
+                    <FxCard className="flex flex-col gap-4 p-5">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h2 className="text-base font-semibold">
+                                    Ranking menu
+                                </h2>
+                                <p className="text-xs text-muted-foreground">
+                                    Agregat periode dari pesanan selesai (BL
+                                    7.2), diurutkan menurut laba kotor.
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {periods.map((p) => (
+                                    <button
+                                        key={p.key}
+                                        onClick={() => changePeriod(p.key)}
+                                        className={`h-8 rounded-full px-3 text-xs font-semibold transition-colors ${
+                                            period === p.key
+                                                ? 'bg-[#1C1B18] text-white'
+                                                : 'bg-secondary text-foreground hover:bg-[#EBEBE8]'
+                                        }`}
+                                    >
+                                        {p.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-3">
+                            <FxSoft className="flex flex-col gap-3 p-4">
+                                <p className="text-xs text-muted-foreground">
+                                    Revenue
+                                </p>
+                                <p className="text-lg font-bold tabular-nums">
+                                    {formatRupiah(totals.revenue)}
+                                </p>
+                            </FxSoft>
+                            <FxSoft className="flex flex-col gap-3 p-4">
+                                <p className="text-xs text-muted-foreground">
+                                    HPP terjual
+                                </p>
+                                <p className="text-lg font-bold tabular-nums">
+                                    {formatRupiah(totals.cogs)}
+                                </p>
+                            </FxSoft>
+                            <FxSoft className="flex flex-col gap-3 p-4">
+                                <p className="text-xs text-muted-foreground">
+                                    Gross profit
+                                </p>
+                                <p className="text-lg font-bold tabular-nums">
+                                    {formatRupiah(totals.gross_profit)}
+                                </p>
+                            </FxSoft>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-secondary text-left text-xs text-muted-foreground">
+                                        <th className="rounded-l-xl px-3 py-2.5 font-medium">
+                                            #
+                                        </th>
+                                        <th className="px-3 py-2.5 font-medium">
+                                            Menu
+                                        </th>
+                                        <th className="px-3 py-2.5 text-right font-medium">
+                                            Terjual
+                                        </th>
+                                        <th className="px-3 py-2.5 text-right font-medium">
+                                            Revenue
+                                        </th>
+                                        <th className="px-3 py-2.5 text-right font-medium">
+                                            HPP terjual
+                                        </th>
+                                        <th className="px-3 py-2.5 text-right font-medium">
+                                            Gross profit
+                                        </th>
+                                        <th className="px-3 py-2.5 text-right font-medium">
+                                            GM
+                                        </th>
+                                        <th className="rounded-r-xl px-3 py-2.5 text-right font-medium">
+                                            Kontribusi
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {ranking.length === 0 ? (
+                                        <tr>
+                                            <td
+                                                colSpan={8}
+                                                className="px-3 py-6 text-center text-muted-foreground"
+                                            >
+                                                Belum ada penjualan pada periode
+                                                ini.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        ranking.map((r, index) => (
+                                            <tr
+                                                key={r.menu_id}
+                                                className="border-b border-border/60 last:border-0"
+                                            >
+                                                <td className="px-3 py-3 font-semibold text-muted-foreground tabular-nums">
+                                                    {index + 1}
+                                                </td>
+                                                <td className="px-3 py-3 font-medium">
+                                                    {r.name}
+                                                </td>
+                                                <td className="px-3 py-3 text-right tabular-nums">
+                                                    {r.quantity_sold}
+                                                </td>
+                                                <td className="px-3 py-3 text-right tabular-nums">
+                                                    {formatRupiah(r.revenue)}
+                                                </td>
+                                                <td className="px-3 py-3 text-right tabular-nums">
+                                                    {formatRupiah(r.cogs)}
+                                                </td>
+                                                <td className="px-3 py-3 text-right font-semibold tabular-nums">
+                                                    {formatRupiah(
+                                                        r.gross_profit,
+                                                    )}
+                                                </td>
+                                                <td className="px-3 py-3 text-right tabular-nums">
+                                                    {r.gross_margin_pct !== null
+                                                        ? formatPercent(
+                                                              r.gross_margin_pct,
+                                                          )
+                                                        : '-'}
+                                                </td>
+                                                <td className="px-3 py-3 text-right tabular-nums">
+                                                    {r.contribution_pct !== null
+                                                        ? formatPercent(
+                                                              r.contribution_pct,
+                                                          )
+                                                        : '-'}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </FxCard>
+                </Reveal>
             </div>
 
             {simOpen ? (
@@ -302,11 +490,12 @@ export default function Profitability({
                     initialIngredientId={filters.sim_ingredient}
                     initialPrice={filters.sim_price}
                     simulation={simulation}
+                    period={period}
                     onClose={() => {
                         setSimOpen(false);
                         router.get(
                             '/profitabilitas',
-                            {},
+                            { period },
                             {
                                 only: ['simulation'],
                                 preserveState: true,
@@ -326,12 +515,14 @@ function SimulateModal({
     initialIngredientId,
     initialPrice,
     simulation,
+    period,
     onClose,
 }: {
     ingredients: IngredientOption[];
     initialIngredientId: number | null;
     initialPrice: string;
     simulation: SimRow[] | null;
+    period: string;
     onClose: () => void;
 }) {
     const first = ingredients[0];
@@ -352,7 +543,7 @@ function SimulateModal({
         const timer = window.setTimeout(() => {
             router.get(
                 '/profitabilitas',
-                { sim_ingredient: ingredientId, sim_price: price },
+                { sim_ingredient: ingredientId, sim_price: price, period },
                 {
                     only: ['simulation'],
                     preserveState: true,
@@ -363,7 +554,7 @@ function SimulateModal({
         }, 300);
 
         return () => window.clearTimeout(timer);
-    }, [ingredientId, price]);
+    }, [ingredientId, price, period]);
 
     if (!first || !target) {
         return (
