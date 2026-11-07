@@ -89,10 +89,11 @@ type Props = {
     simulation: SimRow[] | null;
 };
 
+// Warna batang mengikuti token tone status agar ikut menyesuaikan dark mode.
 const statusColor: Record<MenuStatus, string> = {
-    profitable: '#1D9E53',
-    watchlist: '#F2B824',
-    loss: '#D93829',
+    profitable: 'var(--success)',
+    watchlist: 'var(--warning)',
+    loss: 'var(--danger)',
 };
 
 export default function Profitability({
@@ -239,7 +240,10 @@ export default function Profitability({
                                         type="number"
                                         domain={[0, 100]}
                                         tickFormatter={(v: number) => `${v}%`}
-                                        tick={{ fontSize: 12, fill: '#6E6E6A' }}
+                                        tick={{
+                                            fontSize: 12,
+                                            fill: 'var(--muted-foreground)',
+                                        }}
                                         axisLine={false}
                                         tickLine={false}
                                     />
@@ -247,12 +251,15 @@ export default function Profitability({
                                         type="category"
                                         dataKey="name"
                                         width={148}
-                                        tick={{ fontSize: 12, fill: '#161615' }}
+                                        tick={{
+                                            fontSize: 12,
+                                            fill: 'var(--foreground)',
+                                        }}
                                         axisLine={false}
                                         tickLine={false}
                                     />
                                     <Tooltip
-                                        cursor={{ fill: 'rgba(22,22,21,0.04)' }}
+                                        cursor={{ fill: 'var(--hover-soft)' }}
                                         formatter={(value) => [
                                             `${Number(value).toFixed(2)}%`,
                                             'Margin',
@@ -261,6 +268,8 @@ export default function Profitability({
                                             borderRadius: 12,
                                             border: 'none',
                                             fontSize: 12,
+                                            backgroundColor: 'var(--card)',
+                                            color: 'var(--foreground)',
                                         }}
                                     />
                                     <Bar
@@ -354,10 +363,10 @@ export default function Profitability({
                                     <button
                                         key={p.key}
                                         onClick={() => changePeriod(p.key)}
-                                        className={`h-8 rounded-full px-3 text-xs font-semibold transition-colors ${
+                                        className={`h-8 rounded-full px-3 text-xs font-semibold transition-all duration-200 ${
                                             period === p.key
-                                                ? 'bg-[#1C1B18] text-white'
-                                                : 'bg-secondary text-foreground hover:bg-[#EBEBE8]'
+                                                ? 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)]'
+                                                : 'bg-secondary text-foreground hover:bg-hover-soft'
                                         }`}
                                     >
                                         {p.label}

@@ -4,9 +4,9 @@ type Variant = 'coral' | 'dark' | 'soft';
 type Size = 'md' | 'lg' | 'icon';
 
 const variants: Record<Variant, string> = {
-    coral: 'bg-gradient-to-br from-[#F57B54] to-[#E84B20] text-white shadow-[0_10px_24px_rgba(236,88,42,0.22)] hover:-translate-y-0.5',
-    dark: 'bg-[#1C1B18] text-white hover:-translate-y-0.5',
-    soft: 'bg-secondary text-foreground hover:bg-[#EBEBE8]',
+    coral: 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)] hover:-translate-y-0.5',
+    dark: 'bg-accent text-accent-foreground hover:-translate-y-0.5',
+    soft: 'bg-secondary text-foreground hover:bg-hover-soft',
 };
 
 const sizes: Record<Size, string> = {

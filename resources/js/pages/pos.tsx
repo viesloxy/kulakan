@@ -130,7 +130,7 @@ export default function Pos({ menus }: Props) {
                                                 tone="coral"
                                             />
                                             <span
-                                                className={`text-[11px] font-semibold ${low ? 'text-[#D93829]' : 'text-[#1D9E53]'}`}
+                                                className={`text-[11px] font-semibold ${low ? 'text-danger' : 'text-success'}`}
                                             >
                                                 Sisa {m.portions_available}
                                             </span>
@@ -189,7 +189,7 @@ export default function Pos({ menus }: Props) {
                                                     onClick={() =>
                                                         setQty(menu.id, qty - 1)
                                                     }
-                                                    className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-[#EBEBE8]"
+                                                    className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
                                                     aria-label="Kurangi"
                                                 >
                                                     <Minus className="size-3.5" />
@@ -201,7 +201,7 @@ export default function Pos({ menus }: Props) {
                                                     onClick={() =>
                                                         setQty(menu.id, qty + 1)
                                                     }
-                                                    className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-[#EBEBE8]"
+                                                    className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
                                                     aria-label="Tambah"
                                                 >
                                                     <Plus className="size-3.5" />
@@ -217,7 +217,7 @@ export default function Pos({ menus }: Props) {
                                                 onClick={() =>
                                                     setQty(menu.id, 0)
                                                 }
-                                                className="text-muted-foreground transition-colors hover:text-[#D93829]"
+                                                className="text-muted-foreground transition-colors hover:text-danger"
                                                 aria-label="Hapus"
                                             >
                                                 <Trash2 className="size-4" />
@@ -241,10 +241,10 @@ export default function Pos({ menus }: Props) {
                                     <button
                                         key={p}
                                         onClick={() => setPayment(p)}
-                                        className={`h-10 rounded-full text-sm font-semibold transition-colors ${
+                                        className={`h-10 rounded-full text-sm font-semibold transition-all duration-200 ${
                                             payment === p
-                                                ? 'bg-[#1C1B18] text-white'
-                                                : 'bg-secondary text-foreground hover:bg-[#EBEBE8]'
+                                                ? 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)]'
+                                                : 'bg-secondary text-foreground hover:bg-hover-soft'
                                         }`}
                                     >
                                         {p === 'cash' ? 'Tunai' : 'QRIS'}

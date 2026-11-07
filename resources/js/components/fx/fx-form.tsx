@@ -33,7 +33,7 @@ export function FxField({
 }
 
 const fieldClass =
-    'h-11 w-full rounded-2xl border-0 bg-secondary px-4 text-sm text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus:ring-2 focus:ring-[#EC582A]/30';
+    'h-11 w-full rounded-2xl border-0 bg-secondary px-4 text-sm text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30';
 
 export function FxInput({ className = '', ...props }: ComponentProps<'input'>) {
     return <input className={`${fieldClass} ${className}`} {...props} />;

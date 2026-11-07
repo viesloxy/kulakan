@@ -60,6 +60,19 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    --color-success: var(--success);
+    --color-success-soft: var(--success-soft);
+    --color-warning: var(--warning);
+    --color-warning-ink: var(--warning-ink);
+    --color-warning-soft: var(--warning-soft);
+    --color-danger: var(--danger);
+    --color-danger-soft: var(--danger-soft);
+    --color-coral: var(--coral);
+    --color-coral-soft: var(--coral-soft);
+    --color-info: var(--info);
+    --color-info-soft: var(--info-soft);
+    --color-hover-soft: var(--hover-soft);
 }
 
 :root {
@@ -96,6 +109,20 @@
     --sidebar-accent-foreground: #1c1b18;
     --sidebar-border: #ecece9;
     --sidebar-ring: #ec582a;
+
+    /* tone status (Finexy) - teks & permukaan lembut */
+    --success: #1d9e53;
+    --success-soft: #e6f5ec;
+    --warning: #f2b824;
+    --warning-ink: #9a6b00;
+    --warning-soft: #fef3d6;
+    --danger: #d93829;
+    --danger-soft: #fceae8;
+    --coral: #ec582a;
+    --coral-soft: #fdece7;
+    --info: #2b6be6;
+    --info-soft: #e7eefc;
+    --hover-soft: #ebebe8;
 }
 
 .dark {
@@ -131,6 +158,20 @@
     --sidebar-accent-foreground: #f5f5f3;
     --sidebar-border: #2c2c29;
     --sidebar-ring: #ec582a;
+
+    /* tone status versi gelap: tint transparan + teks lebih terang agar terbaca */
+    --success: #4ade80;
+    --success-soft: rgba(74, 222, 128, 0.14);
+    --warning: #f2b824;
+    --warning-ink: #f2b824;
+    --warning-soft: rgba(242, 184, 36, 0.14);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.14);
+    --coral: #f57b54;
+    --coral-soft: rgba(236, 88, 42, 0.18);
+    --info: #8ab0f5;
+    --info-soft: rgba(138, 176, 245, 0.14);
+    --hover-soft: #2c2c29;
 }
 
 @utility fx-card {

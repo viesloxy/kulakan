@@ -6,18 +6,18 @@ const config: Record<
 > = {
     profitable: {
         label: 'Profitable',
-        className: 'bg-[#E6F5EC] text-[#1D9E53]',
-        dot: 'bg-[#1D9E53]',
+        className: 'bg-success-soft text-success',
+        dot: 'bg-success',
     },
     watchlist: {
         label: 'Watchlist',
-        className: 'bg-[#FEF3D6] text-[#9A6B00]',
-        dot: 'bg-[#F2B824]',
+        className: 'bg-warning-soft text-warning-ink',
+        dot: 'bg-warning',
     },
     loss: {
         label: 'Loss',
-        className: 'bg-[#FCEAE8] text-[#D93829]',
-        dot: 'bg-[#D93829]',
+        className: 'bg-danger-soft text-danger',
+        dot: 'bg-danger',
     },
 };
 
