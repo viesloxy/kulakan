@@ -1,6 +1,16 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { motion } from 'motion/react';
-import { ArrowRight, Check, ChevronDown } from 'lucide-react';
+import {
+    ArrowRight,
+    Calculator,
+    Check,
+    ChevronDown,
+    CircleHelp,
+    CookingPot,
+    Gauge,
+    Package,
+    TriangleAlert,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard } from '@/components/fx/fx-card';
@@ -30,14 +40,6 @@ function FadeIn({
     );
 }
 
-function SectionLabel({ children }: { children: ReactNode }) {
-    return (
-        <p className="text-[11px] font-bold tracking-[0.22em] text-primary uppercase">
-            {children}
-        </p>
-    );
-}
-
 const navLinks = [
     ['#masalah', 'Masalah'],
     ['#kapabilitas', 'Kapabilitas'],
@@ -50,16 +52,19 @@ const problems = [
         title: 'Harga bahan naik tak terdeteksi',
         description:
             'Harga cabai naik 20% tapi harga jual tetap. Tanpa pencatatan penawaran, margin tergerus diam-diam sampai akhir bulan.',
+        icon: TriangleAlert,
     },
     {
         title: 'Stok bocor tanpa jejak',
         description:
             'Bahan hilang karena terbuang, rusak, atau salah takar. Buku manual tidak membedakan stok terpakai dan stok terbuang.',
+        icon: Package,
     },
     {
         title: 'Harga jual pakai perasaan',
         description:
             'Meniru warung sebelah tanpa tahu biaya sendiri. Untung terlihat besar di kasir, tapi habis setelah bahan dan overhead dihitung.',
+        icon: Gauge,
     },
 ];
 
@@ -669,26 +674,35 @@ export default function Welcome() {
                     id="masalah"
                     className="relative z-10 mx-auto w-full max-w-6xl scroll-mt-28 px-4 py-20 md:px-6"
                 >
-                    <FadeIn className="max-w-2xl">
-                        <SectionLabel>Yang diselesaikan</SectionLabel>
-                        <h2 className="mt-3 text-3xl font-bold tracking-tight text-balance">
+                    <FadeIn className="mx-auto max-w-2xl text-center">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
+                            <TriangleAlert className="size-3.5" />
+                            Masalah yang diselesaikan
+                        </span>
+                        <h2 className="mt-4 text-3xl font-bold tracking-tight text-balance">
                             Tiga hal yang menggerus laba warung
                         </h2>
+                        <p className="mt-3 text-muted-foreground">
+                            Warung kecil jarang kekurangan penjualan; yang
+                            menipis adalah pemahaman terhadap biaya dan stok.
+                        </p>
                     </FadeIn>
-                    <div className="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-3">
+                    <div className="mt-10 grid gap-4 md:grid-cols-3">
                         {problems.map((p, i) => (
                             <FadeIn key={p.title} delay={0.08 * i}>
-                                <div className="border-t-2 border-border pt-5">
-                                    <span className="text-sm font-bold text-primary tabular-nums">
-                                        0{i + 1}
+                                <FxCard className="flex h-full flex-col gap-4 p-6">
+                                    <span className="flex size-10 items-center justify-center rounded-full bg-foreground/5 text-muted-foreground">
+                                        <p.icon className="size-5" />
                                     </span>
-                                    <h3 className="mt-2 text-lg font-semibold tracking-tight">
-                                        {p.title}
-                                    </h3>
-                                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                                        {p.description}
-                                    </p>
-                                </div>
+                                    <div>
+                                        <h3 className="font-semibold tracking-tight">
+                                            {p.title}
+                                        </h3>
+                                        <p className="mt-1.5 text-sm text-muted-foreground">
+                                            {p.description}
+                                        </p>
+                                    </div>
+                                </FxCard>
                             </FadeIn>
                         ))}
                     </div>
@@ -699,9 +713,12 @@ export default function Welcome() {
                     id="kapabilitas"
                     className="relative z-10 mx-auto w-full max-w-6xl scroll-mt-28 px-4 pb-20 md:px-6"
                 >
-                    <FadeIn className="max-w-2xl">
-                        <SectionLabel>Kapabilitas</SectionLabel>
-                        <h2 className="mt-3 text-3xl font-bold tracking-tight text-balance">
+                    <FadeIn className="mx-auto max-w-2xl text-center">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
+                            <Calculator className="size-3.5" />
+                            Empat kapabilitas inti
+                        </span>
+                        <h2 className="mt-4 text-3xl font-bold tracking-tight text-balance">
                             Satu aplikasi untuk belanja, resep, dan laba
                         </h2>
                         <p className="mt-3 text-muted-foreground">
@@ -722,7 +739,7 @@ export default function Welcome() {
                                             <h3 className="text-lg font-semibold tracking-tight">
                                                 {c.title}
                                             </h3>
-                                            <span className="text-xs font-bold tracking-wide text-primary">
+                                            <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-bold tracking-wide text-muted-foreground">
                                                 {c.code}
                                             </span>
                                         </div>
@@ -748,10 +765,11 @@ export default function Welcome() {
                                 />
                             </div>
                             <div>
-                                <SectionLabel>
+                                <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
+                                    <Gauge className="size-3.5" />
                                     Untuk operasi harian
-                                </SectionLabel>
-                                <h2 className="mt-3 text-3xl font-bold tracking-tight text-balance">
+                                </span>
+                                <h2 className="mt-4 text-3xl font-bold tracking-tight text-balance">
                                     Dirancang untuk kenyataan kedai, bukan
                                     laporan ideal
                                 </h2>
@@ -786,10 +804,11 @@ export default function Welcome() {
                     <FadeIn>
                         <FxCard className="overflow-hidden p-6 md:p-10">
                             <div className="mx-auto max-w-2xl text-center">
-                                <p className="text-[11px] font-bold tracking-[0.22em] text-primary uppercase">
+                                <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
+                                    <CookingPot className="size-3.5" />
                                     Cara kerja
-                                </p>
-                                <h2 className="mt-3 text-3xl font-bold tracking-tight">
+                                </span>
+                                <h2 className="mt-4 text-3xl font-bold tracking-tight">
                                     Tiga langkah, langsung jalan
                                 </h2>
                                 <p className="mt-3 text-muted-foreground">
@@ -841,11 +860,12 @@ export default function Welcome() {
                     id="faq"
                     className="relative z-10 mx-auto w-full max-w-3xl scroll-mt-28 px-4 pb-20 md:px-6"
                 >
-                    <FadeIn>
-                        <p className="text-[11px] font-bold tracking-[0.22em] text-primary uppercase">
-                            FAQ
-                        </p>
-                        <h2 className="mt-3 text-3xl font-bold tracking-tight">
+                    <FadeIn className="text-center">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
+                            <CircleHelp className="size-3.5" />
+                            Pertanyaan umum
+                        </span>
+                        <h2 className="mt-4 text-3xl font-bold tracking-tight">
                             Hal yang sering ditanyakan
                         </h2>
                     </FadeIn>
