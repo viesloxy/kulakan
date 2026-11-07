@@ -7,7 +7,6 @@ import {
     CookingPot,
     Gauge,
     Package,
-    ShoppingBasket,
     Sparkles,
     TriangleAlert,
 } from 'lucide-react';

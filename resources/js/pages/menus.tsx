@@ -1,12 +1,14 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     Coffee,
     CupSoda,
+    ImagePlus,
     Pencil,
     Plus,
     Sandwich,
     Sparkles,
     Trash2,
+    UtensilsCrossed,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -18,6 +20,7 @@ import Reveal from '@/components/motion/reveal';
 import PageHeader from '@/components/page-header';
 import StatusBadge, { type MenuStatus } from '@/components/status-badge';
 import { formatPercent, formatRupiah } from '@/lib/format';
+import { isOwner } from '@/lib/permissions';
 
 type Category = 'Kopi' | 'Non-Kopi' | 'Makanan';
 type BaseUnit = 'gram' | 'ml' | 'pcs';
@@ -37,6 +40,7 @@ type MenuRow = {
     id: number;
     name: string;
     category: Category;
+    image_url: string | null;
     selling_price: number | string;
     overhead: number | string;
     yield_portions: number;
@@ -66,20 +70,17 @@ const fmtQty = (value: string | number): string =>
     );
 
 export default function Menus({ menus, ingredients }: Props) {
+    const owner = isOwner(usePage().props.auth.user);
     const [selectedId, setSelectedId] = useState<number | null>(
         menus[0]?.id ?? null,
     );
     const [createOpen, setCreateOpen] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
     const [bomOpen, setBomOpen] = useState(false);
 
     const selected = menus.find((m) => m.id === selectedId) ?? menus[0] ?? null;
 
-    function handleCreate(data: {
-        name: string;
-        category: Category;
-        price: number;
-        overhead: number;
-    }) {
+    function handleCreate(data: CreateMenuData) {
         router.post(
             '/menu',
             {
@@ -87,6 +88,7 @@ export default function Menus({ menus, ingredients }: Props) {
                 category: data.category,
                 selling_price: data.price,
                 overhead: data.overhead,
+                ...(data.image ? { image: data.image } : {}),
             },
             {
                 preserveScroll: true,
@@ -99,6 +101,35 @@ export default function Menus({ menus, ingredients }: Props) {
                 onError: (errors) =>
                     toast.error(
                         Object.values(errors)[0] ?? 'Gagal menyimpan menu.',
+                    ),
+            },
+        );
+    }
+
+    function handleEdit(data: EditMenuData) {
+        router.post(
+            `/menu/${data.id}`,
+            {
+                _method: 'put',
+                name: data.name,
+                category: data.category,
+                selling_price: data.price,
+                overhead: data.overhead,
+                is_active: data.is_active,
+                ...(data.image ? { image: data.image } : {}),
+                ...(data.removeImage ? { remove_image: true } : {}),
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setEditOpen(false);
+                    toast.success('Menu diperbarui', {
+                        description: `${data.name} disimpan.`,
+                    });
+                },
+                onError: (errors) =>
+                    toast.error(
+                        Object.values(errors)[0] ?? 'Gagal memperbarui menu.',
                     ),
             },
         );
@@ -143,13 +174,15 @@ export default function Menus({ menus, ingredients }: Props) {
                             title="Menu & Resep"
                             description="Kelola menu jual dan susun BOM (resep) agar stok dan HPP terhitung otomatis."
                         />
-                        <FxButton
-                            variant="coral"
-                            onClick={() => setCreateOpen(true)}
-                        >
-                            <Plus className="size-4" />
-                            Tambah menu
-                        </FxButton>
+                        {owner ? (
+                            <FxButton
+                                variant="coral"
+                                onClick={() => setCreateOpen(true)}
+                            >
+                                <Plus className="size-4" />
+                                Tambah menu
+                            </FxButton>
+                        ) : null}
                     </div>
                 </Reveal>
 
@@ -158,13 +191,15 @@ export default function Menus({ menus, ingredients }: Props) {
                         <p className="text-sm text-muted-foreground">
                             Belum ada menu. Tambahkan menu pertama.
                         </p>
-                        <FxButton
-                            variant="coral"
-                            onClick={() => setCreateOpen(true)}
-                        >
-                            <Plus className="size-4" />
-                            Tambah menu
-                        </FxButton>
+                        {owner ? (
+                            <FxButton
+                                variant="coral"
+                                onClick={() => setCreateOpen(true)}
+                            >
+                                <Plus className="size-4" />
+                                Tambah menu
+                            </FxButton>
+                        ) : null}
                     </FxSoft>
                 ) : (
                     <div className="grid items-start gap-5 lg:grid-cols-[1fr_1.35fr]">
@@ -195,14 +230,22 @@ export default function Menus({ menus, ingredients }: Props) {
                                                         : 'fx-soft hover:bg-hover-soft'
                                                 }`}
                                             >
-                                                <IconCircle
-                                                    icon={Icon}
-                                                    tone={
-                                                        active
-                                                            ? 'white'
-                                                            : 'soft'
-                                                    }
-                                                />
+                                                {m.image_url ? (
+                                                    <img
+                                                        src={m.image_url}
+                                                        alt={m.name}
+                                                        className="size-10 rounded-xl object-cover"
+                                                    />
+                                                ) : (
+                                                    <IconCircle
+                                                        icon={Icon}
+                                                        tone={
+                                                            active
+                                                                ? 'white'
+                                                                : 'soft'
+                                                        }
+                                                    />
+                                                )}
                                                 <div className="min-w-0 flex-1">
                                                     <p className="truncate font-semibold">
                                                         {m.name}
@@ -244,16 +287,31 @@ export default function Menus({ menus, ingredients }: Props) {
                             <FxCard className="flex flex-col gap-4 p-5">
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div className="flex items-center gap-3">
-                                        <IconCircle
-                                            icon={
-                                                categoryIcon[selected.category]
-                                            }
-                                            tone="soft"
-                                            size="lg"
-                                        />
+                                        {selected.image_url ? (
+                                            <img
+                                                src={selected.image_url}
+                                                alt={selected.name}
+                                                className="size-12 rounded-2xl object-cover"
+                                            />
+                                        ) : (
+                                            <IconCircle
+                                                icon={
+                                                    categoryIcon[
+                                                        selected.category
+                                                    ]
+                                                }
+                                                tone="soft"
+                                                size="lg"
+                                            />
+                                        )}
                                         <div>
-                                            <h2 className="text-base font-semibold">
+                                            <h2 className="flex items-center gap-2 text-base font-semibold">
                                                 {selected.name}
+                                                {!selected.is_active ? (
+                                                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                        Nonaktif
+                                                    </span>
+                                                ) : null}
                                             </h2>
                                             <p className="text-xs text-muted-foreground">
                                                 {selected.category} · harga jual{' '}
@@ -269,13 +327,28 @@ export default function Menus({ menus, ingredients }: Props) {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <StatusBadge status={selected.status} />
-                                        <FxButton
-                                            variant="soft"
-                                            onClick={() => setBomOpen(true)}
-                                        >
-                                            <Pencil className="size-4" />
-                                            Susun BOM
-                                        </FxButton>
+                                        {owner ? (
+                                            <>
+                                                <FxButton
+                                                    variant="soft"
+                                                    onClick={() =>
+                                                        setEditOpen(true)
+                                                    }
+                                                >
+                                                    <Pencil className="size-4" />
+                                                    Edit menu
+                                                </FxButton>
+                                                <FxButton
+                                                    variant="soft"
+                                                    onClick={() =>
+                                                        setBomOpen(true)
+                                                    }
+                                                >
+                                                    <UtensilsCrossed className="size-4" />
+                                                    Susun BOM
+                                                </FxButton>
+                                            </>
+                                        ) : null}
                                     </div>
                                 </div>
 
@@ -312,13 +385,15 @@ export default function Menus({ menus, ingredients }: Props) {
                                             Menu ini belum punya resep. Susun
                                             BOM agar bisa dijual di POS.
                                         </p>
-                                        <FxButton
-                                            variant="coral"
-                                            onClick={() => setBomOpen(true)}
-                                        >
-                                            <Plus className="size-4" />
-                                            Susun BOM sekarang
-                                        </FxButton>
+                                        {owner ? (
+                                            <FxButton
+                                                variant="coral"
+                                                onClick={() => setBomOpen(true)}
+                                            >
+                                                <Plus className="size-4" />
+                                                Susun BOM sekarang
+                                            </FxButton>
+                                        ) : null}
                                     </FxSoft>
                                 ) : (
                                     <div className="overflow-x-auto">
@@ -494,6 +569,15 @@ export default function Menus({ menus, ingredients }: Props) {
                 onSubmit={handleCreate}
             />
 
+            {editOpen && selected ? (
+                <EditMenuModal
+                    key={selected.id}
+                    menu={selected}
+                    onClose={() => setEditOpen(false)}
+                    onSubmit={handleEdit}
+                />
+            ) : null}
+
             {bomOpen && selected ? (
                 <BomModal
                     key={selected.id}
@@ -507,6 +591,80 @@ export default function Menus({ menus, ingredients }: Props) {
     );
 }
 
+type CreateMenuData = {
+    name: string;
+    category: Category;
+    price: number;
+    overhead: number;
+    image: File | null;
+};
+
+type EditMenuData = {
+    id: number;
+    name: string;
+    category: Category;
+    price: number;
+    overhead: number;
+    is_active: boolean;
+    image: File | null;
+    removeImage: boolean;
+};
+
+function MenuImageField({
+    preview,
+    onPick,
+    onRemove,
+}: {
+    preview: string | null;
+    onPick: (file: File | null) => void;
+    onRemove?: () => void;
+}) {
+    return (
+        <FxField
+            label="Foto menu"
+            hint="JPG, PNG, atau WebP maksimal 2 MB. Opsional; tampil di katalog dan POS."
+        >
+            <div className="flex items-center gap-3">
+                {preview ? (
+                    <img
+                        src={preview}
+                        alt="Pratinjau foto menu"
+                        className="size-14 rounded-2xl object-cover"
+                    />
+                ) : (
+                    <div className="flex size-14 items-center justify-center rounded-2xl bg-secondary text-muted-foreground">
+                        <ImagePlus className="size-5" />
+                    </div>
+                )}
+                <div className="flex flex-col items-start gap-1.5">
+                    <label className="flex cursor-pointer items-center gap-1.5 rounded-full bg-secondary px-3 py-2 text-xs font-semibold transition-colors hover:bg-hover-soft">
+                        <ImagePlus className="size-3.5" />
+                        {preview ? 'Ganti foto' : 'Pilih foto'}
+                        <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            className="hidden"
+                            onChange={(e) => {
+                                onPick(e.target.files?.[0] ?? null);
+                                e.target.value = '';
+                            }}
+                        />
+                    </label>
+                    {preview && onRemove ? (
+                        <button
+                            type="button"
+                            onClick={onRemove}
+                            className="text-xs font-medium text-danger transition-opacity hover:opacity-80"
+                        >
+                            Hapus foto
+                        </button>
+                    ) : null}
+                </div>
+            </div>
+        </FxField>
+    );
+}
+
 function CreateMenuModal({
     open,
     onOpenChange,
@@ -514,17 +672,22 @@ function CreateMenuModal({
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSubmit: (data: {
-        name: string;
-        category: Category;
-        price: number;
-        overhead: number;
-    }) => void;
+    onSubmit: (data: CreateMenuData) => void;
 }) {
     const [name, setName] = useState('');
     const [category, setCategory] = useState<Category>('Kopi');
     const [price, setPrice] = useState('15000');
     const [overhead, setOverhead] = useState('1500');
+    const [image, setImage] = useState<File | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
+
+    function pick(file: File | null) {
+        setImage(file);
+        setPreview((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return file ? URL.createObjectURL(file) : null;
+        });
+    }
 
     function submit() {
         if (!name.trim()) {
@@ -540,6 +703,7 @@ function CreateMenuModal({
             category,
             price: Number(price),
             overhead: Number(overhead) || 0,
+            image,
         });
     }
 
@@ -604,6 +768,144 @@ function CreateMenuModal({
                     value={overhead}
                     onChange={(e) => setOverhead(e.target.value)}
                 />
+            </FxField>
+            <MenuImageField preview={preview} onPick={pick} />
+        </FxModal>
+    );
+}
+
+function EditMenuModal({
+    menu,
+    onClose,
+    onSubmit,
+}: {
+    menu: MenuRow;
+    onClose: () => void;
+    onSubmit: (data: EditMenuData) => void;
+}) {
+    const [name, setName] = useState(menu.name);
+    const [category, setCategory] = useState<Category>(menu.category);
+    const [price, setPrice] = useState(String(menu.selling_price));
+    const [overhead, setOverhead] = useState(String(menu.overhead));
+    const [isActive, setIsActive] = useState(menu.is_active);
+    const [image, setImage] = useState<File | null>(null);
+    const [removeImage, setRemoveImage] = useState(false);
+    const [preview, setPreview] = useState<string | null>(menu.image_url);
+
+    function pick(file: File | null) {
+        setImage(file);
+        setRemoveImage(false);
+        setPreview((prev) => {
+            if (prev && prev !== menu.image_url) URL.revokeObjectURL(prev);
+            return file ? URL.createObjectURL(file) : menu.image_url;
+        });
+    }
+
+    function removePhoto() {
+        if (image) {
+            setImage(null);
+            setPreview(menu.image_url);
+        } else {
+            setRemoveImage(true);
+            setPreview(null);
+        }
+    }
+
+    function submit() {
+        if (!name.trim()) {
+            toast.error('Nama menu wajib diisi.');
+            return;
+        }
+        if (Number(price) <= 0) {
+            toast.error('Harga jual harus lebih dari 0.');
+            return;
+        }
+        onSubmit({
+            id: menu.id,
+            name: name.trim(),
+            category,
+            price: Number(price),
+            overhead: Number(overhead) || 0,
+            is_active: isActive,
+            image,
+            removeImage,
+        });
+    }
+
+    return (
+        <FxModal
+            open
+            onOpenChange={(o) => !o && onClose()}
+            title={`Edit ${menu.name}`}
+            description="Ubah detail menu, foto, atau status ketersediaan."
+            footer={
+                <>
+                    <FxButton variant="soft" onClick={onClose}>
+                        Batal
+                    </FxButton>
+                    <FxButton variant="coral" onClick={submit}>
+                        Simpan perubahan
+                    </FxButton>
+                </>
+            }
+        >
+            <FxField label="Nama menu">
+                <FxInput
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                />
+            </FxField>
+            <div className="grid gap-3 sm:grid-cols-2">
+                <FxField label="Kategori">
+                    <FxSelect
+                        value={category}
+                        onChange={(e) =>
+                            setCategory(e.target.value as Category)
+                        }
+                    >
+                        {categories.map((c) => (
+                            <option key={c} value={c}>
+                                {c}
+                            </option>
+                        ))}
+                    </FxSelect>
+                </FxField>
+                <FxField label="Harga jual">
+                    <FxInput
+                        type="number"
+                        min="0"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                    />
+                </FxField>
+            </div>
+            <FxField
+                label="Overhead standar per porsi"
+                hint="Listrik, tenaga kerja; kemasan dimodelkan sebagai bahan."
+            >
+                <FxInput
+                    type="number"
+                    min="0"
+                    value={overhead}
+                    onChange={(e) => setOverhead(e.target.value)}
+                />
+            </FxField>
+            <MenuImageField
+                preview={preview}
+                onPick={pick}
+                onRemove={preview || image ? removePhoto : undefined}
+            />
+            <FxField
+                label="Status menu"
+                hint="Menu nonaktif tidak muncul di POS dan tidak bisa dijual."
+            >
+                <FxSelect
+                    value={isActive ? '1' : '0'}
+                    onChange={(e) => setIsActive(e.target.value === '1')}
+                >
+                    <option value="1">Aktif</option>
+                    <option value="0">Nonaktif</option>
+                </FxSelect>
             </FxField>
         </FxModal>
     );

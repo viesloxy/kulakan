@@ -45,6 +45,7 @@ composer install
 npm install
 docker compose up -d db         # start PostgreSQL 16
 php artisan key:generate
+php artisan storage:link        # publikasikan storage (foto menu)
 php artisan migrate --seed
 npm run dev                     # Vite dev server
 php artisan serve               # buka http://localhost:8000

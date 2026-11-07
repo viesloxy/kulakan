@@ -14,6 +14,7 @@ use App\Services\CostingService;
 use App\Support\Number;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -50,6 +51,7 @@ class MenuController extends Controller
         $menu = Menu::create([
             'name' => $data['name'],
             'category' => $data['category'],
+            'image_path' => $this->storeImage($request),
             'selling_price' => $data['selling_price'],
             'overhead' => $data['overhead'] ?? 0,
             'is_active' => true,
@@ -62,7 +64,17 @@ class MenuController extends Controller
 
     public function update(UpdateMenuRequest $request, Menu $menu): RedirectResponse
     {
-        $menu->fill($request->validated())->save();
+        $data = $request->validated();
+
+        if ($request->hasFile('image')) {
+            $this->deleteImage($menu);
+            $data['image_path'] = $this->storeImage($request);
+        } elseif ($request->boolean('remove_image')) {
+            $this->deleteImage($menu);
+            $data['image_path'] = null;
+        }
+
+        $menu->fill($data)->save();
 
         $this->costing->recalculateMenu($menu->fresh());
 
@@ -147,6 +159,9 @@ class MenuController extends Controller
             'id' => $menu->id,
             'name' => $menu->name,
             'category' => $menu->category ?? 'Kopi',
+            'image_url' => $menu->image_path !== null
+                ? Storage::disk('public')->url($menu->image_path)
+                : null,
             'selling_price' => $menu->selling_price,
             'overhead' => $menu->overhead,
             'yield_portions' => max(1, $recipe !== null ? (int) $recipe->yield_portions : 1),
@@ -169,5 +184,29 @@ class MenuController extends Controller
     private function roundMoney(string $value): string
     {
         return bcadd(Number::str($value), '0', 2);
+    }
+
+    /**
+     * Simpan gambar menu yang diunggah ke disk public.
+     */
+    private function storeImage(StoreMenuRequest|UpdateMenuRequest $request): ?string
+    {
+        if (! $request->hasFile('image')) {
+            return null;
+        }
+
+        $path = $request->file('image')?->store('menus', 'public');
+
+        return is_string($path) ? $path : null;
+    }
+
+    /**
+     * Hapus file gambar lama dari disk public (bila ada).
+     */
+    private function deleteImage(Menu $menu): void
+    {
+        if ($menu->image_path !== null) {
+            Storage::disk('public')->delete($menu->image_path);
+        }
     }
 }
