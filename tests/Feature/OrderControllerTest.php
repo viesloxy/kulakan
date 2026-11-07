@@ -52,6 +52,24 @@ it('menolak pesanan bila stok tidak cukup (FR-015, BR-032)', function () {
     expect(SalesOrder::count())->toBe(7); // tidak ada pesanan baru
 });
 
+it('mencegah pemotongan ganda dengan idempotency key (FR-016)', function () {
+    $biji = Ingredient::where('name', 'Biji Kopi Arabika')->firstOrFail();
+    $menu = Menu::where('name', 'Es Kopi Susu Aren')->firstOrFail();
+    $before = (string) $biji->current_stock;
+
+    $payload = [
+        'lines' => [['menu_id' => $menu->id, 'quantity' => 10]],
+        'payment_method' => 'cash',
+        'idempotency_key' => 'test-key-12345',
+    ];
+
+    $this->actingAs($this->staff)->post('/pos', $payload)->assertRedirect();
+    $this->actingAs($this->staff)->post('/pos', $payload)->assertRedirect();
+
+    expect(SalesOrder::count())->toBe(8)
+        ->and(bcsub($before, (string) $biji->fresh()->current_stock, 3))->toBe('210.000');
+});
+
 it('tamu diarahkan ke halaman login', function () {
     $this->get('/pos')->assertRedirect('/login');
 });

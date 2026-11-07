@@ -1,11 +1,14 @@
 import { Head, router } from '@inertiajs/react';
 import {
     ArrowDownToLine,
+    Ban,
     Box,
     Clock,
     PackageOpen,
+    Pencil,
     Plus,
     Search,
+    SlidersHorizontal,
     Tag,
     TrendingUp,
     TriangleAlert,
@@ -24,6 +27,16 @@ type BaseUnit = 'gram' | 'ml' | 'pcs';
 type Abc = 'A' | 'B' | 'C';
 type StockStatus = 'low' | 'near' | 'safe';
 
+type PriceHistoryRow = {
+    id: number;
+    type: 'purchase' | 'quote';
+    old_value: string | null;
+    new_value: string;
+    reason: string | null;
+    change_pct: string | null;
+    created_at: string | null;
+};
+
 type IngredientRow = {
     id: number;
     name: string;
@@ -41,6 +54,7 @@ type IngredientRow = {
     stock_status: StockStatus;
     price_change_pct: string;
     quote_change_pct: string;
+    price_history: PriceHistoryRow[];
 };
 
 type Props = {
@@ -100,6 +114,8 @@ export default function Ingredients({ ingredients, meta }: Props) {
     const [stockIn, setStockIn] = useState<IngredientRow | null>(null);
     const [quote, setQuote] = useState<IngredientRow | null>(null);
     const [history, setHistory] = useState<IngredientRow | null>(null);
+    const [adjust, setAdjust] = useState<IngredientRow | null>(null);
+    const [edit, setEdit] = useState<IngredientRow | null>(null);
 
     const rows = useMemo(
         () =>
@@ -171,6 +187,60 @@ export default function Ingredients({ ingredients, meta }: Props) {
                     ),
             },
         );
+    }
+
+    function handleAdjust(
+        target: IngredientRow,
+        type: 'waste' | 'adjustment',
+        qtyChange: number,
+        reason: string,
+    ) {
+        router.post(
+            `/bahan-baku/${target.id}/adjustments`,
+            { type, qty_change: qtyChange, reason },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setAdjust(null);
+                    toast.success('Penyesuaian stok tercatat', {
+                        description: `${target.name}: ${qtyChange > 0 ? '+' : ''}${qtyChange} ${unitShort[target.base_unit]}.`,
+                    });
+                },
+                onError: (errors) =>
+                    toast.error(
+                        Object.values(errors)[0] ??
+                            'Gagal menyimpan penyesuaian.',
+                    ),
+            },
+        );
+    }
+
+    function handleUpdate(
+        target: IngredientRow,
+        data: Record<string, string | number | boolean>,
+    ) {
+        router.put(`/bahan-baku/${target.id}`, data, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setEdit(null);
+                toast.success('Bahan diperbarui');
+            },
+            onError: (errors) =>
+                toast.error(
+                    Object.values(errors)[0] ?? 'Gagal memperbarui bahan.',
+                ),
+        });
+    }
+
+    function handleDeactivate(target: IngredientRow) {
+        router.delete(`/bahan-baku/${target.id}`, {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Bahan dinonaktifkan'),
+            onError: (errors) =>
+                toast.error(
+                    Object.values(errors)[0] ?? 'Gagal menonaktifkan bahan.',
+                ),
+        });
     }
 
     const kpis = [
@@ -430,6 +500,16 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                                     <div className="flex items-center justify-center gap-1">
                                                         <button
                                                             type="button"
+                                                            title="Edit bahan"
+                                                            onClick={() =>
+                                                                setEdit(i)
+                                                            }
+                                                            className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-[#EBEBE8] hover:text-foreground"
+                                                        >
+                                                            <Pencil className="size-4" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
                                                             title="Stock-in pembelian"
                                                             onClick={() =>
                                                                 setStockIn(i)
@@ -450,6 +530,16 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                                         </button>
                                                         <button
                                                             type="button"
+                                                            title="Sesuaikan stok (waste/opname)"
+                                                            onClick={() =>
+                                                                setAdjust(i)
+                                                            }
+                                                            className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-[#D93829] hover:text-white"
+                                                        >
+                                                            <SlidersHorizontal className="size-4" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
                                                             title="Riwayat harga"
                                                             onClick={() =>
                                                                 setHistory(i)
@@ -458,6 +548,20 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                                         >
                                                             <Clock className="size-4" />
                                                         </button>
+                                                        {i.is_active ? (
+                                                            <button
+                                                                type="button"
+                                                                title="Nonaktifkan bahan"
+                                                                onClick={() =>
+                                                                    handleDeactivate(
+                                                                        i,
+                                                                    )
+                                                                }
+                                                                className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-[#D93829] hover:text-white"
+                                                            >
+                                                                <Ban className="size-4" />
+                                                            </button>
+                                                        ) : null}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -510,6 +614,24 @@ export default function Ingredients({ ingredients, meta }: Props) {
                     key={history.id}
                     target={history}
                     onClose={() => setHistory(null)}
+                />
+            ) : null}
+
+            {adjust ? (
+                <AdjustModal
+                    key={adjust.id}
+                    target={adjust}
+                    onClose={() => setAdjust(null)}
+                    onSubmit={handleAdjust}
+                />
+            ) : null}
+
+            {edit ? (
+                <EditIngredientModal
+                    key={edit.id}
+                    target={edit}
+                    onClose={() => setEdit(null)}
+                    onSubmit={handleUpdate}
                 />
             ) : null}
         </>
@@ -803,6 +925,130 @@ function QuoteModal({
     );
 }
 
+function EditIngredientModal({
+    target,
+    onClose,
+    onSubmit,
+}: {
+    target: IngredientRow;
+    onClose: () => void;
+    onSubmit: (
+        target: IngredientRow,
+        data: Record<string, string | number | boolean>,
+    ) => void;
+}) {
+    const [name, setName] = useState(target.name);
+    const [minStock, setMinStock] = useState(target.minimum_stock);
+    const [leadTime, setLeadTime] = useState(String(target.lead_time_days));
+    const [packSize, setPackSize] = useState(target.package_size ?? '1');
+    const [packPrice, setPackPrice] = useState(
+        String(target.package_price ?? 0),
+    );
+    const [active, setActive] = useState(target.is_active);
+
+    function submit() {
+        if (!name.trim()) {
+            toast.error('Nama bahan wajib diisi.');
+            return;
+        }
+        onSubmit(target, {
+            name: name.trim(),
+            minimum_stock: minStock || '0',
+            lead_time_days: Number(leadTime) || 0,
+            package_size: packSize || '1',
+            package_price: Number(packPrice) || 0,
+            is_active: active,
+        });
+    }
+
+    return (
+        <FxModal
+            open
+            onOpenChange={(o) => !o && onClose()}
+            title={`Edit ${target.name}`}
+            description={`Satuan dasar ${unitLabel[target.base_unit]}. WAC diperbarui lewat Stock-in, bukan di sini.`}
+            footer={
+                <>
+                    <FxButton variant="soft" onClick={onClose}>
+                        Batal
+                    </FxButton>
+                    <FxButton variant="coral" onClick={submit}>
+                        Simpan perubahan
+                    </FxButton>
+                </>
+            }
+        >
+            <FxField label="Nama bahan">
+                <FxInput
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                />
+            </FxField>
+            <div className="grid gap-3 sm:grid-cols-2">
+                <FxField label="Stok minimum">
+                    <FxInput
+                        type="number"
+                        min="0"
+                        value={minStock}
+                        onChange={(e) => setMinStock(e.target.value)}
+                    />
+                </FxField>
+                <FxField label="Lead time (hari)">
+                    <FxInput
+                        type="number"
+                        min="0"
+                        value={leadTime}
+                        onChange={(e) => setLeadTime(e.target.value)}
+                    />
+                </FxField>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+                <FxField
+                    label={`Ukuran kemasan (${unitLabel[target.base_unit]})`}
+                >
+                    <FxInput
+                        type="number"
+                        min="1"
+                        value={packSize}
+                        onChange={(e) => setPackSize(e.target.value)}
+                    />
+                </FxField>
+                <FxField label="Harga per kemasan">
+                    <FxInput
+                        type="number"
+                        min="0"
+                        value={packPrice}
+                        onChange={(e) => setPackPrice(e.target.value)}
+                    />
+                </FxField>
+            </div>
+            <FxField label="Status">
+                <FxSelect
+                    value={active ? '1' : '0'}
+                    onChange={(e) => setActive(e.target.value === '1')}
+                >
+                    <option value="1">Aktif</option>
+                    <option value="0">Nonaktif</option>
+                </FxSelect>
+            </FxField>
+        </FxModal>
+    );
+}
+
+function timeLabel(iso: string | null): string {
+    if (!iso) {
+        return '-';
+    }
+
+    const date = new Date(iso);
+    const day = date.toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+    });
+
+    return `${day} ${String(date.getHours()).padStart(2, '0')}.${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
 function HistoryModal({
     target,
     onClose,
@@ -810,54 +1056,198 @@ function HistoryModal({
     target: IngredientRow;
     onClose: () => void;
 }) {
-    const rows = [
-        {
-            label: 'WAC saat ini',
-            value: `${formatRupiah(target.cost_per_unit)}/${unitShort[target.base_unit]}`,
-        },
-        {
-            label: 'Perubahan harga terakhir',
-            value: `${formatPercent(Number(target.price_change_pct), 1)}`,
-        },
-        {
-            label: 'Harga penawaran terbaru',
-            value: target.last_quote_price
-                ? `${formatRupiah(target.last_quote_price)}/${unitShort[target.base_unit]}`
-                : 'Belum ada',
-        },
-        {
-            label: 'Harga kemasan terakhir',
-            value: target.package_price
-                ? formatRupiah(target.package_price)
-                : '-',
-        },
-    ];
+    const history = target.price_history;
 
     return (
         <FxModal
             open
             onOpenChange={(o) => !o && onClose()}
+            wide
             title={`Riwayat harga ${target.name}`}
-            description="Tercatat otomatis setiap stock-in dan input penawaran."
+            description={`WAC saat ini ${formatRupiah(target.cost_per_unit)}/${unitShort[target.base_unit]}. Tercatat otomatis setiap stock-in dan input penawaran.`}
             footer={
                 <FxButton variant="soft" onClick={onClose}>
                     Tutup
                 </FxButton>
             }
         >
-            <div className="flex flex-col divide-y divide-border/60">
-                {rows.map((r) => (
-                    <div
-                        key={r.label}
-                        className="flex items-center justify-between py-3 text-sm"
+            {history.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                    Belum ada riwayat harga.
+                </p>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="bg-secondary text-left text-xs text-muted-foreground">
+                                <th className="rounded-l-xl px-3 py-2.5 font-medium">
+                                    Waktu
+                                </th>
+                                <th className="px-3 py-2.5 font-medium">
+                                    Jenis
+                                </th>
+                                <th className="px-3 py-2.5 text-right font-medium">
+                                    Harga lama
+                                </th>
+                                <th className="px-3 py-2.5 text-right font-medium">
+                                    Harga baru
+                                </th>
+                                <th className="px-3 py-2.5 text-right font-medium">
+                                    Perubahan
+                                </th>
+                                <th className="rounded-r-xl px-3 py-2.5 font-medium">
+                                    Alasan
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {history.map((h) => {
+                                const change =
+                                    h.change_pct !== null
+                                        ? Number(h.change_pct)
+                                        : 0;
+                                return (
+                                    <tr
+                                        key={h.id}
+                                        className="border-b border-border/60 last:border-0"
+                                    >
+                                        <td className="px-3 py-3 text-muted-foreground tabular-nums">
+                                            {timeLabel(h.created_at)}
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            {h.type === 'purchase'
+                                                ? 'Pembelian'
+                                                : 'Penawaran'}
+                                        </td>
+                                        <td className="px-3 py-3 text-right tabular-nums">
+                                            {h.old_value !== null
+                                                ? formatRupiah(h.old_value)
+                                                : '-'}
+                                        </td>
+                                        <td className="px-3 py-3 text-right tabular-nums">
+                                            {formatRupiah(h.new_value)}
+                                        </td>
+                                        <td
+                                            className={`px-3 py-3 text-right font-semibold tabular-nums ${
+                                                change > 0
+                                                    ? 'text-[#D93829]'
+                                                    : change < 0
+                                                      ? 'text-[#1D9E53]'
+                                                      : ''
+                                            }`}
+                                        >
+                                            {h.change_pct !== null
+                                                ? `${change > 0 ? '+' : ''}${formatPercent(change, 1)}`
+                                                : '-'}
+                                        </td>
+                                        <td className="px-3 py-3 text-muted-foreground">
+                                            {h.reason ?? '-'}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </FxModal>
+    );
+}
+
+function AdjustModal({
+    target,
+    onClose,
+    onSubmit,
+}: {
+    target: IngredientRow;
+    onClose: () => void;
+    onSubmit: (
+        target: IngredientRow,
+        type: 'waste' | 'adjustment',
+        qtyChange: number,
+        reason: string,
+    ) => void;
+}) {
+    const [type, setType] = useState<'waste' | 'adjustment'>('waste');
+    const [qty, setQty] = useState('0');
+    const [reason, setReason] = useState('');
+
+    const delta = Number(qty) || 0;
+    const preview = Number(target.current_stock) + delta;
+
+    function submit() {
+        if (delta === 0) {
+            toast.error('Kuantitas penyesuaian tidak boleh 0.');
+            return;
+        }
+        if (!reason.trim()) {
+            toast.error('Alasan wajib diisi.');
+            return;
+        }
+        onSubmit(target, type, delta, reason.trim());
+    }
+
+    return (
+        <FxModal
+            open
+            onOpenChange={(o) => !o && onClose()}
+            title={`Sesuaikan stok ${target.name}`}
+            description={`Waste, rusak, atau hasil stock opname. Stok saat ini ${formatQty(target.current_stock)} ${unitShort[target.base_unit]}.`}
+            footer={
+                <>
+                    <FxButton variant="soft" onClick={onClose}>
+                        Batal
+                    </FxButton>
+                    <FxButton variant="coral" onClick={submit}>
+                        Catat penyesuaian
+                    </FxButton>
+                </>
+            }
+        >
+            <div className="grid gap-3 sm:grid-cols-2">
+                <FxField label="Jenis">
+                    <FxSelect
+                        value={type}
+                        onChange={(e) =>
+                            setType(e.target.value as 'waste' | 'adjustment')
+                        }
                     >
-                        <span className="text-muted-foreground">{r.label}</span>
-                        <span className="font-semibold tabular-nums">
-                            {r.value}
-                        </span>
-                    </div>
-                ))}
+                        <option value="waste">Waste / rusak</option>
+                        <option value="adjustment">Koreksi opname</option>
+                    </FxSelect>
+                </FxField>
+                <FxField
+                    label={`Perubahan (${unitShort[target.base_unit]})`}
+                    hint="Negatif mengurangi stok."
+                >
+                    <FxInput
+                        type="number"
+                        value={qty}
+                        onChange={(e) => setQty(e.target.value)}
+                    />
+                </FxField>
             </div>
+            <FxField label="Alasan" hint="Wajib diisi (BR-011).">
+                <FxInput
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Contoh: tumpah / hasil opname"
+                />
+            </FxField>
+            <FxSoft className="flex items-center justify-between p-4 text-sm">
+                <span className="text-muted-foreground">
+                    Stok setelah penyesuaian
+                </span>
+                <span
+                    className={`font-bold tabular-nums ${
+                        preview < Number(target.minimum_stock)
+                            ? 'text-[#D93829]'
+                            : ''
+                    }`}
+                >
+                    {formatQty(preview)} {unitShort[target.base_unit]}
+                </span>
+            </FxSoft>
         </FxModal>
     );
 }

@@ -21,6 +21,7 @@ class StoreOrderRequest extends FormRequest
             'lines.*.menu_id' => ['required', 'integer', 'exists:menus,id'],
             'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:999'],
             'payment_method' => ['required', 'in:cash,qris'],
+            'idempotency_key' => ['nullable', 'string', 'max:64'],
         ];
     }
 

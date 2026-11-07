@@ -50,11 +50,14 @@ class OrderController extends Controller
             ];
         }
 
+        $idempotencyKey = $request->validated('idempotency_key');
+        $idempotencyKey = is_string($idempotencyKey) && $idempotencyKey !== '' ? $idempotencyKey : null;
+
         try {
             $order = $this->inventory->processOrder(
                 $lines,
                 (string) $request->validated('payment_method'),
-                null,
+                $idempotencyKey,
                 $request->user(),
             );
         } catch (InsufficientStockException $e) {

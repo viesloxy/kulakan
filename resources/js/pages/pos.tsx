@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { Coffee, CupSoda, Minus, Plus, Sandwich, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
@@ -26,6 +26,8 @@ const categoryIcon = { Kopi: Coffee, 'Non-Kopi': CupSoda, Makanan: Sandwich };
 export default function Pos({ menus }: Props) {
     const [cart, setCart] = useState<Record<number, number>>({});
     const [payment, setPayment] = useState<'cash' | 'qris'>('cash');
+    // Idempotency key (FR-016): dibuat saat submit, dipakai ulang bila retry, dibersihkan saat sukses.
+    const idempotencyKey = useRef<string | null>(null);
 
     const items = useMemo(
         () =>
@@ -64,6 +66,14 @@ export default function Pos({ menus }: Props) {
             toast.error('Belum ada item di pesanan.');
             return;
         }
+
+        if (idempotencyKey.current === null) {
+            idempotencyKey.current = (
+                globalThis.crypto?.randomUUID?.() ??
+                `ord-${Date.now()}-${Math.random().toString(36).slice(2)}`
+            ).slice(0, 64);
+        }
+
         router.post(
             '/pos',
             {
@@ -72,10 +82,12 @@ export default function Pos({ menus }: Props) {
                     quantity: qty,
                 })),
                 payment_method: payment,
+                idempotency_key: idempotencyKey.current,
             },
             {
                 preserveScroll: true,
                 onSuccess: () => {
+                    idempotencyKey.current = null;
                     setCart({});
                     toast.success('Pesanan tersimpan', {
                         description: `${items.length} item, total ${formatRupiah(total)}. Stok bahan terpotong otomatis.`,

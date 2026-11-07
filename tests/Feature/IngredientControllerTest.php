@@ -2,6 +2,7 @@
 
 use App\Models\Ingredient;
 use App\Models\Menu;
+use App\Models\StockMovement;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -73,6 +74,67 @@ it('input penawaran memperbarui HPP proyeksi menu terkait', function () {
         ->assertRedirect();
 
     expect((string) $menu->fresh()->projected_hpp)->toBe('11244.00');
+});
+
+it('mencatat penyesuaian stok dengan alasan wajib (FR-007)', function () {
+    $biji = Ingredient::where('name', 'Biji Kopi Arabika')->firstOrFail();
+    $before = (string) $biji->current_stock;
+
+    $this->actingAs($this->staff)->post("/bahan-baku/{$biji->id}/adjustments", [
+        'type' => 'waste',
+        'qty_change' => '-50',
+        'reason' => 'tumpah',
+    ])->assertRedirect();
+
+    expect(bcsub($before, (string) $biji->fresh()->current_stock, 3))->toBe('50.000')
+        ->and(StockMovement::where('ingredient_id', $biji->id)
+            ->where('type', 'waste')
+            ->where('reason', 'tumpah')
+            ->exists())->toBeTrue();
+
+    // Alasan wajib (BR-011).
+    $this->actingAs($this->staff)->post("/bahan-baku/{$biji->id}/adjustments", [
+        'type' => 'waste',
+        'qty_change' => '-10',
+    ])->assertSessionHasErrors('reason');
+});
+
+it('menyertakan riwayat harga per bahan (FR-009)', function () {
+    $biji = Ingredient::where('name', 'Biji Kopi Arabika')->firstOrFail();
+
+    $this->actingAs($this->owner)
+        ->get('/bahan-baku')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('ingredients')
+            ->where('ingredients', function ($rows) use ($biji) {
+                $row = collect($rows)->firstWhere('id', $biji->id);
+
+                expect($row['price_history'])->toBeArray()->not->toBeEmpty()
+                    ->and($row['price_history'][0]['type'])->toBe('quote')
+                    ->and($row['price_history'][0]['change_pct'])->toBe('20.00')
+                    ->and(collect($row['price_history'])->pluck('type'))->toContain('purchase');
+
+                return true;
+            }));
+});
+
+it('owner dapat mengubah dan menonaktifkan bahan (FR-004)', function () {
+    $biji = Ingredient::where('name', 'Biji Kopi Arabika')->firstOrFail();
+
+    $this->actingAs($this->owner)->put("/bahan-baku/{$biji->id}", [
+        'name' => 'Biji Kopi Arabika Premium',
+        'minimum_stock' => 600,
+        'lead_time_days' => 3,
+    ])->assertRedirect();
+
+    expect($biji->fresh()->name)->toBe('Biji Kopi Arabika Premium')
+        ->and((string) $biji->fresh()->minimum_stock)->toBe('600.000');
+
+    $this->actingAs($this->owner)->delete("/bahan-baku/{$biji->id}")->assertRedirect();
+    expect($biji->fresh()->is_active)->toBeFalse();
+
+    $this->actingAs($this->staff)->delete("/bahan-baku/{$biji->id}")->assertForbidden();
 });
 
 it('tamu diarahkan ke halaman login', function () {
