@@ -35,6 +35,15 @@ dibeli, menu mana yang paling untung, dan berapa modal yang aman dipakai**, tanp
 | Database | PostgreSQL 16 (Docker)             |
 | Testing  | Pest                               |
 
+## Model Penggunaan
+
+Kulakan dikembangkan sebagai proyek open source yang dijalankan **self-hosted: satu deployment
+melayani satu UMKM**, sehingga seluruh data operasional (stok, harga, penjualan) tetap milik
+UMKM itu sendiri di lingkungan lokalnya. Di dalam satu deployment, satu UMKM dapat memiliki
+lebih dari satu owner dan banyak staff yang berbagi satu lingkungan data melalui halaman
+**Pengguna** (multi-user per UMKM). Dukungan banyak UMKM dalam satu deployment (multi-tenant,
+hosting bersama) menjadi peta jalan rilis berikutnya.
+
 ## Cara Menjalankan (Development)
 
 Prasyarat: PHP >= 8.3 + Composer, Node >= 20, dan Docker.
