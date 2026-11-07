@@ -8,12 +8,15 @@ import {
     CircleHelp,
     CookingPot,
     Gauge,
+    Moon,
     Package,
+    Sun,
     TriangleAlert,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard } from '@/components/fx/fx-card';
+import { useAppearance } from '@/hooks/use-appearance';
 import { dashboard, login, register } from '@/routes';
 
 function FadeIn({
@@ -163,6 +166,8 @@ const capabilityVisuals = {
 
 export default function Welcome() {
     const { auth } = usePage().props;
+    const { resolvedAppearance, updateAppearance } = useAppearance();
+    const isDark = resolvedAppearance === 'dark';
 
     return (
         <>
@@ -206,6 +211,25 @@ export default function Welcome() {
                         </div>
 
                         <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    updateAppearance(isDark ? 'light' : 'dark')
+                                }
+                                aria-label={
+                                    isDark
+                                        ? 'Aktifkan mode terang'
+                                        : 'Aktifkan mode gelap'
+                                }
+                                title={isDark ? 'Mode terang' : 'Mode gelap'}
+                                className="flex size-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
+                            >
+                                {isDark ? (
+                                    <Sun className="size-[18px]" />
+                                ) : (
+                                    <Moon className="size-[18px]" />
+                                )}
+                            </button>
                             {auth.user ? (
                                 <FxButton
                                     variant="coral"
@@ -241,7 +265,7 @@ export default function Welcome() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                        className="mx-auto max-w-3xl text-4xl leading-[1.06] font-bold tracking-tight text-balance sm:text-6xl"
+                        className="mx-auto max-w-3xl text-5xl leading-[1.04] font-bold tracking-tight text-balance sm:text-6xl lg:text-7xl"
                     >
                         Stok, HPP, dan margin warungmu, terhitung otomatis.
                     </motion.h1>
@@ -374,7 +398,7 @@ export default function Welcome() {
                             <TriangleAlert className="size-3.5" />
                             Masalah yang diselesaikan
                         </span>
-                        <h2 className="mt-4 text-3xl font-bold tracking-tight text-balance">
+                        <h2 className="mt-4 text-4xl font-bold tracking-tight text-balance">
                             Tiga hal yang menggerus laba warung
                         </h2>
                         <p className="mt-3 text-muted-foreground">
@@ -413,7 +437,7 @@ export default function Welcome() {
                             <Calculator className="size-3.5" />
                             Empat kapabilitas inti
                         </span>
-                        <h2 className="mt-4 text-3xl font-bold tracking-tight text-balance">
+                        <h2 className="mt-4 text-4xl font-bold tracking-tight text-balance">
                             Satu aplikasi untuk belanja, resep, dan laba
                         </h2>
                         <p className="mt-3 text-muted-foreground">
@@ -468,7 +492,7 @@ export default function Welcome() {
                                     <Gauge className="size-3.5" />
                                     Untuk operasi harian
                                 </span>
-                                <h2 className="mt-4 text-3xl font-bold tracking-tight text-balance">
+                                <h2 className="mt-4 text-4xl font-bold tracking-tight text-balance">
                                     Dirancang untuk kenyataan kedai, bukan
                                     laporan ideal
                                 </h2>
@@ -507,7 +531,7 @@ export default function Welcome() {
                                     <CookingPot className="size-3.5" />
                                     Cara kerja
                                 </span>
-                                <h2 className="mt-4 text-3xl font-bold tracking-tight">
+                                <h2 className="mt-4 text-4xl font-bold tracking-tight">
                                     Tiga langkah, langsung jalan
                                 </h2>
                                 <p className="mt-3 text-muted-foreground">
@@ -564,7 +588,7 @@ export default function Welcome() {
                             <CircleHelp className="size-3.5" />
                             Pertanyaan umum
                         </span>
-                        <h2 className="mt-4 text-3xl font-bold tracking-tight">
+                        <h2 className="mt-4 text-4xl font-bold tracking-tight">
                             Hal yang sering ditanyakan
                         </h2>
                     </FadeIn>
@@ -588,53 +612,57 @@ export default function Welcome() {
                     </div>
                 </section>
 
-                {/* banner CTA dengan foto kedai */}
-                <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-20 md:px-6">
+                {/* CTA: foto kedai penuh dengan overlay gelap, konten ketengah */}
+                <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-24 md:px-6">
                     <FadeIn>
-                        <div className="relative overflow-hidden rounded-[2rem] fx-coral">
-                            <div
-                                aria-hidden="true"
-                                className="absolute inset-y-0 left-0 w-24 fx-hatch-coral opacity-60"
+                        <div className="relative overflow-hidden rounded-[2.5rem]">
+                            <img
+                                src="/images/cta-kedai.jpg"
+                                alt="Kedai kopi yang mengelola bahan dan margin dengan Kulakan"
+                                className="absolute inset-0 h-full w-full object-cover"
                             />
-                            <div className="relative grid items-stretch gap-8 p-8 md:grid-cols-[1.2fr_1fr] md:p-12">
-                                <div className="my-auto text-center">
-                                    <h2 className="text-2xl font-bold tracking-tight text-balance text-white md:text-3xl">
-                                        Siap mengetahui margin sebenarnya dari
-                                        tiap menu?
-                                    </h2>
-                                    <p className="mt-3 text-sm text-white/90 md:text-base">
-                                        Mulai dari bahan pertama, biarkan
-                                        Kulakan yang menghitung sisanya.
-                                    </p>
-                                    <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                                        <FxButton
-                                            variant="soft"
-                                            size="lg"
-                                            className="bg-white! text-[#E84B20]! hover:bg-white/90!"
-                                            onClick={() =>
-                                                router.visit(register())
-                                            }
-                                        >
-                                            Daftar sekarang
-                                        </FxButton>
-                                        <FxButton
-                                            variant="soft"
-                                            size="lg"
-                                            className="bg-white/15! text-white! hover:bg-white/25!"
-                                            onClick={() =>
-                                                router.visit(login())
-                                            }
-                                        >
-                                            Masuk
-                                        </FxButton>
-                                    </div>
+                            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(26,18,13,0.82)_0%,rgba(58,26,12,0.72)_55%,rgba(127,26,0,0.78)_100%)]" />
+                            <div className="relative flex flex-col items-center gap-5 px-6 py-16 text-center md:py-24">
+                                <h2 className="max-w-2xl text-3xl leading-[1.1] font-bold tracking-tight text-balance text-white md:text-5xl">
+                                    Siap mengetahui margin sebenarnya dari tiap
+                                    menu?
+                                </h2>
+                                <p className="max-w-xl text-base text-white/85 md:text-lg">
+                                    Mulai dari bahan pertama, biarkan Kulakan
+                                    yang menghitung sisanya.
+                                </p>
+                                <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+                                    <FxButton
+                                        variant="soft"
+                                        size="lg"
+                                        className="bg-white! text-[#E84B20]! hover:bg-white/90!"
+                                        onClick={() => router.visit(register())}
+                                    >
+                                        Daftar sekarang
+                                    </FxButton>
+                                    <FxButton
+                                        variant="soft"
+                                        size="lg"
+                                        className="bg-white/15! text-white! hover:bg-white/25!"
+                                        onClick={() => router.visit(login())}
+                                    >
+                                        Masuk
+                                    </FxButton>
                                 </div>
-                                <div className="relative min-h-56 overflow-hidden rounded-[1.5rem] ring-1 ring-white/25">
-                                    <img
-                                        src="/images/cta-kedai.jpg"
-                                        alt="Kedai kopi yang mengelola bahan dan margin dengan Kulakan"
-                                        className="absolute inset-0 h-full w-full object-cover"
-                                    />
+                                <div className="mt-4 flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-xs font-medium text-white/75">
+                                    {[
+                                        'Gratis untuk dicoba',
+                                        'Data contoh siap pakai',
+                                        'Tanpa instalasi',
+                                    ].map((t) => (
+                                        <span
+                                            key={t}
+                                            className="inline-flex items-center gap-1.5"
+                                        >
+                                            <Check className="size-3.5" />
+                                            {t}
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
                         </div>
