@@ -1,16 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { motion } from 'motion/react';
-import {
-    ArrowRight,
-    Calculator,
-    ChevronDown,
-    CircleHelp,
-    CookingPot,
-    Gauge,
-    Package,
-    Sparkles,
-    TriangleAlert,
-} from 'lucide-react';
+import { ArrowRight, Check, ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard } from '@/components/fx/fx-card';
@@ -40,6 +30,14 @@ function FadeIn({
     );
 }
 
+function SectionLabel({ children }: { children: ReactNode }) {
+    return (
+        <p className="text-[11px] font-bold tracking-[0.22em] text-primary uppercase">
+            {children}
+        </p>
+    );
+}
+
 const navLinks = [
     ['#masalah', 'Masalah'],
     ['#kapabilitas', 'Kapabilitas'],
@@ -52,19 +50,16 @@ const problems = [
         title: 'Harga bahan naik tak terdeteksi',
         description:
             'Harga cabai naik 20% tapi harga jual tetap. Tanpa pencatatan penawaran, margin tergerus diam-diam sampai akhir bulan.',
-        icon: TriangleAlert,
     },
     {
         title: 'Stok bocor tanpa jejak',
         description:
             'Bahan hilang karena terbuang, rusak, atau salah takar. Buku manual tidak membedakan stok terpakai dan stok terbuang.',
-        icon: Package,
     },
     {
         title: 'Harga jual pakai perasaan',
         description:
             'Meniru warung sebelah tanpa tahu biaya sendiri. Untung terlihat besar di kasir, tapi habis setelah bahan dan overhead dihitung.',
-        icon: Gauge,
     },
 ];
 
@@ -99,6 +94,13 @@ const capabilities = [
     },
 ];
 
+const dailyOps = [
+    'WAC bergerak otomatis dari setiap pembelian',
+    'HPP tersnapshot saat penjualan, laporan lama tidak berubah',
+    'Ledger append-only: waste dan penyesuaian tercatat rapi',
+    'Peran owner dan kasir dengan hak akses berbeda',
+];
+
 const steps = [
     {
         title: 'Catat bahan dan harga',
@@ -118,22 +120,10 @@ const steps = [
 ];
 
 const stats = [
-    {
-        value: 'Rp 11.244',
-        label: 'HPP dihitung akurat dari resep',
-    },
-    {
-        value: '-210 g',
-        label: 'stok terpotong otomatis per 10 cup',
-    },
-    {
-        value: '48,89%',
-        label: 'margin terpantau per menu',
-    },
-    {
-        value: 'Rp 483.000',
-        label: 'rencana belanja dari kas Rp 500.000',
-    },
+    { value: 'Rp 11.244', label: 'HPP dihitung akurat dari resep' },
+    { value: '-210 g', label: 'stok terpotong otomatis per 10 cup' },
+    { value: '48,89%', label: 'margin terpantau per menu' },
+    { value: 'Rp 483.000', label: 'rencana belanja dari kas Rp 500.000' },
 ];
 
 const faqs = [
@@ -471,112 +461,6 @@ const capabilityVisuals = {
     costing: CostingVisual,
 };
 
-/* ilustrasi vektor untuk banner CTA: cangkir, struk margin, koin */
-function CtaIllustration() {
-    return (
-        <svg
-            viewBox="0 0 280 220"
-            className="mx-auto h-auto w-full max-w-[280px]"
-            fill="none"
-            aria-hidden="true"
-        >
-            <circle cx="140" cy="112" r="94" className="fill-white/10" />
-            <circle cx="140" cy="112" r="72" className="fill-white/10" />
-
-            {/* uap */}
-            <path
-                d="M118 78c-4-8 4-11 0-19M138 78c-4-8 4-11 0-19"
-                className="stroke-white/60"
-                strokeWidth="4"
-                strokeLinecap="round"
-            />
-
-            {/* cangkir */}
-            <rect
-                x="90"
-                y="102"
-                width="84"
-                height="14"
-                rx="7"
-                className="fill-white"
-            />
-            <path
-                d="M96 120h72l-9 50a11 11 0 0 1-10.8 9h-32.4a11 11 0 0 1-10.8-9z"
-                className="fill-white"
-            />
-            <path d="M106 132h52l-3.5 20h-45z" className="fill-[#C93E17]" />
-            <path
-                d="M176 126c15 3 15 26-7 30"
-                className="stroke-white"
-                strokeWidth="6"
-                strokeLinecap="round"
-            />
-
-            {/* struk margin */}
-            <g transform="rotate(9 214 100)">
-                <rect
-                    x="188"
-                    y="56"
-                    width="54"
-                    height="86"
-                    rx="7"
-                    className="fill-white"
-                />
-                <rect
-                    x="196"
-                    y="68"
-                    width="30"
-                    height="6"
-                    rx="3"
-                    className="fill-[#FDB79E]"
-                />
-                <rect
-                    x="196"
-                    y="80"
-                    width="38"
-                    height="6"
-                    rx="3"
-                    className="fill-[#FDB79E]"
-                />
-                <rect
-                    x="196"
-                    y="92"
-                    width="24"
-                    height="6"
-                    rx="3"
-                    className="fill-[#FDB79E]"
-                />
-                <rect
-                    x="196"
-                    y="108"
-                    width="38"
-                    height="12"
-                    rx="6"
-                    className="fill-[#1D9E53]"
-                />
-                <path
-                    d="M204 114l4 4 8-8"
-                    className="stroke-white"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-            </g>
-
-            {/* koin */}
-            <circle cx="74" cy="168" r="14" className="fill-[#F2B824]" />
-            <path
-                d="M74 161v14M70 164.5h8M70 170.5h8"
-                className="stroke-[#8A5A00]"
-                strokeWidth="2"
-                strokeLinecap="round"
-            />
-            <circle cx="98" cy="184" r="10" className="fill-[#FFD866]" />
-            <circle cx="58" cy="146" r="7" className="fill-white/40" />
-        </svg>
-    );
-}
-
 export default function Welcome() {
     const { auth } = usePage().props;
 
@@ -584,37 +468,44 @@ export default function Welcome() {
         <>
             <Head title="Kulakan · Smart Profit & Inventory for Small F&B" />
             <div className="relative min-h-screen overflow-x-clip bg-background text-foreground">
-                {/* gradasi hangat di belakang heading hero */}
+                {/* pita gradasi coral gelap dari design system, dengan bentuk abstrak */}
                 <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 top-0 h-[46rem] bg-[linear-gradient(180deg,rgba(236,88,42,0.12)_0%,rgba(247,148,108,0.07)_42%,rgba(244,244,242,0)_100%)] dark:bg-[linear-gradient(180deg,rgba(236,88,42,0.16)_0%,rgba(236,88,42,0.06)_42%,rgba(18,18,17,0)_100%)]"
-                />
+                    className="pointer-events-none absolute inset-x-0 top-0 h-[600px] overflow-hidden rounded-b-[3.5rem]"
+                >
+                    <div className="absolute inset-0 fx-coral" />
+                    <div className="absolute -top-24 -left-16 size-96 rounded-full bg-white/10 blur-3xl" />
+                    <div className="absolute top-10 right-[-6rem] size-80 rounded-full bg-white/10 blur-2xl" />
+                    <div className="absolute -bottom-28 left-1/3 size-[26rem] rounded-full bg-[#7F1A00]/45 blur-3xl" />
+                    <div className="absolute inset-y-0 right-16 w-28 fx-hatch-coral opacity-50" />
+                    <div className="absolute inset-y-0 left-10 w-16 fx-hatch-coral opacity-40" />
+                </div>
 
-                {/* navigasi */}
-                <header className="sticky top-0 z-40 border-b border-border/60 bg-background/75 backdrop-blur-md">
-                    <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6">
-                        <Link href="/" className="flex items-center gap-2.5">
+                {/* navbar kapsul */}
+                <div className="sticky top-4 z-40 px-4 pt-4">
+                    <nav className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-4 rounded-full bg-card/90 px-5 ring-1 ring-border backdrop-blur-md md:px-6">
+                        <Link href="/" className="flex items-center gap-3">
                             <img
                                 src="/images/logo.svg"
                                 alt="Logo Kulakan"
-                                className="size-8"
+                                className="size-9"
                             />
-                            <span className="text-lg font-bold tracking-tight">
+                            <span className="text-xl font-bold tracking-tight">
                                 Kulakan
                             </span>
                         </Link>
 
-                        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:flex">
+                        <div className="hidden items-center gap-1 lg:flex">
                             {navLinks.map(([href, label]) => (
                                 <a
                                     key={href}
                                     href={href}
-                                    className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                    className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                                 >
                                     {label}
                                 </a>
                             ))}
-                        </nav>
+                        </div>
 
                         <div className="flex items-center gap-2">
                             {auth.user ? (
@@ -629,7 +520,7 @@ export default function Welcome() {
                                 <>
                                     <Link
                                         href={login()}
-                                        className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold text-foreground transition-colors hover:text-primary"
+                                        className="inline-flex h-11 items-center rounded-full px-5 text-sm font-semibold text-foreground transition-colors hover:text-primary"
                                     >
                                         Masuk
                                     </Link>
@@ -643,29 +534,16 @@ export default function Welcome() {
                                 </>
                             )}
                         </div>
-                    </div>
-                </header>
+                    </nav>
+                </div>
 
-                {/* hero */}
-                <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-16 text-center md:px-6 lg:pt-20">
-                    <motion.span
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                        className="inline-flex items-center gap-2 rounded-full bg-card px-4 py-1.5 text-xs font-semibold text-primary ring-1 ring-primary/20"
-                    >
-                        <Sparkles className="size-3.5" />
-                        Smart Profit &amp; Inventory for Small F&amp;B
-                    </motion.span>
+                {/* hero di atas pita coral */}
+                <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-14 text-center md:px-6 lg:pt-20">
                     <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                            duration: 0.7,
-                            delay: 0.08,
-                            ease: [0.22, 1, 0.36, 1],
-                        }}
-                        className="mx-auto mt-6 max-w-3xl text-4xl leading-[1.06] font-bold tracking-tight text-balance sm:text-6xl"
+                        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                        className="mx-auto max-w-3xl text-4xl leading-[1.06] font-bold tracking-tight text-balance text-white sm:text-6xl"
                     >
                         Stok, HPP, dan margin warungmu, terhitung otomatis.
                     </motion.h1>
@@ -673,11 +551,11 @@ export default function Welcome() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{
-                            duration: 0.7,
-                            delay: 0.16,
+                            duration: 0.8,
+                            delay: 0.1,
                             ease: [0.22, 1, 0.36, 1],
                         }}
-                        className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg"
+                        className="mx-auto mt-5 max-w-2xl text-base text-white/85 sm:text-lg"
                     >
                         Kulakan mencatat bahan baku, menyusun resep menjadi
                         stok, menghitung HPP secara akurat, dan menyarankan
@@ -687,15 +565,16 @@ export default function Welcome() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{
-                            duration: 0.7,
-                            delay: 0.24,
+                            duration: 0.8,
+                            delay: 0.2,
                             ease: [0.22, 1, 0.36, 1],
                         }}
                         className="mt-8 flex flex-wrap items-center justify-center gap-3"
                     >
                         <FxButton
-                            variant="coral"
+                            variant="soft"
                             size="lg"
+                            className="bg-white! text-[#E84B20]! hover:bg-white/90!"
                             onClick={() => router.visit(login())}
                         >
                             Masuk ke aplikasi
@@ -704,28 +583,24 @@ export default function Welcome() {
                         <FxButton
                             variant="soft"
                             size="lg"
+                            className="bg-white/15! text-white! ring-1! ring-white/30! hover:bg-white/25!"
                             onClick={() => router.visit(register())}
                         >
                             Daftar gratis
                         </FxButton>
                     </motion.div>
 
-                    {/* laptop melayang di bawah heading */}
+                    {/* laptop melayang, menimpa tepi pita */}
                     <motion.div
                         initial={{ opacity: 0, y: 56, scale: 0.97 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         transition={{
                             duration: 1,
-                            delay: 0.4,
+                            delay: 0.35,
                             ease: [0.22, 1, 0.36, 1],
                         }}
-                        className="relative mx-auto mt-16 max-w-4xl"
+                        className="relative z-20 mx-auto -mt-10 max-w-4xl"
                     >
-                        {/* cahaya latar di belakang laptop */}
-                        <div
-                            aria-hidden="true"
-                            className="pointer-events-none absolute -top-12 left-1/2 h-64 w-[46rem] max-w-none -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(236,88,42,0.18),transparent_65%)]"
-                        />
                         <motion.div
                             animate={{ y: [0, -12, 0] }}
                             transition={{
@@ -741,7 +616,6 @@ export default function Welcome() {
                             />
                         </motion.div>
 
-                        {/* chip info melayang */}
                         <motion.div
                             animate={{ y: [0, -8, 0] }}
                             transition={{
@@ -772,14 +646,14 @@ export default function Welcome() {
                 </section>
 
                 {/* angka kanonik */}
-                <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-16 pb-4 md:px-6">
+                <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-12 pb-4 md:px-6">
                     <FadeIn>
                         <FxCard className="overflow-hidden">
-                            <div className="grid grid-cols-2 divide-border/70 lg:grid-cols-4 lg:divide-x">
+                            <div className="grid grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border/70">
                                 {stats.map((s) => (
                                     <div
                                         key={s.value}
-                                        className="flex flex-col gap-1 px-6 py-5 odd:border-r lg:odd:border-r-0"
+                                        className="flex flex-col gap-1 px-6 py-5"
                                     >
                                         <p className="text-xl font-bold tracking-tight tabular-nums">
                                             {s.value}
@@ -797,37 +671,28 @@ export default function Welcome() {
                 {/* masalah */}
                 <section
                     id="masalah"
-                    className="relative z-10 mx-auto w-full max-w-6xl scroll-mt-24 px-4 py-20 md:px-6"
+                    className="relative z-10 mx-auto w-full max-w-6xl scroll-mt-28 px-4 py-20 md:px-6"
                 >
-                    <FadeIn className="mx-auto max-w-2xl text-center">
-                        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
-                            <TriangleAlert className="size-3.5" />
-                            Masalah yang diselesaikan
-                        </span>
-                        <h2 className="mt-4 text-3xl font-bold tracking-tight text-balance">
+                    <FadeIn className="max-w-2xl">
+                        <SectionLabel>Yang diselesaikan</SectionLabel>
+                        <h2 className="mt-3 text-3xl font-bold tracking-tight text-balance">
                             Tiga hal yang menggerus laba warung
                         </h2>
-                        <p className="mt-3 text-muted-foreground">
-                            Warung kecil jarang kekurangan penjualan; yang
-                            menipis adalah pemahaman terhadap biaya dan stok.
-                        </p>
                     </FadeIn>
-                    <div className="mt-10 grid gap-4 md:grid-cols-3">
+                    <div className="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-3">
                         {problems.map((p, i) => (
                             <FadeIn key={p.title} delay={0.08 * i}>
-                                <FxCard className="flex h-full flex-col gap-4 p-6">
-                                    <span className="flex size-10 items-center justify-center rounded-full bg-foreground/5 text-muted-foreground">
-                                        <p.icon className="size-5" />
+                                <div className="border-t-2 border-border pt-5">
+                                    <span className="text-sm font-bold text-primary tabular-nums">
+                                        0{i + 1}
                                     </span>
-                                    <div>
-                                        <h3 className="font-semibold tracking-tight">
-                                            {p.title}
-                                        </h3>
-                                        <p className="mt-1.5 text-sm text-muted-foreground">
-                                            {p.description}
-                                        </p>
-                                    </div>
-                                </FxCard>
+                                    <h3 className="mt-2 text-lg font-semibold tracking-tight">
+                                        {p.title}
+                                    </h3>
+                                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                                        {p.description}
+                                    </p>
+                                </div>
                             </FadeIn>
                         ))}
                     </div>
@@ -836,14 +701,11 @@ export default function Welcome() {
                 {/* kapabilitas */}
                 <section
                     id="kapabilitas"
-                    className="relative z-10 mx-auto w-full max-w-6xl scroll-mt-24 px-4 pb-20 md:px-6"
+                    className="relative z-10 mx-auto w-full max-w-6xl scroll-mt-28 px-4 pb-20 md:px-6"
                 >
-                    <FadeIn className="mx-auto max-w-2xl text-center">
-                        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
-                            <Calculator className="size-3.5" />
-                            Empat kapabilitas inti
-                        </span>
-                        <h2 className="mt-4 text-3xl font-bold tracking-tight text-balance">
+                    <FadeIn className="max-w-2xl">
+                        <SectionLabel>Kapabilitas</SectionLabel>
+                        <h2 className="mt-3 text-3xl font-bold tracking-tight text-balance">
                             Satu aplikasi untuk belanja, resep, dan laba
                         </h2>
                         <p className="mt-3 text-muted-foreground">
@@ -864,7 +726,7 @@ export default function Welcome() {
                                             <h3 className="text-lg font-semibold tracking-tight">
                                                 {c.title}
                                             </h3>
-                                            <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-bold tracking-wide text-muted-foreground">
+                                            <span className="text-xs font-bold tracking-wide text-primary">
                                                 {c.code}
                                             </span>
                                         </div>
@@ -878,19 +740,60 @@ export default function Welcome() {
                     </div>
                 </section>
 
+                {/* untuk operasi harian, dengan foto */}
+                <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-20 md:px-6">
+                    <FadeIn>
+                        <div className="grid items-center gap-8 lg:grid-cols-2">
+                            <div className="relative overflow-hidden rounded-[2rem]">
+                                <img
+                                    src="/images/operasi-kedai.jpg"
+                                    alt="Suasana kedai kopi yang beroperasi setiap hari"
+                                    className="h-full w-full object-cover"
+                                />
+                            </div>
+                            <div>
+                                <SectionLabel>
+                                    Untuk operasi harian
+                                </SectionLabel>
+                                <h2 className="mt-3 text-3xl font-bold tracking-tight text-balance">
+                                    Dirancang untuk kenyataan kedai, bukan
+                                    laporan ideal
+                                </h2>
+                                <p className="mt-3 text-muted-foreground">
+                                    Data yang masuk adalah yang terjadi di kasir
+                                    dan dapur: pembelian, penjualan, waste, dan
+                                    perubahan harga.
+                                </p>
+                                <ul className="mt-6 flex flex-col gap-3">
+                                    {dailyOps.map((item) => (
+                                        <li
+                                            key={item}
+                                            className="flex items-start gap-3 text-sm font-medium"
+                                        >
+                                            <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
+                                                <Check className="size-3.5" />
+                                            </span>
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    </FadeIn>
+                </section>
+
                 {/* cara kerja */}
                 <section
                     id="cara-kerja"
-                    className="relative z-10 mx-auto w-full max-w-6xl scroll-mt-24 px-4 pb-20 md:px-6"
+                    className="relative z-10 mx-auto w-full max-w-6xl scroll-mt-28 px-4 pb-20 md:px-6"
                 >
                     <FadeIn>
                         <FxCard className="overflow-hidden p-6 md:p-10">
                             <div className="mx-auto max-w-2xl text-center">
-                                <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
-                                    <CookingPot className="size-3.5" />
+                                <p className="text-[11px] font-bold tracking-[0.22em] text-primary uppercase">
                                     Cara kerja
-                                </span>
-                                <h2 className="mt-4 text-3xl font-bold tracking-tight">
+                                </p>
+                                <h2 className="mt-3 text-3xl font-bold tracking-tight">
                                     Tiga langkah, langsung jalan
                                 </h2>
                                 <p className="mt-3 text-muted-foreground">
@@ -940,14 +843,13 @@ export default function Welcome() {
                 {/* FAQ */}
                 <section
                     id="faq"
-                    className="relative z-10 mx-auto w-full max-w-3xl scroll-mt-24 px-4 pb-20 md:px-6"
+                    className="relative z-10 mx-auto w-full max-w-3xl scroll-mt-28 px-4 pb-20 md:px-6"
                 >
-                    <FadeIn className="text-center">
-                        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
-                            <CircleHelp className="size-3.5" />
-                            Pertanyaan umum
-                        </span>
-                        <h2 className="mt-4 text-3xl font-bold tracking-tight">
+                    <FadeIn>
+                        <p className="text-[11px] font-bold tracking-[0.22em] text-primary uppercase">
+                            FAQ
+                        </p>
+                        <h2 className="mt-3 text-3xl font-bold tracking-tight">
                             Hal yang sering ditanyakan
                         </h2>
                     </FadeIn>
@@ -971,16 +873,16 @@ export default function Welcome() {
                     </div>
                 </section>
 
-                {/* banner CTA dengan ilustrasi */}
+                {/* banner CTA dengan foto kedai */}
                 <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-20 md:px-6">
                     <FadeIn>
-                        <div className="relative overflow-hidden rounded-[2rem] fx-coral md:p-12">
+                        <div className="relative overflow-hidden rounded-[2rem] fx-coral">
                             <div
                                 aria-hidden="true"
                                 className="absolute inset-y-0 left-0 w-24 fx-hatch-coral opacity-60"
                             />
-                            <div className="relative grid items-center gap-8 p-8 md:grid-cols-[1.3fr_1fr] md:p-12">
-                                <div className="text-center md:text-left">
+                            <div className="relative grid items-stretch gap-8 p-8 md:grid-cols-[1.2fr_1fr] md:p-12">
+                                <div className="my-auto text-center md:text-left">
                                     <h2 className="text-2xl font-bold tracking-tight text-balance text-white md:text-3xl">
                                         Siap mengetahui margin sebenarnya dari
                                         tiap menu?
@@ -1012,7 +914,13 @@ export default function Welcome() {
                                         </FxButton>
                                     </div>
                                 </div>
-                                <CtaIllustration />
+                                <div className="relative min-h-56 overflow-hidden rounded-[1.5rem] ring-1 ring-white/25">
+                                    <img
+                                        src="/images/cta-kedai.jpg"
+                                        alt="Kedai kopi yang mengelola bahan dan margin dengan Kulakan"
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </FadeIn>
@@ -1020,31 +928,46 @@ export default function Welcome() {
 
                 {/* footer */}
                 <footer className="relative z-10 border-t border-border">
-                    <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 py-10 md:flex-row md:px-6">
-                        <Link href="/" className="flex items-center gap-2.5">
-                            <img
-                                src="/images/logo.svg"
-                                alt="Logo Kulakan"
-                                className="size-8"
-                            />
-                            <span className="font-bold tracking-tight">
-                                Kulakan
-                            </span>
-                        </Link>
-                        <nav className="flex items-center gap-6">
-                            {navLinks.map(([href, label]) => (
-                                <a
-                                    key={href}
-                                    href={href}
-                                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                                >
-                                    {label}
-                                </a>
-                            ))}
-                        </nav>
-                        <p className="text-xs text-muted-foreground">
-                            © 2026 Kulakan
-                        </p>
+                    <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 md:grid-cols-[1.5fr_1fr] md:px-6">
+                        <div>
+                            <div className="flex items-center gap-3">
+                                <img
+                                    src="/images/logo.svg"
+                                    alt="Logo Kulakan"
+                                    className="size-9"
+                                />
+                                <span className="text-lg font-bold tracking-tight">
+                                    Kulakan
+                                </span>
+                            </div>
+                            <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+                                Aplikasi stok, HPP, dan margin untuk warung dan
+                                kafe kecil. Dari bahan baku sampai laba,
+                                semuanya dalam satu tempat.
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold">Kapabilitas</p>
+                            <ul className="mt-3 flex flex-col gap-2.5 text-sm text-muted-foreground">
+                                {capabilities.map((c) => (
+                                    <li key={c.code}>
+                                        <a
+                                            href="#kapabilitas"
+                                            className="transition-colors hover:text-foreground"
+                                        >
+                                            {c.title}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                    <div className="border-t border-border">
+                        <div className="mx-auto w-full max-w-6xl px-4 py-5 md:px-6">
+                            <p className="text-xs text-muted-foreground">
+                                © 2026 Kulakan
+                            </p>
+                        </div>
                     </div>
                 </footer>
             </div>
