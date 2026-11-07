@@ -5,7 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $created_at
+ */
 #[Fillable(['ingredient_id', 'type', 'old_value', 'new_value', 'reason', 'user_id'])]
 class PriceHistory extends Model
 {

@@ -16,6 +16,7 @@ use App\Services\RestockService;
 use App\Support\Number;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -42,8 +43,14 @@ class IngredientController extends Controller
             ->groupBy('ingredient_id')
             ->map(fn ($group) => $group->first());
 
+        $histories = PriceHistory::whereIn('ingredient_id', $ingredients->pluck('id'))
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('ingredient_id');
+
         $rows = $ingredients->map(
-            fn (Ingredient $i) => $this->resource($i, $abc[$i->id] ?? 'C', $lastChanges[$i->id] ?? null)
+            fn (Ingredient $i) => $this->resource($i, $abc[$i->id] ?? 'C', $lastChanges[$i->id] ?? null, $histories[$i->id] ?? collect())
         );
 
         $inventoryValue = $ingredients->reduce(
@@ -182,9 +189,10 @@ class IngredientController extends Controller
     }
 
     /**
+     * @param  Collection<int, PriceHistory>  $history
      * @return array<string, mixed>
      */
-    private function resource(Ingredient $ingredient, string $abcClass, ?PriceHistory $lastPurchase): array
+    private function resource(Ingredient $ingredient, string $abcClass, ?PriceHistory $lastPurchase, Collection $history): array
     {
         $stock = Number::str($ingredient->current_stock);
         $minimum = Number::str($ingredient->minimum_stock);
@@ -212,6 +220,20 @@ class IngredientController extends Controller
             'quote_change_pct' => $quote !== null && bccomp($cost, '0', 4) > 0
                 ? $this->pct($cost, $quote)
                 : '0.00',
+            'price_history' => $history->take(10)->map(function (PriceHistory $entry): array {
+                $old = $entry->old_value !== null ? Number::str($entry->old_value) : null;
+                $new = Number::str($entry->new_value);
+
+                return [
+                    'id' => $entry->id,
+                    'type' => $entry->type,
+                    'old_value' => $old !== null ? bcadd($old, '0', 4) : null,
+                    'new_value' => bcadd($new, '0', 4),
+                    'reason' => $entry->reason,
+                    'change_pct' => $old !== null && bccomp($old, '0', 8) > 0 ? $this->pct($old, $new) : null,
+                    'created_at' => $entry->created_at?->toIso8601String(),
+                ];
+            })->values(),
         ];
     }
 
