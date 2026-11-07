@@ -40,7 +40,7 @@ const typeConfig: Record<
     AlertType,
     {
         icon: typeof Bell;
-        tone: 'danger' | 'warning' | 'coral';
+        tone: 'soft' | 'danger' | 'warning' | 'coral';
         label: string;
         action: string;
         href: string;
@@ -62,7 +62,7 @@ const typeConfig: Record<
     },
     price_hike: {
         icon: TrendingUp,
-        tone: 'coral',
+        tone: 'soft',
         label: 'Harga naik',
         action: 'Lihat bahan',
         href: '/bahan-baku',

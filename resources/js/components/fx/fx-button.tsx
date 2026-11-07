@@ -4,8 +4,8 @@ type Variant = 'coral' | 'dark' | 'soft';
 type Size = 'md' | 'lg' | 'icon';
 
 const variants: Record<Variant, string> = {
-    coral: 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)] hover:-translate-y-0.5',
-    dark: 'bg-accent text-accent-foreground hover:-translate-y-0.5',
+    coral: 'fx-coral hover:brightness-[0.97] active:brightness-95',
+    dark: 'bg-accent text-accent-foreground hover:brightness-110',
     soft: 'bg-secondary text-foreground hover:bg-hover-soft',
 };
 

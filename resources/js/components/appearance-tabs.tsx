@@ -29,7 +29,7 @@ export default function AppearanceToggleTab({
                     className={cn(
                         'flex items-center rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200',
                         appearance === value
-                            ? 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)]'
+                            ? 'fx-coral'
                             : 'text-muted-foreground hover:text-foreground',
                     )}
                 >

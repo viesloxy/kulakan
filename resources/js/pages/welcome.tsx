@@ -25,7 +25,7 @@ const capabilities = [
         description:
             'Masukkan kas yang tersedia, sistem menyusun rencana belanja bahan sesuai urgensi dan kelas ABC sampai kasnya habis secara efisien.',
         icon: ShoppingBasket,
-        tone: 'coral' as const,
+        tone: 'soft' as const,
     },
     {
         code: 'CAP-B',
@@ -33,7 +33,7 @@ const capabilities = [
         description:
             'Susun BOM resep per menu. Setiap pesanan di kasir otomatis memotong stok bahan sesuai kuantitas dan faktor waste.',
         icon: CookingPot,
-        tone: 'success' as const,
+        tone: 'soft' as const,
     },
     {
         code: 'CAP-C',
@@ -41,7 +41,7 @@ const capabilities = [
         description:
             'Margin tiap menu dihitung dari HPP terkini, lengkap dengan status profitable, watchlist, atau loss serta simulasi kenaikan harga.',
         icon: TrendingUp,
-        tone: 'warning' as const,
+        tone: 'soft' as const,
     },
     {
         code: 'CAP-D',
@@ -49,7 +49,7 @@ const capabilities = [
         description:
             'HPP dihitung otomatis dari WAC bahan, overhead, dan waste. Proyeksi HPP ikut terbarui saat harga penawaran berubah.',
         icon: Calculator,
-        tone: 'coral' as const,
+        tone: 'soft' as const,
     },
 ];
 
@@ -223,7 +223,7 @@ export default function Welcome() {
                                     </div>
                                     <IconCircle
                                         icon={Coins}
-                                        tone="coral"
+                                        tone="soft"
                                         size="sm"
                                     />
                                 </div>
@@ -246,7 +246,7 @@ export default function Welcome() {
                             </FxCard>
 
                             {/* kartu nilai persediaan (coral) */}
-                            <div className="relative z-20 mx-6 -mt-8 flex items-center justify-between rounded-3xl fx-coral p-4 shadow-[0_16px_36px_rgba(236,88,42,0.28)]">
+                            <div className="relative z-20 mx-6 -mt-8 flex items-center justify-between rounded-3xl fx-coral p-4">
                                 <div>
                                     <p className="text-xs font-medium text-white/90">
                                         Nilai persediaan
@@ -267,7 +267,7 @@ export default function Welcome() {
                                 <FxCard className="flex flex-1 items-center gap-3 p-3.5">
                                     <IconCircle
                                         icon={TrendingUp}
-                                        tone="success"
+                                        tone="soft"
                                         size="sm"
                                     />
                                     <div className="min-w-0">
@@ -285,7 +285,7 @@ export default function Welcome() {
                                 <FxCard className="flex items-center gap-3 p-3.5">
                                     <IconCircle
                                         icon={TriangleAlert}
-                                        tone="warning"
+                                        tone="soft"
                                         size="sm"
                                     />
                                     <p className="text-sm font-semibold">
@@ -379,7 +379,7 @@ export default function Welcome() {
                                         key={s.title}
                                         className="relative flex flex-col items-center gap-3 text-center"
                                     >
-                                        <span className="relative z-10 flex size-12 items-center justify-center rounded-full fx-coral text-lg font-bold text-white shadow-[0_10px_24px_rgba(236,88,42,0.28)]">
+                                        <span className="relative z-10 flex size-12 items-center justify-center rounded-full fx-coral text-lg font-bold text-white">
                                             {i + 1}
                                         </span>
                                         <h3 className="font-semibold tracking-tight">
@@ -398,7 +398,7 @@ export default function Welcome() {
                 {/* banner CTA */}
                 <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-20 md:px-6">
                     <Reveal>
-                        <div className="relative overflow-hidden rounded-[2rem] fx-coral p-8 text-center shadow-[0_24px_60px_rgba(236,88,42,0.30)] md:p-12">
+                        <div className="relative overflow-hidden rounded-[2rem] fx-coral p-8 text-center md:p-12">
                             <div
                                 aria-hidden="true"
                                 className="absolute inset-y-0 left-0 w-24 fx-hatch-coral opacity-60"

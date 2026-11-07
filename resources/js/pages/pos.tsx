@@ -122,12 +122,12 @@ export default function Pos({ menus }: Props) {
                                     <button
                                         key={m.id}
                                         onClick={() => add(m)}
-                                        className="flex flex-col gap-3 fx-card p-4 text-left transition-transform duration-200 hover:-translate-y-1"
+                                        className="flex flex-col gap-3 fx-card p-4 text-left transition-colors duration-200 hover:bg-hover-soft"
                                     >
                                         <div className="flex items-center justify-between">
                                             <IconCircle
                                                 icon={Icon}
-                                                tone="coral"
+                                                tone="soft"
                                             />
                                             <span
                                                 className={`text-[11px] font-semibold ${low ? 'text-danger' : 'text-success'}`}
@@ -243,7 +243,7 @@ export default function Pos({ menus }: Props) {
                                         onClick={() => setPayment(p)}
                                         className={`h-10 rounded-full text-sm font-semibold transition-all duration-200 ${
                                             payment === p
-                                                ? 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)]'
+                                                ? 'fx-coral'
                                                 : 'bg-secondary text-foreground hover:bg-hover-soft'
                                         }`}
                                     >

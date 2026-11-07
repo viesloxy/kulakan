@@ -365,7 +365,7 @@ export default function Profitability({
                                         onClick={() => changePeriod(p.key)}
                                         className={`h-8 rounded-full px-3 text-xs font-semibold transition-all duration-200 ${
                                             period === p.key
-                                                ? 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)]'
+                                                ? 'fx-coral'
                                                 : 'bg-secondary text-foreground hover:bg-hover-soft'
                                         }`}
                                     >

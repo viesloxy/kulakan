@@ -9,8 +9,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)] hover:-translate-y-0.5",
+        default: "fx-coral hover:brightness-[0.97] active:brightness-95",
         destructive:
           "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
         outline:

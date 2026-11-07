@@ -347,7 +347,7 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                     onClick={() => setLowOnly((v) => !v)}
                                     className={`h-10 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
                                         lowOnly
-                                            ? 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)]'
+                                            ? 'fx-coral'
                                             : 'bg-secondary text-foreground hover:bg-hover-soft'
                                     }`}
                                 >
