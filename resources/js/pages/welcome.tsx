@@ -1,19 +1,23 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { motion } from 'motion/react';
+import { animate, motion, useInView } from 'motion/react';
 import {
     ArrowRight,
     Calculator,
+    Camera,
     Check,
     ChevronDown,
     CircleHelp,
     CookingPot,
     Gauge,
+    Layers,
     Moon,
     Package,
+    RefreshCw,
+    ShieldCheck,
     Sun,
     TriangleAlert,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard } from '@/components/fx/fx-card';
 import { useAppearance } from '@/hooks/use-appearance';
@@ -41,6 +45,47 @@ function FadeIn({
             {children}
         </motion.div>
     );
+}
+
+function CountUp({
+    target,
+    prefix = '',
+    suffix = '',
+    decimals = 0,
+}: {
+    target: number;
+    prefix?: string;
+    suffix?: string;
+    decimals?: number;
+}) {
+    const ref = useRef<HTMLSpanElement>(null);
+    const inView = useInView(ref, { once: true, margin: '-40px' });
+    const format = (v: number) =>
+        prefix +
+        new Intl.NumberFormat('id-ID', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        }).format(v) +
+        suffix;
+
+    useEffect(() => {
+        if (!inView || !ref.current) {
+            return;
+        }
+        const controls = animate(0, target, {
+            duration: 1.6,
+            ease: [0.22, 1, 0.36, 1],
+            onUpdate: (v) => {
+                if (ref.current) {
+                    ref.current.textContent = format(v);
+                }
+            },
+        });
+        return () => controls.stop();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [inView, target]);
+
+    return <span ref={ref}>{format(0)}</span>;
 }
 
 const navLinks = [
@@ -103,10 +148,22 @@ const capabilities = [
 ];
 
 const dailyOps = [
-    'WAC bergerak otomatis dari setiap pembelian',
-    'HPP tersnapshot saat penjualan, laporan lama tidak berubah',
-    'Ledger append-only: waste dan penyesuaian tercatat rapi',
-    'Peran owner dan kasir dengan hak akses berbeda',
+    {
+        icon: RefreshCw,
+        text: 'WAC bergerak otomatis dari setiap pembelian',
+    },
+    {
+        icon: Camera,
+        text: 'HPP tersnapshot saat penjualan, laporan lama tidak berubah',
+    },
+    {
+        icon: Layers,
+        text: 'Ledger append-only: waste dan penyesuaian tercatat rapi',
+    },
+    {
+        icon: ShieldCheck,
+        text: 'Peran owner dan kasir dengan hak akses berbeda',
+    },
 ];
 
 const steps = [
@@ -128,10 +185,25 @@ const steps = [
 ];
 
 const stats = [
-    { value: 'Rp 11.244', label: 'HPP dihitung akurat dari resep' },
-    { value: '-210 g', label: 'stok terpotong otomatis per 10 cup' },
-    { value: '48,89%', label: 'margin terpantau per menu' },
-    { value: 'Rp 483.000', label: 'rencana belanja dari kas Rp 500.000' },
+    { prefix: 'Rp ', target: 11244, label: 'HPP dihitung akurat dari resep' },
+    {
+        prefix: '',
+        target: -210,
+        suffix: ' g',
+        label: 'stok terpotong otomatis per 10 cup',
+    },
+    {
+        prefix: '',
+        target: 48.89,
+        suffix: '%',
+        decimals: 2,
+        label: 'margin terpantau per menu',
+    },
+    {
+        prefix: 'Rp ',
+        target: 483000,
+        label: 'rencana belanja dari kas Rp 500.000',
+    },
 ];
 
 const faqs = [
@@ -319,7 +391,7 @@ export default function Welcome() {
                             delay: 0.35,
                             ease: [0.22, 1, 0.36, 1],
                         }}
-                        className="relative z-20 mx-auto -mt-10 max-w-4xl"
+                        className="relative z-20 mx-auto mt-8 max-w-4xl"
                     >
                         <motion.div
                             animate={{ y: [0, -12, 0] }}
@@ -366,26 +438,28 @@ export default function Welcome() {
                 </section>
 
                 {/* angka kanonik */}
-                <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-12 pb-4 md:px-6">
-                    <FadeIn>
-                        <FxCard className="overflow-hidden">
-                            <div className="grid grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border/70">
-                                {stats.map((s) => (
-                                    <div
-                                        key={s.value}
-                                        className="flex flex-col gap-1 px-6 py-5"
-                                    >
-                                        <p className="text-xl font-bold tracking-tight tabular-nums">
-                                            {s.value}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {s.label}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        </FxCard>
-                    </FadeIn>
+                <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-16 pb-6 md:px-6">
+                    <div className="grid grid-cols-2 gap-y-12 lg:grid-cols-4">
+                        {stats.map((s, i) => (
+                            <FadeIn
+                                key={s.label}
+                                delay={0.1 * i}
+                                className="flex flex-col items-center gap-2.5 text-center"
+                            >
+                                <p className="text-4xl font-semibold tracking-tight text-primary tabular-nums md:text-5xl">
+                                    <CountUp
+                                        target={s.target}
+                                        prefix={s.prefix}
+                                        suffix={s.suffix ?? ''}
+                                        decimals={s.decimals ?? 0}
+                                    />
+                                </p>
+                                <p className="max-w-[16rem] text-sm text-muted-foreground">
+                                    {s.label}
+                                </p>
+                            </FadeIn>
+                        ))}
+                    </div>
                 </section>
 
                 {/* masalah */}
@@ -477,105 +551,163 @@ export default function Welcome() {
                 </section>
 
                 {/* untuk operasi harian, dengan foto */}
-                <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-20 md:px-6">
-                    <FadeIn>
-                        <div className="grid items-center gap-8 lg:grid-cols-2">
-                            <div className="relative overflow-hidden rounded-[2rem]">
-                                <img
-                                    src="/images/operasi-kedai.jpg"
-                                    alt="Suasana kedai kopi yang beroperasi setiap hari"
-                                    className="h-full w-full object-cover"
-                                />
+                <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-24 md:px-6">
+                    <div className="grid items-center gap-12 lg:grid-cols-2">
+                        <FadeIn>
+                            <div className="relative">
+                                <div className="overflow-hidden rounded-[2rem] ring-1 ring-border">
+                                    <img
+                                        src="/images/operasi-kedai.jpg"
+                                        alt="Suasana kedai kopi yang beroperasi setiap hari"
+                                        className="aspect-[4/3] w-full object-cover"
+                                    />
+                                </div>
+                                <motion.div
+                                    animate={{ y: [0, -8, 0] }}
+                                    transition={{
+                                        duration: 6,
+                                        repeat: Infinity,
+                                        ease: 'easeInOut',
+                                    }}
+                                    className="absolute -bottom-7 left-6 flex items-center gap-3 rounded-2xl bg-card/95 px-4 py-3 shadow-sm ring-1 ring-border backdrop-blur"
+                                >
+                                    <span className="flex size-9 items-center justify-center rounded-full bg-success-soft text-success">
+                                        <Check className="size-4" />
+                                    </span>
+                                    <div className="text-left">
+                                        <p className="text-xs font-semibold">
+                                            HPP tersnapshot
+                                        </p>
+                                        <p className="text-[11px] text-muted-foreground">
+                                            Rp 11.244 tercatat per porsi
+                                        </p>
+                                    </div>
+                                </motion.div>
                             </div>
-                            <div>
-                                <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
-                                    <Gauge className="size-3.5" />
-                                    Untuk operasi harian
-                                </span>
-                                <h2 className="mt-4 text-4xl font-semibold tracking-tight text-balance">
-                                    Dirancang untuk kenyataan kedai, bukan
-                                    laporan ideal
-                                </h2>
-                                <p className="mt-3 text-muted-foreground">
-                                    Data yang masuk adalah yang terjadi di kasir
-                                    dan dapur: pembelian, penjualan, waste, dan
-                                    perubahan harga.
-                                </p>
-                                <ul className="mt-6 flex flex-col gap-3">
-                                    {dailyOps.map((item) => (
-                                        <li
-                                            key={item}
-                                            className="flex items-start gap-3 text-sm font-medium"
-                                        >
-                                            <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
-                                                <Check className="size-3.5" />
+                        </FadeIn>
+                        <div>
+                            <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
+                                <Gauge className="size-3.5" />
+                                Untuk operasi harian
+                            </span>
+                            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-balance">
+                                Dirancang untuk kenyataan kedai, bukan laporan
+                                ideal
+                            </h2>
+                            <p className="mt-3 text-muted-foreground">
+                                Data yang masuk adalah yang terjadi di kasir dan
+                                dapur: pembelian, penjualan, waste, dan
+                                perubahan harga.
+                            </p>
+                            <ul className="mt-8 flex flex-col gap-3">
+                                {dailyOps.map((item, i) => (
+                                    <FadeIn
+                                        key={item.text}
+                                        delay={0.08 * i}
+                                        y={16}
+                                    >
+                                        <li className="flex items-center gap-4 rounded-2xl bg-secondary/70 p-4">
+                                            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card text-primary ring-1 ring-primary/25">
+                                                <item.icon className="size-[18px]" />
                                             </span>
-                                            {item}
+                                            <p className="text-sm font-medium">
+                                                {item.text}
+                                            </p>
                                         </li>
-                                    ))}
-                                </ul>
-                            </div>
+                                    </FadeIn>
+                                ))}
+                            </ul>
                         </div>
-                    </FadeIn>
+                    </div>
                 </section>
 
-                {/* cara kerja */}
+                {/* cara kerja: timeline vertikal beranimasi */}
                 <section
                     id="cara-kerja"
-                    className="relative z-10 mx-auto w-full max-w-6xl scroll-mt-28 px-4 pb-20 md:px-6"
+                    className="relative z-10 mx-auto w-full max-w-6xl scroll-mt-28 px-4 pb-24 md:px-6"
                 >
-                    <FadeIn>
-                        <FxCard className="overflow-hidden p-6 md:p-10">
-                            <div className="mx-auto max-w-2xl text-center">
-                                <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
-                                    <CookingPot className="size-3.5" />
-                                    Cara kerja
-                                </span>
-                                <h2 className="mt-4 text-4xl font-semibold tracking-tight">
-                                    Tiga langkah, langsung jalan
-                                </h2>
-                                <p className="mt-3 text-muted-foreground">
-                                    Tidak perlu spreadsheet. Semua formula
-                                    dihitung sistem, Anda cukup membaca
-                                    hasilnya.
-                                </p>
-                            </div>
-                            <div className="relative mt-10 grid gap-8 md:grid-cols-3">
-                                <svg
-                                    aria-hidden="true"
-                                    viewBox="0 0 600 20"
-                                    preserveAspectRatio="none"
-                                    className="absolute top-6 right-[16%] left-[16%] hidden md:block"
-                                    fill="none"
+                    <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-16">
+                        <FadeIn className="lg:sticky lg:top-28 lg:self-start">
+                            <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
+                                <CookingPot className="size-3.5" />
+                                Cara kerja
+                            </span>
+                            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-balance">
+                                Tiga langkah, langsung jalan
+                            </h2>
+                            <p className="mt-3 max-w-md text-muted-foreground">
+                                Tidak perlu spreadsheet. Semua formula dihitung
+                                sistem, Anda cukup membaca hasilnya.
+                            </p>
+                            <p className="mt-8 hidden rounded-2xl bg-secondary/70 p-4 text-sm text-muted-foreground lg:block">
+                                Seluruh perhitungan mengikuti rumus bisnis yang
+                                baku, tanpa entri manual dan tanpa excel.
+                            </p>
+                        </FadeIn>
+
+                        <div className="flex flex-col">
+                            {steps.map((s, i) => (
+                                <motion.div
+                                    key={s.title}
+                                    initial={{ opacity: 0, x: 32 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ once: true, margin: '-80px' }}
+                                    transition={{
+                                        duration: 0.7,
+                                        delay: 0.1 * i,
+                                        ease: [0.22, 1, 0.36, 1],
+                                    }}
+                                    className="relative flex gap-6 pb-12 last:pb-0"
                                 >
-                                    <path
-                                        d="M0 10 H600"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeDasharray="2 10"
-                                        strokeLinecap="round"
-                                        className="text-primary/40"
-                                    />
-                                </svg>
-                                {steps.map((s, i) => (
-                                    <div
-                                        key={s.title}
-                                        className="relative flex flex-col items-center gap-3 text-center"
-                                    >
-                                        <span className="relative z-10 flex size-12 items-center justify-center rounded-full fx-coral text-lg font-bold text-white">
+                                    <div className="flex flex-col items-center">
+                                        <motion.span
+                                            initial={{ scale: 0.6, opacity: 0 }}
+                                            whileInView={{
+                                                scale: 1,
+                                                opacity: 1,
+                                            }}
+                                            viewport={{
+                                                once: true,
+                                                margin: '-80px',
+                                            }}
+                                            transition={{
+                                                duration: 0.5,
+                                                delay: 0.15 + 0.1 * i,
+                                                ease: [0.22, 1, 0.36, 1],
+                                            }}
+                                            className="relative z-10 flex size-14 shrink-0 items-center justify-center rounded-full fx-coral text-xl font-semibold text-white"
+                                        >
                                             {i + 1}
-                                        </span>
-                                        <h3 className="font-semibold tracking-tight">
+                                        </motion.span>
+                                        {i < steps.length - 1 ? (
+                                            <motion.span
+                                                initial={{ scaleY: 0 }}
+                                                whileInView={{ scaleY: 1 }}
+                                                viewport={{
+                                                    once: true,
+                                                    margin: '-80px',
+                                                }}
+                                                transition={{
+                                                    duration: 0.6,
+                                                    delay: 0.3 + 0.1 * i,
+                                                    ease: 'easeOut',
+                                                }}
+                                                className="mt-3 w-px flex-1 origin-top bg-gradient-to-b from-primary/50 to-border"
+                                            />
+                                        ) : null}
+                                    </div>
+                                    <div className="pt-1.5 pb-2 text-left">
+                                        <h3 className="text-xl font-semibold tracking-tight">
                                             {s.title}
                                         </h3>
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="mt-2 max-w-md leading-relaxed text-muted-foreground">
                                             {s.description}
                                         </p>
                                     </div>
-                                ))}
-                            </div>
-                        </FxCard>
-                    </FadeIn>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
                 </section>
 
                 {/* FAQ */}
@@ -633,9 +765,9 @@ export default function Welcome() {
                                 </p>
                                 <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
                                     <FxButton
-                                        variant="soft"
+                                        variant="coral"
                                         size="lg"
-                                        className="bg-white! text-[#E84B20]! hover:bg-white/90!"
+                                        className="ring-1! ring-white/30!"
                                         onClick={() => router.visit(register())}
                                     >
                                         Daftar sekarang
