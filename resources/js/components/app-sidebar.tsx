@@ -7,6 +7,7 @@ import {
     Receipt,
     ShoppingBasket,
     TrendingUp,
+    Users,
     Utensils,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -72,6 +73,12 @@ const allNavItems: RoleNavItem[] = [
         title: 'Alert',
         href: '/alert',
         icon: Bell,
+        roles: ['owner'],
+    },
+    {
+        title: 'Pengguna',
+        href: '/pengguna',
+        icon: Users,
         roles: ['owner'],
     },
 ];

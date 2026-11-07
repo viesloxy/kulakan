@@ -7,6 +7,7 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfitabilityController;
 use App\Http\Controllers\RestockController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -37,6 +38,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Void pesanan khusus owner (FR-018, DEC-13).
         Route::post('pos/{salesOrder}/void', [OrderController::class, 'void'])->name('orders.void');
+
+        // Kelola pengguna: multi-owner & staff dalam 1 UMKM (matriks SAD §9).
+        Route::get('pengguna', [UserController::class, 'index'])->name('pengguna');
+        Route::post('pengguna', [UserController::class, 'store'])->name('pengguna.store');
+        Route::put('pengguna/{user}', [UserController::class, 'update'])->name('pengguna.update');
+        Route::delete('pengguna/{user}', [UserController::class, 'destroy'])->name('pengguna.destroy');
+        Route::post('pengguna/{userId}/restore', [UserController::class, 'restore'])->name('pengguna.restore');
     });
 
     // Baca bahan baku: owner & staff.

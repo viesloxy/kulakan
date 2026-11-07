@@ -76,7 +76,11 @@ class ProfileUpdateTest extends TestCase
             ->assertRedirect(route('home'));
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+
+        // Penghapusan akun kini soft delete (FK restrict dari riwayat penjualan),
+        // sehingga user tidak ditemukan query normal tetapi barisnya tetap ada.
+        $this->assertNull(User::find($user->id));
+        $this->assertNotNull($user->fresh()?->deleted_at);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account()
