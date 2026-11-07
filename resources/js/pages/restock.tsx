@@ -67,23 +67,23 @@ type Props = {
 };
 
 const abcTone: Record<Abc, { bg: string; text: string }> = {
-    A: { bg: 'bg-[#FDECE7]', text: 'text-[#EC582A]' },
-    B: { bg: 'bg-[#E7EEFC]', text: 'text-[#2B6BE6]' },
+    A: { bg: 'bg-coral-soft', text: 'text-primary' },
+    B: { bg: 'bg-info-soft', text: 'text-info' },
     C: { bg: 'bg-secondary', text: 'text-muted-foreground' },
 };
 
 const labelConfig: Record<Label, { text: string; cls: string }> = {
     beli_sekarang: {
         text: 'Beli sekarang',
-        cls: 'bg-[#E6F5EC] text-[#1D9E53]',
+        cls: 'bg-success-soft text-success',
     },
     beli_sekarang_parsial: {
         text: 'Beli sebagian',
-        cls: 'bg-[#FEF3D6] text-[#9A6B00]',
+        cls: 'bg-warning-soft text-warning-ink',
     },
     beli_opsional: {
         text: 'Beli opsional',
-        cls: 'bg-[#E7EEFC] text-[#2B6BE6]',
+        cls: 'bg-info-soft text-info',
     },
     tahan_dulu: {
         text: 'Tahan dulu',
@@ -91,7 +91,7 @@ const labelConfig: Record<Label, { text: string; cls: string }> = {
     },
     kas_tidak_cukup: {
         text: 'Kas tidak cukup',
-        cls: 'bg-[#FCEAE8] text-[#D93829]',
+        cls: 'bg-danger-soft text-danger',
     },
 };
 
@@ -205,7 +205,7 @@ export default function Restock({
                                 onChange={(e) =>
                                     setCash(Number(e.target.value))
                                 }
-                                className="mt-4 w-full accent-[#EC582A]"
+                                className="mt-4 w-full accent-primary"
                             />
 
                             <div className="mt-3 flex flex-wrap gap-2">
@@ -213,10 +213,10 @@ export default function Restock({
                                     <button
                                         key={p}
                                         onClick={() => setCash(p)}
-                                        className={`h-8 rounded-full px-3 text-xs font-semibold transition-colors ${
+                                        className={`h-8 rounded-full px-3 text-xs font-semibold transition-all duration-200 ${
                                             cash === p
-                                                ? 'bg-[#1C1B18] text-white'
-                                                : 'bg-secondary text-foreground hover:bg-[#EBEBE8]'
+                                                ? 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)]'
+                                                : 'bg-secondary text-foreground hover:bg-hover-soft'
                                         }`}
                                     >
                                         {p / 1000 + 'rb'}
@@ -233,9 +233,9 @@ export default function Restock({
                                         {formatRupiah(total)}
                                     </span>
                                 </div>
-                                <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-[#EBEBE8] fx-hatch">
+                                <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-hover-soft fx-hatch">
                                     <div
-                                        className="h-full rounded-full bg-[#EC582A]"
+                                        className="h-full rounded-full bg-primary"
                                         style={{
                                             width: `${usedPct}%`,
                                             backgroundImage:
@@ -247,7 +247,7 @@ export default function Restock({
                                     <span className="text-muted-foreground">
                                         Sisa kas
                                     </span>
-                                    <span className="font-semibold text-[#1D9E53] tabular-nums">
+                                    <span className="font-semibold text-success tabular-nums">
                                         {formatRupiah(remaining)}
                                     </span>
                                 </div>
@@ -287,7 +287,7 @@ export default function Restock({
                                             Tandai dibeli
                                         </FxButton>
                                     ) : (
-                                        <p className="inline-flex items-center gap-2 text-xs font-semibold text-[#1D9E53]">
+                                        <p className="inline-flex items-center gap-2 text-xs font-semibold text-success">
                                             <CheckCircle2 className="size-4" />
                                             Sudah dibeli, stok bertambah.
                                         </p>
@@ -384,7 +384,7 @@ export default function Restock({
 
                             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                                 <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-                                    <Lightbulb className="size-4 text-[#EC582A]" />
+                                    <Lightbulb className="size-4 text-primary" />
                                     Total tidak pernah melebihi kas.{' '}
                                     {boughtCount} bahan direkomendasikan dibeli.
                                 </span>

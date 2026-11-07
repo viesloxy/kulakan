@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { FxField, FxInput, FxModal, FxSelect } from '@/components/fx/fx-form';
+import { FxIconButton } from '@/components/fx/fx-icon-button';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageHeader from '@/components/page-header';
@@ -68,8 +69,8 @@ type Props = {
 };
 
 const abcTone: Record<Abc, string> = {
-    A: 'bg-[#FDECE7] text-[#EC582A]',
-    B: 'bg-[#E7EEFC] text-[#2B6BE6]',
+    A: 'bg-coral-soft text-primary',
+    B: 'bg-info-soft text-info',
     C: 'bg-secondary text-muted-foreground',
 };
 
@@ -79,18 +80,18 @@ const stateConfig: Record<
 > = {
     low: {
         label: 'Menipis',
-        cls: 'bg-[#FCEAE8] text-[#D93829]',
-        dot: 'bg-[#D93829]',
+        cls: 'bg-danger-soft text-danger',
+        dot: 'bg-danger',
     },
     near: {
         label: 'Perhatian',
-        cls: 'bg-[#FEF3D6] text-[#9A6B00]',
-        dot: 'bg-[#F2B824]',
+        cls: 'bg-warning-soft text-warning-ink',
+        dot: 'bg-warning',
     },
     safe: {
         label: 'Aman',
-        cls: 'bg-[#E6F5EC] text-[#1D9E53]',
-        dot: 'bg-[#1D9E53]',
+        cls: 'bg-success-soft text-success',
+        dot: 'bg-success',
     },
 };
 
@@ -344,10 +345,10 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                 <button
                                     type="button"
                                     onClick={() => setLowOnly((v) => !v)}
-                                    className={`h-10 rounded-full px-4 text-sm font-semibold transition-colors ${
+                                    className={`h-10 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
                                         lowOnly
-                                            ? 'bg-[#1C1B18] text-white'
-                                            : 'bg-secondary text-foreground hover:bg-[#EBEBE8]'
+                                            ? 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)]'
+                                            : 'bg-secondary text-foreground hover:bg-hover-soft'
                                     }`}
                                 >
                                     Stok menipis
@@ -444,7 +445,7 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                                         {Math.abs(change) >=
                                                         0.5 ? (
                                                             <span
-                                                                className={`ml-2 text-[11px] font-semibold ${change > 0 ? 'text-[#D93829]' : 'text-[#1D9E53]'}`}
+                                                                className={`ml-2 text-[11px] font-semibold ${change > 0 ? 'text-danger' : 'text-success'}`}
                                                             >
                                                                 {change > 0
                                                                     ? '+'
@@ -458,7 +459,7 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                                     </span>
                                                     {quoteChange >= 1 &&
                                                     i.last_quote_price ? (
-                                                        <span className="mt-1 block text-[11px] font-semibold text-[#EC582A]">
+                                                        <span className="mt-1 block text-[11px] font-semibold text-primary">
                                                             penawaran{' '}
                                                             {formatRupiah(
                                                                 i.last_quote_price,
@@ -498,69 +499,64 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                                 </td>
                                                 <td className="px-3 py-3">
                                                     <div className="flex items-center justify-center gap-1">
-                                                        <button
-                                                            type="button"
+                                                        <FxIconButton
                                                             title="Edit bahan"
+                                                            aria-label="Edit bahan"
                                                             onClick={() =>
                                                                 setEdit(i)
                                                             }
-                                                            className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-[#EBEBE8] hover:text-foreground"
                                                         >
                                                             <Pencil className="size-4" />
-                                                        </button>
-                                                        <button
-                                                            type="button"
+                                                        </FxIconButton>
+                                                        <FxIconButton
                                                             title="Stock-in pembelian"
+                                                            aria-label="Stock-in pembelian"
                                                             onClick={() =>
                                                                 setStockIn(i)
                                                             }
-                                                            className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-[#1C1B18] hover:text-white"
                                                         >
                                                             <ArrowDownToLine className="size-4" />
-                                                        </button>
-                                                        <button
-                                                            type="button"
+                                                        </FxIconButton>
+                                                        <FxIconButton
                                                             title="Update harga penawaran"
+                                                            aria-label="Update harga penawaran"
                                                             onClick={() =>
                                                                 setQuote(i)
                                                             }
-                                                            className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-[#EC582A] hover:text-white"
                                                         >
                                                             <Tag className="size-4" />
-                                                        </button>
-                                                        <button
-                                                            type="button"
+                                                        </FxIconButton>
+                                                        <FxIconButton
                                                             title="Sesuaikan stok (waste/opname)"
+                                                            aria-label="Sesuaikan stok (waste/opname)"
                                                             onClick={() =>
                                                                 setAdjust(i)
                                                             }
-                                                            className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-[#D93829] hover:text-white"
                                                         >
                                                             <SlidersHorizontal className="size-4" />
-                                                        </button>
-                                                        <button
-                                                            type="button"
+                                                        </FxIconButton>
+                                                        <FxIconButton
                                                             title="Riwayat harga"
+                                                            aria-label="Riwayat harga"
                                                             onClick={() =>
                                                                 setHistory(i)
                                                             }
-                                                            className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-[#EBEBE8] hover:text-foreground"
                                                         >
                                                             <Clock className="size-4" />
-                                                        </button>
+                                                        </FxIconButton>
                                                         {i.is_active ? (
-                                                            <button
-                                                                type="button"
+                                                            <FxIconButton
+                                                                tone="danger"
                                                                 title="Nonaktifkan bahan"
+                                                                aria-label="Nonaktifkan bahan"
                                                                 onClick={() =>
                                                                     handleDeactivate(
                                                                         i,
                                                                     )
                                                                 }
-                                                                className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-[#D93829] hover:text-white"
                                                             >
                                                                 <Ban className="size-4" />
-                                                            </button>
+                                                            </FxIconButton>
                                                         ) : null}
                                                     </div>
                                                 </td>
@@ -851,7 +847,7 @@ function StockInModal({
                 </div>
                 <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">WAC baru</span>
-                    <span className="font-bold text-[#EC582A] tabular-nums">
+                    <span className="font-bold text-primary tabular-nums">
                         {formatRupiah(newWac)}/{unitShort[target.base_unit]}
                     </span>
                 </div>
@@ -909,14 +905,14 @@ function QuoteModal({
             <FxSoft className="flex items-center justify-between p-4 text-sm">
                 <span className="text-muted-foreground">Perubahan vs WAC</span>
                 <span
-                    className={`font-bold tabular-nums ${change > 0 ? 'text-[#D93829]' : change < 0 ? 'text-[#1D9E53]' : ''}`}
+                    className={`font-bold tabular-nums ${change > 0 ? 'text-danger' : change < 0 ? 'text-success' : ''}`}
                 >
                     {change > 0 ? '+' : ''}
                     {formatPercent(change, 1)}
                 </span>
             </FxSoft>
             {change > 10 ? (
-                <p className="text-xs font-semibold text-[#D93829]">
+                <p className="text-xs font-semibold text-danger">
                     Melewati ambang alert 10%. Sistem akan membuat alert harga
                     bahan ini.
                 </p>
@@ -1130,9 +1126,9 @@ function HistoryModal({
                                         <td
                                             className={`px-3 py-3 text-right font-semibold tabular-nums ${
                                                 change > 0
-                                                    ? 'text-[#D93829]'
+                                                    ? 'text-danger'
                                                     : change < 0
-                                                      ? 'text-[#1D9E53]'
+                                                      ? 'text-success'
                                                       : ''
                                             }`}
                                         >
@@ -1241,7 +1237,7 @@ function AdjustModal({
                 <span
                     className={`font-bold tabular-nums ${
                         preview < Number(target.minimum_stock)
-                            ? 'text-[#D93829]'
+                            ? 'text-danger'
                             : ''
                     }`}
                 >

@@ -189,10 +189,10 @@ export default function Menus({ menus, ingredients }: Props) {
                                                 onClick={() =>
                                                     setSelectedId(m.id)
                                                 }
-                                                className={`flex items-center gap-3 rounded-2xl p-3 text-left transition-colors ${
+                                                className={`flex items-center gap-3 rounded-2xl p-3 text-left transition-all duration-200 ${
                                                     active
-                                                        ? 'bg-[#1C1B18] text-white'
-                                                        : 'fx-soft hover:bg-[#EBEBE8]'
+                                                        ? 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)]'
+                                                        : 'fx-soft hover:bg-hover-soft'
                                                 }`}
                                             >
                                                 <IconCircle
@@ -466,7 +466,7 @@ export default function Menus({ menus, ingredients }: Props) {
                                             </span>
                                         </span>
                                         <span className="inline-flex items-center gap-2">
-                                            <span className="rounded-full bg-[#FEF3D6] px-2.5 py-1 text-xs font-semibold text-[#9A6B00]">
+                                            <span className="rounded-full bg-warning-soft px-2.5 py-1 text-xs font-semibold text-warning-ink">
                                                 {formatPercent(
                                                     selected.projected_margin_pct ??
                                                         0,
@@ -789,7 +789,7 @@ function BomModal({
                                     type="button"
                                     onClick={() => removeRow(index)}
                                     disabled={rows.length === 1}
-                                    className="flex size-11 items-center justify-center rounded-2xl bg-secondary text-muted-foreground transition-colors hover:text-[#D93829] disabled:opacity-40"
+                                    className="flex size-11 items-center justify-center rounded-2xl bg-secondary text-muted-foreground transition-colors hover:text-danger disabled:opacity-40"
                                     title="Hapus bahan"
                                 >
                                     <Trash2 className="size-4" />
@@ -802,7 +802,7 @@ function BomModal({
                 <button
                     type="button"
                     onClick={addRow}
-                    className="flex items-center gap-2 self-start rounded-full bg-secondary px-4 py-2 text-sm font-semibold transition-colors hover:bg-[#EBEBE8]"
+                    className="flex items-center gap-2 self-start rounded-full bg-secondary px-4 py-2 text-sm font-semibold transition-colors hover:bg-hover-soft"
                 >
                     <Plus className="size-4" />
                     Tambah bahan

@@ -182,7 +182,7 @@ export default function Dashboard({
                                     Kas untuk belanja
                                 </span>
                                 <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold">
-                                    <span className="size-1.5 rounded-full bg-[#1D9E53]" />
+                                    <span className="size-1.5 rounded-full bg-success" />
                                     Hari ini
                                 </span>
                             </div>
@@ -190,7 +190,7 @@ export default function Dashboard({
                                 {formatRupiah(cash_budget)}
                             </p>
                             <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                                <span className="rounded-full bg-[#E6F5EC] px-2 py-0.5 font-semibold text-[#1D9E53]">
+                                <span className="rounded-full bg-success-soft px-2 py-0.5 font-semibold text-success">
                                     {restock.exists
                                         ? restock.status
                                         : 'preview'}
@@ -232,7 +232,7 @@ export default function Dashboard({
                                         <p className="mt-1 text-[11px] font-bold whitespace-nowrap tabular-nums">
                                             {formatRupiah(wallets.cash)}
                                         </p>
-                                        <p className="mt-1 text-[11px] font-semibold text-[#1D9E53]">
+                                        <p className="mt-1 text-[11px] font-semibold text-success">
                                             Tunai
                                         </p>
                                     </div>
@@ -243,7 +243,7 @@ export default function Dashboard({
                                         <p className="mt-1 text-[11px] font-bold whitespace-nowrap tabular-nums">
                                             {formatRupiah(wallets.qris)}
                                         </p>
-                                        <p className="mt-1 text-[11px] font-semibold text-[#1D9E53]">
+                                        <p className="mt-1 text-[11px] font-semibold text-success">
                                             Digital
                                         </p>
                                     </div>
@@ -256,7 +256,7 @@ export default function Dashboard({
                                                 wallets.cash + wallets.qris,
                                             )}
                                         </p>
-                                        <p className="mt-1 text-[11px] font-semibold text-[#1D9E53]">
+                                        <p className="mt-1 text-[11px] font-semibold text-success">
                                             Hari ini
                                         </p>
                                     </div>
@@ -329,7 +329,7 @@ export default function Dashboard({
                                         className="flex h-full flex-1 flex-col justify-end gap-1"
                                     >
                                         <div
-                                            className="w-full rounded-md bg-[#EC582A] fx-hatch-coral"
+                                            className="w-full rounded-md bg-primary fx-hatch-coral"
                                             style={{
                                                 height: `${(c.total / maxBar) * 100}%`,
                                             }}
@@ -356,9 +356,9 @@ export default function Dashboard({
                                     ? 'Terpakai dari rencana terakhir'
                                     : 'Preview rencana kas'}
                             </p>
-                            <div className="mt-4 h-3 w-full overflow-hidden rounded-full bg-[#EBEBE8] fx-hatch">
+                            <div className="mt-4 h-3 w-full overflow-hidden rounded-full bg-hover-soft fx-hatch">
                                 <div
-                                    className="h-full rounded-full bg-[#EC582A]"
+                                    className="h-full rounded-full bg-primary"
                                     style={{
                                         width: `${usedPct}%`,
                                         backgroundImage:
@@ -376,7 +376,7 @@ export default function Dashboard({
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
                                 Sisa kas{' '}
-                                <span className="font-semibold text-[#1D9E53]">
+                                <span className="font-semibold text-success">
                                     {formatRupiah(restock.remaining_cash)}
                                 </span>
                             </p>
@@ -430,16 +430,16 @@ export default function Dashboard({
                                                 <span
                                                     className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
                                                         order.status === 'void'
-                                                            ? 'text-[#D93829]'
-                                                            : 'text-[#1D9E53]'
+                                                            ? 'text-danger'
+                                                            : 'text-success'
                                                     }`}
                                                 >
                                                     <span
                                                         className={`size-1.5 rounded-full ${
                                                             order.status ===
                                                             'void'
-                                                                ? 'bg-[#D93829]'
-                                                                : 'bg-[#1D9E53]'
+                                                                ? 'bg-danger'
+                                                                : 'bg-success'
                                                         }`}
                                                     />
                                                     {order.status === 'void'
@@ -454,7 +454,7 @@ export default function Dashboard({
                                                         onClick={() =>
                                                             voidOrder(order)
                                                         }
-                                                        className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-[#D93829] hover:text-white"
+                                                        className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-destructive hover:text-white"
                                                     >
                                                         Void
                                                     </button>
@@ -641,8 +641,8 @@ export default function Dashboard({
                                                         className={`text-xs font-semibold ${
                                                             order.status ===
                                                             'void'
-                                                                ? 'text-[#D93829]'
-                                                                : 'text-[#1D9E53]'
+                                                                ? 'text-danger'
+                                                                : 'text-success'
                                                         }`}
                                                     >
                                                         {order.status === 'void'
@@ -657,7 +657,7 @@ export default function Dashboard({
                                                             onClick={() =>
                                                                 voidOrder(order)
                                                             }
-                                                            className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-[#D93829] hover:text-white"
+                                                            className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-destructive hover:text-white"
                                                         >
                                                             Void
                                                         </button>
