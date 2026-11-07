@@ -191,7 +191,7 @@ export default function Menus({ menus, ingredients }: Props) {
                                                 }
                                                 className={`flex items-center gap-3 rounded-2xl p-3 text-left transition-all duration-200 ${
                                                     active
-                                                        ? 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)]'
+                                                        ? 'fx-coral'
                                                         : 'fx-soft hover:bg-hover-soft'
                                                 }`}
                                             >
@@ -200,7 +200,7 @@ export default function Menus({ menus, ingredients }: Props) {
                                                     tone={
                                                         active
                                                             ? 'white'
-                                                            : 'coral'
+                                                            : 'soft'
                                                     }
                                                 />
                                                 <div className="min-w-0 flex-1">
@@ -248,7 +248,7 @@ export default function Menus({ menus, ingredients }: Props) {
                                             icon={
                                                 categoryIcon[selected.category]
                                             }
-                                            tone="coral"
+                                            tone="soft"
                                             size="lg"
                                         />
                                         <div>
@@ -452,7 +452,7 @@ export default function Menus({ menus, ingredients }: Props) {
                                         <span className="inline-flex items-center gap-2 text-sm">
                                             <IconCircle
                                                 icon={Sparkles}
-                                                tone="warning"
+                                                tone="soft"
                                                 size="sm"
                                             />
                                             <span>

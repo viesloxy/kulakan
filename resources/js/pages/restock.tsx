@@ -215,7 +215,7 @@ export default function Restock({
                                         onClick={() => setCash(p)}
                                         className={`h-8 rounded-full px-3 text-xs font-semibold transition-all duration-200 ${
                                             cash === p
-                                                ? 'fx-coral shadow-[0_10px_24px_rgba(236,88,42,0.22)]'
+                                                ? 'fx-coral'
                                                 : 'bg-secondary text-foreground hover:bg-hover-soft'
                                         }`}
                                     >
@@ -384,7 +384,7 @@ export default function Restock({
 
                             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                                 <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-                                    <Lightbulb className="size-4 text-primary" />
+                                    <Lightbulb className="size-4 text-muted-foreground" />
                                     Total tidak pernah melebihi kas.{' '}
                                     {boughtCount} bahan direkomendasikan dibeli.
                                 </span>

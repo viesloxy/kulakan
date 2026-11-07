@@ -502,7 +502,7 @@ export default function Dashboard({
                                     </h3>
                                     <IconCircle
                                         icon={Receipt}
-                                        tone="coral"
+                                        tone="soft"
                                         size="sm"
                                     />
                                 </div>
@@ -553,7 +553,7 @@ export default function Dashboard({
                                     </h3>
                                     <IconCircle
                                         icon={Package}
-                                        tone="success"
+                                        tone="soft"
                                         size="sm"
                                     />
                                 </div>

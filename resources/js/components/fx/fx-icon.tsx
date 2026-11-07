@@ -11,7 +11,8 @@ type Tone =
 type Size = 'sm' | 'md' | 'lg';
 
 const tones: Record<Tone, string> = {
-    soft: 'bg-foreground/5 text-foreground',
+    // Tone netral untuk ikon dekoratif; warna hanya untuk ikon bermakna status.
+    soft: 'bg-foreground/5 text-muted-foreground',
     coral: 'bg-coral-soft text-primary',
     coralSolid: 'bg-primary text-primary-foreground',
     white: 'bg-white/20 text-white',
