@@ -63,7 +63,7 @@ it('owner dapat mengunggah foto saat menambah menu; image_url tampil di props', 
     expect($menu->image_path)->not->toBeNull()
         ->and(Storage::disk('public')->exists((string) $menu->image_path))->toBeTrue();
 
-    $url = Storage::disk('public')->url((string) $menu->image_path);
+    $url = '/storage/'.$menu->image_path;
 
     $this->actingAs($this->owner)->get('/menu')->assertInertia(
         fn (Assert $page) => $page
@@ -122,7 +122,7 @@ it('image_url menu ber-BOM tampil di props POS', function () {
     Storage::disk('public')->put($path, 'x');
     $menu->forceFill(['image_path' => $path])->save();
 
-    $url = Storage::disk('public')->url($path);
+    $url = '/storage/'.$path;
     $index = menuPropIndex($menu, posOnly: true);
 
     $this->actingAs($this->staff)->get('/pos')->assertInertia(
