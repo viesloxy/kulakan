@@ -26,6 +26,15 @@ class Menu extends Model
         ];
     }
 
+    /**
+     * URL publik gambar menu sebagai path relatif (bukan Storage::url yang
+     * mengikuti APP_URL) agar tetap benar di port/host mana pun saat dev.
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image_path !== null ? '/storage/'.$this->image_path : null;
+    }
+
     /** @return HasOne<Recipe, $this> */
     public function recipe(): HasOne
     {

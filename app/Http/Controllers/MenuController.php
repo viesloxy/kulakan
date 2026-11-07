@@ -159,9 +159,7 @@ class MenuController extends Controller
             'id' => $menu->id,
             'name' => $menu->name,
             'category' => $menu->category ?? 'Kopi',
-            'image_url' => $menu->image_path !== null
-                ? Storage::disk('public')->url($menu->image_path)
-                : null,
+            'image_url' => $menu->image_url,
             'selling_price' => $menu->selling_price,
             'overhead' => $menu->overhead,
             'yield_portions' => max(1, $recipe !== null ? (int) $recipe->yield_portions : 1),

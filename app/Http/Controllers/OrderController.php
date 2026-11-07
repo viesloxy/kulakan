@@ -12,7 +12,6 @@ use App\Services\CostingService;
 use App\Services\InventoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,9 +34,7 @@ class OrderController extends Controller
                 'id' => $m->id,
                 'name' => $m->name,
                 'category' => $m->category ?? 'Kopi',
-                'image_url' => $m->image_path !== null
-                    ? Storage::disk('public')->url($m->image_path)
-                    : null,
+                'image_url' => $m->image_url,
                 'selling_price' => $m->selling_price,
                 'portions_available' => $this->costing->portionsAvailable($m),
             ])->values();
