@@ -18,18 +18,11 @@ import {
     Sun,
     TriangleAlert,
 } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard } from '@/components/fx/fx-card';
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from '@/components/ui/sheet';
 import { useAppearance } from '@/hooks/use-appearance';
-import { dashboard, login, register } from '@/routes';
+import { dashboard, login } from '@/routes';
 
 function FadeIn({
     children,
@@ -248,7 +241,6 @@ export default function Welcome() {
     const { auth } = usePage().props;
     const { resolvedAppearance, updateAppearance } = useAppearance();
     const isDark = resolvedAppearance === 'dark';
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     return (
         <>
@@ -328,123 +320,15 @@ export default function Welcome() {
                                     <ArrowRight className="size-3.5 sm:size-4" />
                                 </FxButton>
                             ) : (
-                                <>
-                                    <Link
-                                        href={login()}
-                                        className="hidden h-9 items-center rounded-full px-3 text-xs font-semibold text-foreground transition-colors hover:text-primary sm:inline-flex sm:h-10 sm:px-4 sm:text-sm"
-                                    >
-                                        Masuk
-                                    </Link>
-                                    <FxButton
-                                        variant="coral"
-                                        className="h-9 px-3.5 text-xs sm:h-10 sm:px-4 sm:text-sm"
-                                        onClick={() => router.visit(register())}
-                                    >
-                                        Daftar
-                                        <ArrowRight className="size-3.5 sm:size-4" />
-                                    </FxButton>
-                                </>
-                            )}
-
-                            {/* Mobile menu sheet trigger untuk HP dan Tablet */}
-                            <div className="lg:hidden">
-                                <Sheet
-                                    open={mobileMenuOpen}
-                                    onOpenChange={setMobileMenuOpen}
+                                <FxButton
+                                    variant="coral"
+                                    className="h-9 px-3.5 text-xs sm:h-10 sm:px-4 sm:text-sm"
+                                    onClick={() => router.visit(login())}
                                 >
-                                    <SheetTrigger asChild>
-                                        <button
-                                            type="button"
-                                            className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:size-10"
-                                            aria-label="Buka menu navigasi"
-                                        >
-                                            <Menu className="size-5" />
-                                        </button>
-                                    </SheetTrigger>
-                                    <SheetContent
-                                        side="right"
-                                        className="flex w-[280px] flex-col p-6 sm:w-[320px]"
-                                    >
-                                        <SheetHeader className="text-left">
-                                            <div className="flex items-center gap-2.5">
-                                                <img
-                                                    src="/images/logo.svg"
-                                                    alt="Logo Kulakan"
-                                                    className="size-8"
-                                                />
-                                                <SheetTitle className="text-lg font-bold tracking-tight">
-                                                    Kulakan
-                                                </SheetTitle>
-                                            </div>
-                                        </SheetHeader>
-                                        <div className="mt-6 flex flex-col gap-1">
-                                            {navLinks.map(([href, label]) => (
-                                                <a
-                                                    key={href}
-                                                    href={href}
-                                                    onClick={() =>
-                                                        setMobileMenuOpen(false)
-                                                    }
-                                                    className="rounded-xl px-4 py-3 text-base font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                                                >
-                                                    {label}
-                                                </a>
-                                            ))}
-                                        </div>
-                                        <div className="mt-auto flex flex-col gap-3 border-t border-border pt-6">
-                                            {auth.user ? (
-                                                <FxButton
-                                                    variant="coral"
-                                                    className="w-full"
-                                                    onClick={() => {
-                                                        setMobileMenuOpen(
-                                                            false,
-                                                        );
-                                                        router.visit(
-                                                            dashboard(),
-                                                        );
-                                                    }}
-                                                >
-                                                    Buka Dashboard
-                                                    <ArrowRight className="size-4" />
-                                                </FxButton>
-                                            ) : (
-                                                <>
-                                                    <FxButton
-                                                        variant="soft"
-                                                        className="w-full"
-                                                        onClick={() => {
-                                                            setMobileMenuOpen(
-                                                                false,
-                                                            );
-                                                            router.visit(
-                                                                login(),
-                                                            );
-                                                        }}
-                                                    >
-                                                        Masuk
-                                                    </FxButton>
-                                                    <FxButton
-                                                        variant="coral"
-                                                        className="w-full"
-                                                        onClick={() => {
-                                                            setMobileMenuOpen(
-                                                                false,
-                                                            );
-                                                            router.visit(
-                                                                register(),
-                                                            );
-                                                        }}
-                                                    >
-                                                        Daftar akun baru
-                                                        <ArrowRight className="size-4" />
-                                                    </FxButton>
-                                                </>
-                                            )}
-                                        </div>
-                                    </SheetContent>
-                                </Sheet>
-                            </div>
+                                    Masuk
+                                    <ArrowRight className="size-3.5 sm:size-4" />
+                                </FxButton>
+                            )}
                         </div>
                     </nav>
                 </div>
@@ -491,14 +375,6 @@ export default function Welcome() {
                         >
                             Masuk ke aplikasi
                             <ArrowRight className="size-4" />
-                        </FxButton>
-                        <FxButton
-                            variant="soft"
-                            size="lg"
-                            className="w-full sm:w-auto"
-                            onClick={() => router.visit(register())}
-                        >
-                            Daftar gratis
                         </FxButton>
                     </motion.div>
 
@@ -899,18 +775,11 @@ export default function Welcome() {
                                     <FxButton
                                         variant="coral"
                                         size="lg"
-                                        className="w-full ring-1! ring-white/30! sm:w-auto"
-                                        onClick={() => router.visit(register())}
-                                    >
-                                        Daftar sekarang
-                                    </FxButton>
-                                    <FxButton
-                                        variant="soft"
-                                        size="lg"
-                                        className="w-full bg-white/15! text-white! hover:bg-white/25! sm:w-auto"
+                                        className="ring-1! ring-white/30!"
                                         onClick={() => router.visit(login())}
                                     >
-                                        Masuk
+                                        Masuk ke Kulakan
+                                        <ArrowRight className="size-4" />
                                     </FxButton>
                                 </div>
                                 <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] font-medium text-white/75 sm:mt-4 sm:text-xs">

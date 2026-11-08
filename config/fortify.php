@@ -161,7 +161,7 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Features::registration(), // SEC-02: Nonaktifkan registrasi publik untuk mencegah pembuatan akun staf liar
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
