@@ -21,7 +21,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard } from '@/components/fx/fx-card';
 import { useAppearance } from '@/hooks/use-appearance';
-import { dashboard, login, register } from '@/routes';
+import { dashboard, login } from '@/routes';
 
 function FadeIn({
     children,
@@ -312,17 +312,11 @@ export default function Welcome() {
                                 </FxButton>
                             ) : (
                                 <>
-                                    <Link
-                                        href={login()}
-                                        className="inline-flex h-11 items-center rounded-full px-5 text-sm font-semibold text-foreground transition-colors hover:text-primary"
-                                    >
-                                        Masuk
-                                    </Link>
                                     <FxButton
                                         variant="coral"
-                                        onClick={() => router.visit(register())}
+                                        onClick={() => router.visit(login())}
                                     >
-                                        Daftar
+                                        Masuk
                                         <ArrowRight className="size-4" />
                                     </FxButton>
                                 </>
@@ -372,13 +366,6 @@ export default function Welcome() {
                         >
                             Masuk ke aplikasi
                             <ArrowRight className="size-4" />
-                        </FxButton>
-                        <FxButton
-                            variant="soft"
-                            size="lg"
-                            onClick={() => router.visit(register())}
-                        >
-                            Daftar gratis
                         </FxButton>
                     </motion.div>
 
@@ -768,17 +755,10 @@ export default function Welcome() {
                                         variant="coral"
                                         size="lg"
                                         className="ring-1! ring-white/30!"
-                                        onClick={() => router.visit(register())}
-                                    >
-                                        Daftar sekarang
-                                    </FxButton>
-                                    <FxButton
-                                        variant="soft"
-                                        size="lg"
-                                        className="bg-white/15! text-white! hover:bg-white/25!"
                                         onClick={() => router.visit(login())}
                                     >
-                                        Masuk
+                                        Masuk ke Kulakan
+                                        <ArrowRight className="size-4" />
                                     </FxButton>
                                 </div>
                                 <div className="mt-4 flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-xs font-medium text-white/75">
