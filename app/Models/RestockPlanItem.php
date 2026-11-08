@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'restock_plan_id', 'ingredient_id', 'urgency', 'is_urgent', 'abc_class',
     'priority_score', 'qmin_packages', 'qtarget_packages', 'recommended_packages',
-    'estimated_cost', 'label', 'purchased_packages',
+    'estimated_cost', 'actual_cost', 'label', 'purchased_packages', 'notes',
 ])]
 class RestockPlanItem extends Model
 {

@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from 'react';
 
 type Variant = 'coral' | 'dark' | 'soft';
-type Size = 'md' | 'lg' | 'icon';
+type Size = 'sm' | 'md' | 'lg' | 'icon';
 
 const variants: Record<Variant, string> = {
     coral: 'fx-coral hover:brightness-[0.97] active:brightness-95',
@@ -10,6 +10,7 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
+    sm: 'h-8 px-3 text-xs',
     md: 'h-10 px-4 text-sm',
     lg: 'h-12 px-6 text-sm',
     icon: 'size-9 p-0',

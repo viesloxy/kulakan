@@ -18,7 +18,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('profitabilitas', [ProfitabilityController::class, 'index'])->name('profitability');
         Route::get('restock', [RestockController::class, 'index'])->name('restock');
+        Route::get('restock/plans/{restockPlan}', [RestockController::class, 'show'])->name('restock.plans.show');
         Route::post('restock/plans', [RestockController::class, 'store'])->middleware('throttle:30,1')->name('restock.store');
+        Route::post('restock/plans/{restockPlan}/approve', [RestockController::class, 'approve'])->middleware('throttle:30,1')->name('restock.approve');
+        Route::post('restock/plans/{restockPlan}/order', [RestockController::class, 'order'])->middleware('throttle:30,1')->name('restock.order');
+        Route::post('restock/plans/{restockPlan}/cancel', [RestockController::class, 'cancel'])->middleware('throttle:30,1')->name('restock.cancel');
         Route::post('restock/plans/{restockPlan}/purchase', [RestockController::class, 'purchase'])->middleware('throttle:30,1')->name('restock.purchase');
         Route::get('alert', [AlertController::class, 'index'])->name('alerts');
         Route::post('alert/{alert}/resolve', [AlertController::class, 'resolve'])->name('alerts.resolve');
@@ -38,6 +42,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Void pesanan khusus owner (FR-018, DEC-13).
         Route::post('pos/{salesOrder}/void', [OrderController::class, 'void'])->middleware('throttle:30,1')->name('orders.void');
+        Route::post('pesanan/{salesOrder}/void', [OrderController::class, 'void'])->middleware('throttle:30,1')->name('orders.history.void');
 
         // Kelola pengguna: multi-owner & staff dalam 1 UMKM (matriks SAD §9).
         Route::get('pengguna', [UserController::class, 'index'])->name('pengguna');
@@ -63,6 +68,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('pos', [OrderController::class, 'store'])
         ->middleware('throttle:60,1')
         ->name('pos.store');
+
+    // Riwayat pesanan: owner & staff.
+    Route::get('pesanan', [OrderController::class, 'history'])->name('orders.history');
+    Route::patch('pesanan/{salesOrder}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::get('pesanan/{salesOrder}/cetak', [OrderController::class, 'print'])->name('orders.print');
 });
 
 require __DIR__.'/settings.php';

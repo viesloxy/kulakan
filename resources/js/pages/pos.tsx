@@ -1,6 +1,19 @@
 import { router } from '@inertiajs/react';
-import { Coffee, CupSoda, Minus, Plus, Sandwich, Trash2 } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import {
+    ArrowRight,
+    ChevronLeft,
+    ChevronRight,
+    Coffee,
+    CupSoda,
+    Minus,
+    Plus,
+    ReceiptText,
+    Sandwich,
+    Search,
+    Trash2,
+    X,
+} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
@@ -10,6 +23,7 @@ import PageShell from '@/components/page-shell';
 import { formatRupiah } from '@/lib/format';
 
 type Category = 'Kopi' | 'Non-Kopi' | 'Makanan';
+type OrderType = 'dine-in' | 'takeaway' | 'delivery';
 
 type PosMenu = {
     id: number;
@@ -20,15 +34,58 @@ type PosMenu = {
     portions_available: number;
 };
 
-type Props = { menus: PosMenu[] };
+type Props = {
+    menus: PosMenu[];
+    active_queue_count?: number;
+};
 
 const categoryIcon = { Kopi: Coffee, 'Non-Kopi': CupSoda, Makanan: Sandwich };
+const categories: Category[] = ['Kopi', 'Non-Kopi', 'Makanan'];
 
-export default function Pos({ menus }: Props) {
+export default function Pos({ menus, active_queue_count = 0 }: Props) {
     const [cart, setCart] = useState<Record<number, number>>({});
     const [payment, setPayment] = useState<'cash' | 'qris'>('cash');
+    const [orderType, setOrderType] = useState<OrderType>('dine-in');
+    const [customerName, setCustomerName] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState<'Semua' | Category>(
+        'Semua',
+    );
+    const [inStockOnly, setInStockOnly] = useState(false);
+
     // Idempotency key (FR-016): dibuat saat submit, dipakai ulang bila retry, dibersihkan saat sukses.
     const idempotencyKey = useRef<string | null>(null);
+
+    const filteredMenus = useMemo(() => {
+        return menus.filter((m) => {
+            const matchesCategory =
+                categoryFilter === 'Semua' || m.category === categoryFilter;
+            const matchesQuery =
+                searchQuery.trim() === '' ||
+                m.name.toLowerCase().includes(searchQuery.toLowerCase().trim());
+            const matchesStock = !inStockOnly || m.portions_available > 0;
+
+            return matchesCategory && matchesQuery && matchesStock;
+        });
+    }, [menus, categoryFilter, searchQuery, inStockOnly]);
+
+    const ITEMS_PER_PAGE = 9;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, categoryFilter, inStockOnly]);
+
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredMenus.length / ITEMS_PER_PAGE),
+    );
+    const validPage = Math.min(currentPage, totalPages);
+    const startIndex = (validPage - 1) * ITEMS_PER_PAGE;
+    const paginatedMenus = useMemo(
+        () => filteredMenus.slice(startIndex, startIndex + ITEMS_PER_PAGE),
+        [filteredMenus, startIndex],
+    );
 
     const items = useMemo(
         () =>
@@ -41,16 +98,46 @@ export default function Pos({ menus }: Props) {
         [cart, menus],
     );
 
-    const total = items.reduce(
-        (sum, x) => sum + Number(x.menu.selling_price) * x.qty,
-        0,
+    const totalItemsCount = useMemo(
+        () => items.reduce((n, x) => n + x.qty, 0),
+        [items],
+    );
+
+    const total = useMemo(
+        () =>
+            items.reduce(
+                (sum, x) => sum + Number(x.menu.selling_price) * x.qty,
+                0,
+            ),
+        [items],
     );
 
     function add(menu: PosMenu) {
-        setCart((c) => ({ ...c, [menu.id]: (c[menu.id] ?? 0) + 1 }));
+        if (menu.portions_available <= 0) {
+            toast.warning(`Stok bahan untuk ${menu.name} habis.`);
+            return;
+        }
+
+        const currentQty = cart[menu.id] ?? 0;
+        if (currentQty >= menu.portions_available) {
+            toast.warning(
+                `Hanya tersisa ${menu.portions_available} porsi untuk ${menu.name}.`,
+            );
+            return;
+        }
+
+        setCart((c) => ({ ...c, [menu.id]: currentQty + 1 }));
     }
 
     function setQty(id: number, qty: number) {
+        const menu = menus.find((m) => m.id === id);
+        if (menu && qty > menu.portions_available) {
+            toast.warning(
+                `Maksimal ${menu.portions_available} porsi sesuai ketersediaan bahan.`,
+            );
+            return;
+        }
+
         setCart((c) => {
             const next = { ...c };
             if (qty <= 0) {
@@ -60,6 +147,11 @@ export default function Pos({ menus }: Props) {
             }
             return next;
         });
+    }
+
+    function clearCart() {
+        setCart({});
+        setCustomerName('');
     }
 
     function submit() {
@@ -89,9 +181,17 @@ export default function Pos({ menus }: Props) {
                 preserveScroll: true,
                 onSuccess: () => {
                     idempotencyKey.current = null;
+                    const custInfo = customerName.trim()
+                        ? ` (${customerName.trim()})`
+                        : '';
                     setCart({});
+                    setCustomerName('');
                     toast.success('Pesanan tersimpan', {
-                        description: `${items.length} item, total ${formatRupiah(total)}. Stok bahan terpotong otomatis.`,
+                        description: `${items.length} menu${custInfo}, total ${formatRupiah(total)}. Stok bahan terpotong otomatis.`,
+                        action: {
+                            label: 'Riwayat',
+                            onClick: () => router.visit('/pesanan'),
+                        },
                     });
                 },
                 onError: (errors) =>
@@ -106,158 +206,606 @@ export default function Pos({ menus }: Props) {
         <PageShell
             title="POS Kasir"
             description="Pilih menu, catat pesanan, stok bahan terpotong otomatis sesuai resep."
+            actions={
+                <FxButton
+                    variant="soft"
+                    size="sm"
+                    className="gap-2 text-xs font-semibold"
+                    onClick={() => router.visit('/pesanan')}
+                >
+                    <ReceiptText className="size-3.5 text-primary" />
+                    <span>Riwayat Pesanan</span>
+                    {active_queue_count > 0 ? (
+                        <span className="flex items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                            <span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
+                            {active_queue_count} antrean
+                        </span>
+                    ) : null}
+                </FxButton>
+            }
         >
-            <div className="grid items-start gap-5 lg:grid-cols-[1fr_360px]">
-                <Reveal delay={0.05}>
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {menus.map((m) => {
-                            const Icon = categoryIcon[m.category];
-                            const low = m.portions_available <= 3;
-                            return (
-                                <button
-                                    key={m.id}
-                                    onClick={() => add(m)}
-                                    className="flex flex-col gap-3 fx-card p-4 text-left transition-colors duration-200 hover:bg-hover-soft"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        {m.image_url ? (
-                                            <img
-                                                src={m.image_url}
-                                                alt={m.name}
-                                                className="size-11 rounded-2xl object-cover"
-                                            />
-                                        ) : (
-                                            <IconCircle
-                                                icon={Icon}
-                                                tone="soft"
-                                            />
-                                        )}
-                                        <span
-                                            className={`text-[11px] font-semibold ${low ? 'text-danger' : 'text-success'}`}
-                                        >
-                                            Sisa {m.portions_available}
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <p className="font-semibold">
-                                            {m.name}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {m.category}
-                                        </p>
-                                    </div>
-                                    <p className="mt-auto text-sm font-bold tabular-nums">
-                                        {formatRupiah(m.selling_price)}
-                                    </p>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </Reveal>
-
-                <Reveal delay={0.1}>
-                    <FxCard className="sticky top-4 flex flex-col gap-4 p-5">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-base font-semibold">Pesanan</h2>
-                            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold">
-                                {items.reduce((n, x) => n + x.qty, 0)} item
-                            </span>
-                        </div>
-
-                        {items.length === 0 ? (
-                            <p className="py-6 text-center text-sm text-muted-foreground">
-                                Belum ada item. Klik menu untuk menambah.
-                            </p>
-                        ) : (
-                            <div className="flex flex-col gap-3">
-                                {items.map(({ menu, qty }) => (
-                                    <div
-                                        key={menu.id}
-                                        className="flex items-center gap-3"
-                                    >
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-medium">
-                                                {menu.name}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground tabular-nums">
-                                                {formatRupiah(
-                                                    menu.selling_price,
-                                                )}
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 rounded-full bg-secondary p-1">
+            <div className="grid items-start gap-5 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px]">
+                {/* Kolom Kiri: Katalog Produk & Filter (Referensi Tave POS Opsi A) */}
+                <div className="flex flex-col gap-4">
+                    <Reveal delay={0.05}>
+                        {/* Header Toolbar: Kategori Pills + Search & Filter Ketersediaan */}
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            {/* Kategori Pills */}
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                {(['Semua', ...categories] as const).map(
+                                    (cat) => {
+                                        const active = categoryFilter === cat;
+                                        return (
                                             <button
+                                                key={cat}
+                                                type="button"
                                                 onClick={() =>
-                                                    setQty(menu.id, qty - 1)
+                                                    setCategoryFilter(cat)
                                                 }
-                                                className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
-                                                aria-label="Kurangi"
+                                                className={`h-8 rounded-full px-3.5 text-xs font-semibold transition-all duration-200 ${
+                                                    active
+                                                        ? 'fx-coral shadow-xs'
+                                                        : 'bg-secondary text-foreground hover:bg-hover-soft'
+                                                }`}
                                             >
-                                                <Minus className="size-3.5" />
+                                                {cat}
                                             </button>
-                                            <span className="w-5 text-center text-sm font-semibold tabular-nums">
-                                                {qty}
-                                            </span>
-                                            <button
-                                                onClick={() =>
-                                                    setQty(menu.id, qty + 1)
-                                                }
-                                                className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
-                                                aria-label="Tambah"
-                                            >
-                                                <Plus className="size-3.5" />
-                                            </button>
-                                        </div>
-                                        <span className="w-20 text-right text-sm font-semibold tabular-nums">
-                                            {formatRupiah(
-                                                Number(menu.selling_price) *
-                                                    qty,
-                                            )}
-                                        </span>
+                                        );
+                                    },
+                                )}
+                            </div>
+
+                            {/* Search Bar & In-Stock Toggle */}
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-9 w-full items-center gap-2 rounded-full bg-secondary/80 px-3 transition-colors focus-within:bg-secondary focus-within:ring-2 focus-within:ring-primary/20 sm:w-56">
+                                    <Search className="size-3.5 shrink-0 text-muted-foreground" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) =>
+                                            setSearchQuery(e.target.value)
+                                        }
+                                        placeholder="Cari menu..."
+                                        className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                                    />
+                                    {searchQuery ? (
                                         <button
-                                            onClick={() => setQty(menu.id, 0)}
-                                            className="text-muted-foreground transition-colors hover:text-danger"
-                                            aria-label="Hapus"
+                                            type="button"
+                                            onClick={() => setSearchQuery('')}
+                                            className="rounded-full p-0.5 text-muted-foreground hover:text-foreground"
+                                            aria-label="Hapus pencarian"
                                         >
-                                            <Trash2 className="size-4" />
+                                            <X className="size-3" />
                                         </button>
+                                    ) : null}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setInStockOnly((v) => !v)}
+                                    className={`h-9 shrink-0 rounded-full px-3 text-xs font-semibold transition-all duration-200 ${
+                                        inStockOnly
+                                            ? 'bg-success-soft text-success ring-1 ring-success/30'
+                                            : 'bg-secondary text-muted-foreground hover:bg-hover-soft hover:text-foreground'
+                                    }`}
+                                >
+                                    Stok ada
+                                </button>
+                            </div>
+                        </div>
+                    </Reveal>
+
+                    {/* Grid Kartu Produk */}
+                    <Reveal delay={0.1}>
+                        {filteredMenus.length === 0 ? (
+                            <FxSoft className="flex flex-col items-center justify-center gap-2 rounded-3xl p-12 text-center text-muted-foreground">
+                                <Search className="size-8 text-muted-foreground/40" />
+                                <p className="text-sm font-semibold text-foreground">
+                                    Tidak ada menu yang sesuai
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Coba ubah kata kunci pencarian atau ganti
+                                    kategori filter.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        setCategoryFilter('Semua');
+                                        setInStockOnly(false);
+                                    }}
+                                    className="mt-2 text-xs font-semibold text-primary hover:underline"
+                                >
+                                    Reset semua filter
+                                </button>
+                            </FxSoft>
+                        ) : (
+                            <div>
+                                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                    {paginatedMenus.map((m) => {
+                                        const Icon = categoryIcon[m.category];
+                                        const isOutOfStock =
+                                            m.portions_available <= 0;
+                                        const isLowStock =
+                                            m.portions_available > 0 &&
+                                            m.portions_available <= 3;
+                                        const inCartQty = cart[m.id] ?? 0;
+
+                                        return (
+                                            <FxCard
+                                                key={m.id}
+                                                className={`group relative flex flex-col justify-between overflow-hidden p-4 transition-all duration-200 ${
+                                                    inCartQty > 0
+                                                        ? 'shadow-xs ring-2 ring-primary/25'
+                                                        : ''
+                                                } ${
+                                                    isOutOfStock
+                                                        ? 'opacity-60 grayscale-[30%]'
+                                                        : 'hover:-translate-y-0.5 hover:shadow-md'
+                                                }`}
+                                            >
+                                                {/* Top Bar Kartu: Kategori & Ketersediaan Stok */}
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                        {m.category}
+                                                    </span>
+                                                    <span
+                                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                                                            isOutOfStock
+                                                                ? 'bg-danger-soft text-danger'
+                                                                : isLowStock
+                                                                  ? 'bg-warning-soft text-warning-ink'
+                                                                  : 'bg-success-soft text-success'
+                                                        }`}
+                                                    >
+                                                        <span
+                                                            className={`size-1.5 rounded-full ${
+                                                                isOutOfStock
+                                                                    ? 'bg-danger'
+                                                                    : isLowStock
+                                                                      ? 'bg-warning'
+                                                                      : 'bg-success'
+                                                            }`}
+                                                        />
+                                                        {isOutOfStock
+                                                            ? 'Habis'
+                                                            : `Sisa ${m.portions_available}`}
+                                                    </span>
+                                                </div>
+
+                                                {/* Foto Produk Besar (Gaya Opsi A) */}
+                                                <div
+                                                    onClick={() =>
+                                                        !isOutOfStock && add(m)
+                                                    }
+                                                    className="my-3 flex h-36 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-secondary/35 transition-transform duration-300 group-hover:scale-[1.02]"
+                                                >
+                                                    {m.image_url ? (
+                                                        <img
+                                                            src={m.image_url}
+                                                            alt={m.name}
+                                                            className="size-full object-cover"
+                                                            loading="lazy"
+                                                        />
+                                                    ) : (
+                                                        <IconCircle
+                                                            icon={Icon}
+                                                            tone="soft"
+                                                            size="lg"
+                                                        />
+                                                    )}
+                                                </div>
+
+                                                {/* Bagian Bawah: Nama, Harga, & Stepper Kontrol Kuantitas */}
+                                                <div className="flex items-end justify-between gap-2 pt-1">
+                                                    <div
+                                                        onClick={() =>
+                                                            !isOutOfStock &&
+                                                            add(m)
+                                                        }
+                                                        className="min-w-0 flex-1 cursor-pointer"
+                                                    >
+                                                        <p className="truncate font-semibold text-foreground transition-colors group-hover:text-primary">
+                                                            {m.name}
+                                                        </p>
+                                                        <p className="mt-0.5 text-sm font-bold text-foreground tabular-nums">
+                                                            {formatRupiah(
+                                                                m.selling_price,
+                                                            )}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Kontrol Kuantitas: Stepper (- / qty / +) jika sudah dipilih, atau tombol (+) jika belum */}
+                                                    {inCartQty > 0 ? (
+                                                        <div
+                                                            onClick={(e) =>
+                                                                e.stopPropagation()
+                                                            }
+                                                            className="flex items-center gap-1 rounded-xl bg-primary/10 p-1 text-primary ring-1 ring-primary/25"
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setQty(
+                                                                        m.id,
+                                                                        inCartQty -
+                                                                            1,
+                                                                    )
+                                                                }
+                                                                className="flex size-7 items-center justify-center rounded-lg bg-card text-foreground transition-all duration-150 hover:bg-danger-soft hover:text-danger active:scale-90"
+                                                                aria-label={`Kurangi ${m.name}`}
+                                                            >
+                                                                <Minus className="size-3.5" />
+                                                            </button>
+                                                            <span className="w-5 text-center text-xs font-bold text-primary tabular-nums">
+                                                                {inCartQty}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                disabled={
+                                                                    isOutOfStock ||
+                                                                    inCartQty >=
+                                                                        m.portions_available
+                                                                }
+                                                                onClick={() =>
+                                                                    add(m)
+                                                                }
+                                                                className={`flex size-7 items-center justify-center rounded-lg bg-card text-foreground transition-all duration-150 hover:bg-hover-soft active:scale-90 ${
+                                                                    inCartQty >=
+                                                                    m.portions_available
+                                                                        ? 'cursor-not-allowed opacity-40'
+                                                                        : ''
+                                                                }`}
+                                                                aria-label={`Tambah ${m.name}`}
+                                                            >
+                                                                <Plus className="size-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            disabled={
+                                                                isOutOfStock
+                                                            }
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                add(m);
+                                                            }}
+                                                            aria-label={`Tambah ${m.name}`}
+                                                            className={`flex size-9 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground transition-all duration-200 hover:bg-hover-soft active:scale-95 ${
+                                                                isOutOfStock
+                                                                    ? 'cursor-not-allowed opacity-40'
+                                                                    : ''
+                                                            }`}
+                                                        >
+                                                            <Plus className="size-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </FxCard>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Pagination Controls */}
+                                {totalPages > 1 ? (
+                                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-4">
+                                        <p className="text-xs text-muted-foreground">
+                                            Menampilkan{' '}
+                                            <span className="font-semibold text-foreground">
+                                                {startIndex + 1} -{' '}
+                                                {Math.min(
+                                                    startIndex + ITEMS_PER_PAGE,
+                                                    filteredMenus.length,
+                                                )}
+                                            </span>{' '}
+                                            dari{' '}
+                                            <span className="font-semibold text-foreground">
+                                                {filteredMenus.length}
+                                            </span>{' '}
+                                            menu
+                                        </p>
+
+                                        <div className="flex items-center gap-1.5">
+                                            <button
+                                                type="button"
+                                                disabled={validPage <= 1}
+                                                onClick={() =>
+                                                    setCurrentPage((p) =>
+                                                        Math.max(1, p - 1),
+                                                    )
+                                                }
+                                                className="flex size-8 items-center justify-center rounded-xl bg-secondary text-foreground transition-colors hover:bg-hover-soft disabled:cursor-not-allowed disabled:opacity-40"
+                                                aria-label="Halaman sebelumnya"
+                                            >
+                                                <ChevronLeft className="size-4" />
+                                            </button>
+
+                                            <div className="flex items-center gap-1">
+                                                {Array.from(
+                                                    { length: totalPages },
+                                                    (_, i) => i + 1,
+                                                ).map((pageNum) => {
+                                                    const isActive =
+                                                        pageNum === validPage;
+                                                    return (
+                                                        <button
+                                                            key={pageNum}
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setCurrentPage(
+                                                                    pageNum,
+                                                                )
+                                                            }
+                                                            className={`flex size-8 items-center justify-center rounded-xl text-xs font-semibold transition-all duration-200 ${
+                                                                isActive
+                                                                    ? 'fx-coral font-bold shadow-xs'
+                                                                    : 'bg-secondary text-foreground hover:bg-hover-soft'
+                                                            }`}
+                                                        >
+                                                            {pageNum}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                disabled={
+                                                    validPage >= totalPages
+                                                }
+                                                onClick={() =>
+                                                    setCurrentPage((p) =>
+                                                        Math.min(
+                                                            totalPages,
+                                                            p + 1,
+                                                        ),
+                                                    )
+                                                }
+                                                className="flex size-8 items-center justify-center rounded-xl bg-secondary text-foreground transition-colors hover:bg-hover-soft disabled:cursor-not-allowed disabled:opacity-40"
+                                                aria-label="Halaman berikutnya"
+                                            >
+                                                <ChevronRight className="size-4" />
+                                            </button>
+                                        </div>
                                     </div>
-                                ))}
+                                ) : null}
                             </div>
                         )}
+                    </Reveal>
+                </div>
 
-                        <FxSoft className="flex items-center justify-between p-4">
-                            <span className="text-sm text-muted-foreground">
-                                Total
-                            </span>
-                            <span className="text-xl font-bold tabular-nums">
+                {/* Kolom Kanan: Detail Pesanan / Keranjang (Referensi Order Detail Opsi A) */}
+                <Reveal delay={0.1}>
+                    <FxCard className="sticky top-4 flex flex-col gap-4 p-5 shadow-sm">
+                        {/* Header Keranjang: Judul, Counter & Reset Button */}
+                        <div className="flex items-center justify-between border-b border-border/50 pb-3">
+                            <div>
+                                <h2 className="text-base font-bold tracking-tight">
+                                    Detail Pesanan
+                                </h2>
+                                <p className="text-xs text-muted-foreground">
+                                    {totalItemsCount} item terpilih
+                                </p>
+                            </div>
+                            {items.length > 0 ? (
+                                <button
+                                    type="button"
+                                    onClick={clearCart}
+                                    className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-danger-soft hover:text-danger"
+                                >
+                                    <Trash2 className="size-3" />
+                                    Batal
+                                </button>
+                            ) : null}
+                        </div>
+
+                        {/* Segmented Control Tipe Pesanan (Dine-in / Takeaway / Delivery) */}
+                        <div className="grid grid-cols-3 gap-1 rounded-2xl bg-secondary/80 p-1 text-xs font-semibold">
+                            {[
+                                { id: 'dine-in', label: 'Dine In' },
+                                { id: 'takeaway', label: 'Takeaway' },
+                                { id: 'delivery', label: 'Delivery' },
+                            ].map((type) => {
+                                const active = orderType === type.id;
+                                return (
+                                    <button
+                                        key={type.id}
+                                        type="button"
+                                        onClick={() =>
+                                            setOrderType(type.id as OrderType)
+                                        }
+                                        className={`rounded-xl py-1.5 transition-all duration-200 ${
+                                            active
+                                                ? 'bg-card font-bold text-foreground shadow-xs'
+                                                : 'text-muted-foreground hover:text-foreground'
+                                        }`}
+                                    >
+                                        {type.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Input Nama Pelanggan / Nomor Meja */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-medium text-muted-foreground">
+                                Nama Pelanggan / Meja
+                            </label>
+                            <input
+                                type="text"
+                                value={customerName}
+                                onChange={(e) =>
+                                    setCustomerName(e.target.value)
+                                }
+                                placeholder="Contoh: Meja 4 / Daffa"
+                                className="h-9 w-full rounded-xl bg-secondary/60 px-3 text-xs transition-colors outline-none placeholder:text-muted-foreground/60 focus:bg-secondary focus:ring-2 focus:ring-primary/20"
+                            />
+                        </div>
+
+                        {/* Daftar Item Pesanan */}
+                        <div className="flex flex-col">
+                            <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                                Item Pesanan
+                            </p>
+                            {items.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-secondary/30 py-8 text-center text-muted-foreground">
+                                    <p className="text-sm font-medium">
+                                        Keranjang masih kosong
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Pilih menu di katalog sebelah kiri untuk
+                                        menambah pesanan.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="flex max-h-[280px] flex-col gap-3 overflow-y-auto pr-1">
+                                    {items.map(({ menu, qty }) => (
+                                        <div
+                                            key={menu.id}
+                                            className="flex items-center gap-3 rounded-2xl border border-border/40 bg-secondary/20 p-2.5 transition-colors hover:bg-secondary/40"
+                                        >
+                                            {/* Thumbnail Foto Menu */}
+                                            {menu.image_url ? (
+                                                <img
+                                                    src={menu.image_url}
+                                                    alt={menu.name}
+                                                    className="size-11 shrink-0 rounded-xl object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+                                                    <IconCircle
+                                                        icon={
+                                                            categoryIcon[
+                                                                menu.category
+                                                            ]
+                                                        }
+                                                        tone="soft"
+                                                        size="sm"
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Deskripsi & Harga Satuan */}
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-xs font-semibold text-foreground">
+                                                    {menu.name}
+                                                </p>
+                                                <p className="text-[11px] text-muted-foreground tabular-nums">
+                                                    {formatRupiah(
+                                                        menu.selling_price,
+                                                    )}
+                                                </p>
+                                            </div>
+
+                                            {/* Stepper Kuantitas */}
+                                            <div className="flex items-center gap-1 rounded-full bg-secondary p-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setQty(menu.id, qty - 1)
+                                                    }
+                                                    className="flex size-5 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
+                                                    aria-label="Kurangi"
+                                                >
+                                                    <Minus className="size-3" />
+                                                </button>
+                                                <span className="w-4 text-center text-xs font-bold tabular-nums">
+                                                    {qty}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setQty(menu.id, qty + 1)
+                                                    }
+                                                    className="flex size-5 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
+                                                    aria-label="Tambah"
+                                                >
+                                                    <Plus className="size-3" />
+                                                </button>
+                                            </div>
+
+                                            {/* Subtotal Item */}
+                                            <span className="w-16 text-right text-xs font-bold text-foreground tabular-nums">
+                                                {formatRupiah(
+                                                    Number(menu.selling_price) *
+                                                        qty,
+                                                )}
+                                            </span>
+
+                                            {/* Delete Button */}
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setQty(menu.id, 0)
+                                                }
+                                                className="text-muted-foreground transition-colors hover:text-danger"
+                                                aria-label="Hapus item"
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Rincian Pembayaran (Payment Details) */}
+                        <div className="border-t border-border/50 pt-3">
+                            <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                                Metode Pembayaran
+                            </p>
+                            <div className="grid grid-cols-2 gap-2">
+                                {(
+                                    [
+                                        { id: 'cash', label: 'Tunai (Cash)' },
+                                        { id: 'qris', label: 'QRIS' },
+                                    ] as const
+                                ).map((p) => {
+                                    const active = payment === p.id;
+                                    return (
+                                        <button
+                                            key={p.id}
+                                            type="button"
+                                            onClick={() => setPayment(p.id)}
+                                            className={`h-9 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                                                active
+                                                    ? 'fx-coral shadow-xs'
+                                                    : 'bg-secondary text-foreground hover:bg-hover-soft'
+                                            }`}
+                                        >
+                                            {p.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Total Belanja */}
+                        <FxSoft className="flex items-center justify-between p-3.5">
+                            <div>
+                                <span className="text-xs text-muted-foreground">
+                                    Total Bayar
+                                </span>
+                                <p className="text-xs font-medium text-muted-foreground">
+                                    {totalItemsCount} item
+                                </p>
+                            </div>
+                            <span className="text-xl font-bold text-foreground tabular-nums">
                                 {formatRupiah(total)}
                             </span>
                         </FxSoft>
 
-                        <div className="grid grid-cols-2 gap-2">
-                            {(['cash', 'qris'] as const).map((p) => (
-                                <button
-                                    key={p}
-                                    onClick={() => setPayment(p)}
-                                    className={`h-10 rounded-full text-sm font-semibold transition-all duration-200 ${
-                                        payment === p
-                                            ? 'fx-coral'
-                                            : 'bg-secondary text-foreground hover:bg-hover-soft'
-                                    }`}
-                                >
-                                    {p === 'cash' ? 'Tunai' : 'QRIS'}
-                                </button>
-                            ))}
-                        </div>
-
+                        {/* Tombol Eksekusi Order (Gaya Opsi A: Process order →) */}
                         <FxButton
                             variant="coral"
                             size="lg"
+                            disabled={items.length === 0}
                             onClick={submit}
-                            className="w-full"
+                            className="w-full gap-2 text-sm font-semibold shadow-sm"
                         >
-                            Simpan pesanan
+                            <span>Proses Pesanan</span>
+                            <ArrowRight className="size-4" />
                         </FxButton>
                     </FxCard>
                 </Reveal>

@@ -5,6 +5,7 @@ import {
     FolderGit2,
     LayoutGrid,
     Receipt,
+    ReceiptText,
     ShoppingBasket,
     TrendingUp,
     Users,
@@ -55,6 +56,12 @@ const allNavItems: RoleNavItem[] = [
         title: 'POS Kasir',
         href: '/pos',
         icon: Receipt,
+        roles: ['owner', 'staff'],
+    },
+    {
+        title: 'Pesanan',
+        href: '/pesanan',
+        icon: ReceiptText,
         roles: ['owner', 'staff'],
     },
     {

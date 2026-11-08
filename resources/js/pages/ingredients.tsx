@@ -3,27 +3,49 @@ import {
     ArrowDownToLine,
     Ban,
     Box,
+    Check,
+    ClipboardCheck,
     Clock,
+    History,
+    Info,
+    Layers,
     PackageOpen,
+    PackageX,
     Pencil,
+    PenLine,
     Plus,
     Search,
+    ShieldAlert,
     SlidersHorizontal,
     Tag,
+    Trash2,
     TrendingUp,
     TriangleAlert,
+    User as UserIcon,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
-import { FxField, FxInput, FxModal, FxSelect } from '@/components/fx/fx-form';
+import {
+    FxField,
+    FxInput,
+    FxModal,
+    FxSelect,
+    FxTextarea,
+} from '@/components/fx/fx-form';
 import { FxIconButton } from '@/components/fx/fx-icon-button';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { formatPercent, formatRupiah } from '@/lib/format';
 import { isOwner } from '@/lib/permissions';
+import { cn } from '@/lib/utils';
 
 type BaseUnit = 'gram' | 'ml' | 'pcs';
 type Abc = 'A' | 'B' | 'C';
@@ -36,6 +58,15 @@ type PriceHistoryRow = {
     new_value: string;
     reason: string | null;
     change_pct: string | null;
+    created_at: string | null;
+};
+
+type StockAdjustmentRow = {
+    id: number;
+    type: 'waste' | 'adjustment' | 'purchase' | 'sale';
+    qty_change: string;
+    reason: string | null;
+    user_name: string;
     created_at: string | null;
 };
 
@@ -57,6 +88,7 @@ type IngredientRow = {
     price_change_pct: string;
     quote_change_pct: string;
     price_history: PriceHistoryRow[];
+    adjustment_history?: StockAdjustmentRow[];
 };
 
 type Props = {
@@ -107,6 +139,58 @@ const formatQty = (value: string | number): string =>
     new Intl.NumberFormat('id-ID', { maximumFractionDigits: 3 }).format(
         Number(value),
     );
+
+function ColumnHeaderTip({
+    label,
+    title,
+    description,
+    align = 'left',
+}: {
+    label: string;
+    title: string;
+    description: string;
+    align?: 'left' | 'right';
+}) {
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <span
+                    tabIndex={0}
+                    className={`inline-flex cursor-help items-center gap-1 underline decoration-muted-foreground/50 decoration-dotted underline-offset-4 transition-colors hover:text-foreground focus:text-foreground focus:outline-none ${
+                        align === 'right' ? 'justify-end' : ''
+                    }`}
+                >
+                    {label}
+                </span>
+            </TooltipTrigger>
+            <TooltipContent
+                side="top"
+                className="max-w-[240px] rounded-xl bg-card p-3 text-xs text-foreground shadow-md ring-1 ring-border [&>svg]:fill-card"
+            >
+                <p className="font-semibold text-foreground">{title}</p>
+                <p className="mt-1 leading-relaxed text-muted-foreground">
+                    {description}
+                </p>
+            </TooltipContent>
+        </Tooltip>
+    );
+}
+
+function formatAdjustmentDate(isoString: string | null): string {
+    if (!isoString) return '-';
+    try {
+        const d = new Date(isoString);
+        return new Intl.DateTimeFormat('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        }).format(d);
+    } catch {
+        return isoString;
+    }
+}
 
 export default function Ingredients({ ingredients, meta }: Props) {
     const owner = isOwner(usePage().props.auth.user);
@@ -360,22 +444,45 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                         Bahan
                                     </th>
                                     <th className="px-3 py-2.5 font-medium">
-                                        Kelas
+                                        <ColumnHeaderTip
+                                            label="Kelas"
+                                            title="Klasifikasi ABC"
+                                            description="Prioritas bahan berdasarkan kontribusi nilai inventaris (A = tertinggi, B = menengah, C = pelengkap)."
+                                        />
                                     </th>
                                     <th className="px-3 py-2.5 text-right font-medium">
                                         Stok
                                     </th>
                                     <th className="px-3 py-2.5 text-right font-medium">
-                                        Min
+                                        <ColumnHeaderTip
+                                            label="Min"
+                                            title="Stok Minimum"
+                                            description="Batas minimum stok aman. Sistem memicu alert jika sisa stok berada di bawah batas ini."
+                                            align="right"
+                                        />
                                     </th>
                                     <th className="px-3 py-2.5 text-right font-medium">
-                                        WAC
+                                        <ColumnHeaderTip
+                                            label="WAC"
+                                            title="Weighted Average Cost"
+                                            description="Biaya rata-rata tertimbang per satuan dasar dari pembelian riil untuk dasar HPP menu aktif."
+                                            align="right"
+                                        />
                                     </th>
                                     <th className="px-3 py-2.5 text-right font-medium">
-                                        Kemasan beli
+                                        <ColumnHeaderTip
+                                            label="Kemasan beli"
+                                            title="Kemasan Pembelian"
+                                            description="Ukuran konversi kemasan ke satuan dasar dan harga beli per kemasan untuk memudahkan stock-in."
+                                            align="right"
+                                        />
                                     </th>
                                     <th className="px-3 py-2.5 font-medium">
-                                        Status
+                                        <ColumnHeaderTip
+                                            label="Status"
+                                            title="Status Ketersediaan"
+                                            description="Kondisi ketersediaan fisik bahan saat ini: Aman, Perhatian, atau Menipis."
+                                        />
                                     </th>
                                     <th className="rounded-r-xl px-3 py-2.5 text-center font-medium">
                                         Aksi
@@ -813,12 +920,18 @@ function StockInModal({
                     />
                 </FxField>
                 <FxField label="Harga per kemasan">
-                    <FxInput
-                        type="number"
-                        min="0"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                    />
+                    <div className="relative flex items-center">
+                        <span className="pointer-events-none absolute left-4 text-sm font-semibold text-muted-foreground select-none">
+                            Rp
+                        </span>
+                        <FxInput
+                            type="number"
+                            min="0"
+                            className="pl-11"
+                            value={price}
+                            onChange={(e) => setPrice(e.target.value)}
+                        />
+                    </div>
                 </FxField>
             </div>
             <FxSoft className="flex flex-col gap-1 p-4 text-sm">
@@ -886,12 +999,18 @@ function QuoteModal({
                 label={`Harga penawaran per ${unitLabel[target.base_unit]}`}
                 hint="Dipakai untuk HPP proyeksi, tanpa mengubah WAC."
             >
-                <FxInput
-                    type="number"
-                    min="0"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                />
+                <div className="relative flex items-center">
+                    <span className="pointer-events-none absolute left-4 text-sm font-semibold text-muted-foreground select-none">
+                        Rp
+                    </span>
+                    <FxInput
+                        type="number"
+                        min="0"
+                        className="pl-11"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                    />
+                </div>
             </FxField>
             <FxSoft className="flex items-center justify-between p-4 text-sm">
                 <span className="text-muted-foreground">Perubahan vs WAC</span>
@@ -912,6 +1031,37 @@ function QuoteModal({
     );
 }
 
+function formatTwoDecimals(
+    val: string | number | null | undefined,
+    fallback = '0.00',
+): string {
+    if (val === null || val === undefined || val === '') {
+        return fallback;
+    }
+    const num = Number(val);
+    return Number.isNaN(num) ? fallback : num.toFixed(2);
+}
+
+function handleDecimalInput(setter: (val: string) => void, val: string) {
+    const parts = val.split('.');
+    if (parts.length === 2 && parts[1].length > 2) {
+        setter(`${parts[0]}.${parts[1].slice(0, 2)}`);
+    } else {
+        setter(val);
+    }
+}
+
+function handleDecimalBlur(setter: (val: string) => void, fallback: string) {
+    return (e: React.FocusEvent<HTMLInputElement>) => {
+        const raw = e.target.value.trim();
+        if (raw === '' || Number.isNaN(Number(raw))) {
+            setter(fallback);
+        } else {
+            setter(Number(raw).toFixed(2));
+        }
+    };
+}
+
 function EditIngredientModal({
     target,
     onClose,
@@ -925,9 +1075,13 @@ function EditIngredientModal({
     ) => void;
 }) {
     const [name, setName] = useState(target.name);
-    const [minStock, setMinStock] = useState(target.minimum_stock);
+    const [minStock, setMinStock] = useState(() =>
+        formatTwoDecimals(target.minimum_stock, '0.00'),
+    );
     const [leadTime, setLeadTime] = useState(String(target.lead_time_days));
-    const [packSize, setPackSize] = useState(target.package_size ?? '1');
+    const [packSize, setPackSize] = useState(() =>
+        formatTwoDecimals(target.package_size, '1.00'),
+    );
     const [packPrice, setPackPrice] = useState(
         String(target.package_price ?? 0),
     );
@@ -940,9 +1094,9 @@ function EditIngredientModal({
         }
         onSubmit(target, {
             name: name.trim(),
-            minimum_stock: minStock || '0',
+            minimum_stock: formatTwoDecimals(minStock, '0.00'),
             lead_time_days: Number(leadTime) || 0,
-            package_size: packSize || '1',
+            package_size: formatTwoDecimals(packSize, '1.00'),
             package_price: Number(packPrice) || 0,
             is_active: active,
         });
@@ -976,8 +1130,12 @@ function EditIngredientModal({
                     <FxInput
                         type="number"
                         min="0"
+                        step="0.01"
                         value={minStock}
-                        onChange={(e) => setMinStock(e.target.value)}
+                        onChange={(e) =>
+                            handleDecimalInput(setMinStock, e.target.value)
+                        }
+                        onBlur={handleDecimalBlur(setMinStock, '0.00')}
                     />
                 </FxField>
                 <FxField label="Lead time (hari)">
@@ -995,18 +1153,28 @@ function EditIngredientModal({
                 >
                     <FxInput
                         type="number"
-                        min="1"
+                        min="0"
+                        step="0.01"
                         value={packSize}
-                        onChange={(e) => setPackSize(e.target.value)}
+                        onChange={(e) =>
+                            handleDecimalInput(setPackSize, e.target.value)
+                        }
+                        onBlur={handleDecimalBlur(setPackSize, '1.00')}
                     />
                 </FxField>
                 <FxField label="Harga per kemasan">
-                    <FxInput
-                        type="number"
-                        min="0"
-                        value={packPrice}
-                        onChange={(e) => setPackPrice(e.target.value)}
-                    />
+                    <div className="relative flex items-center">
+                        <span className="pointer-events-none absolute left-4 text-sm font-semibold text-muted-foreground select-none">
+                            Rp
+                        </span>
+                        <FxInput
+                            type="number"
+                            min="0"
+                            className="pl-11"
+                            value={packPrice}
+                            onChange={(e) => setPackPrice(e.target.value)}
+                        />
+                    </div>
                 </FxField>
             </div>
             <FxField label="Status">
@@ -1157,106 +1325,576 @@ function AdjustModal({
         reason: string,
     ) => void;
 }) {
-    const [type, setType] = useState<'waste' | 'adjustment'>('waste');
-    const [qty, setQty] = useState('0');
-    const [reason, setReason] = useState('');
+    // Mode: 'adjustment' (Opname Fisik) atau 'waste' (Waste/Kerusakan)
+    const [mode, setMode] = useState<'adjustment' | 'waste'>(
+        isOwner ? 'adjustment' : 'waste',
+    );
 
-    const delta = Number(qty) || 0;
-    const preview = Number(target.current_stock) + delta;
+    const currentStockNum = Number(target.current_stock) || 0;
+
+    // Di mode opname: user menginput stok fisik yang dihitung di lapangan
+    const [physicalInput, setPhysicalInput] = useState<string>(
+        String(currentStockNum),
+    );
+
+    // Di mode waste: user menginput jumlah bahan yang rusak/terbuang
+    const [wasteInput, setWasteInput] = useState<string>('');
+
+    // Pilihan alasan terstruktur terinspirasi referensi Audit Stock
+    const opnameReasons = [
+        {
+            id: 'stocktake',
+            label: 'Selisih Opname',
+            icon: ClipboardCheck,
+            desc: 'Hasil audit fisik berkala',
+        },
+        {
+            id: 'expire',
+            label: 'Kadaluarsa',
+            icon: Clock,
+            desc: 'Bahan lewat masa simpan',
+        },
+        {
+            id: 'damage',
+            label: 'Rusak / Tumpah',
+            icon: PackageX,
+            desc: 'Kemasan rusak / bocor',
+        },
+        {
+            id: 'misplacement',
+            label: 'Salah Catat',
+            icon: Layers,
+            desc: 'Selisih input transaksi',
+        },
+        {
+            id: 'theft',
+            label: 'Susut / Hilang',
+            icon: ShieldAlert,
+            desc: 'Penyusutan tak terduga',
+        },
+        {
+            id: 'custom',
+            label: 'Lainnya',
+            icon: PenLine,
+            desc: 'Keterangan manual khusus',
+        },
+    ];
+
+    const wasteReasons = [
+        {
+            id: 'damage',
+            label: 'Rusak / Basi',
+            icon: PackageX,
+            desc: 'Basi, tumpah, kemasan bocor',
+        },
+        {
+            id: 'expire',
+            label: 'Kadaluarsa',
+            icon: Clock,
+            desc: 'Melebihi tanggal kedaluwarsa',
+        },
+        {
+            id: 'spill',
+            label: 'Tumpah / Jatuh',
+            icon: Layers,
+            desc: 'Kecelakaan kerja di dapur',
+        },
+        {
+            id: 'theft',
+            label: 'Susut Alami',
+            icon: ShieldAlert,
+            desc: 'Penyusutan saat penyimpanan',
+        },
+        {
+            id: 'custom',
+            label: 'Lainnya',
+            icon: PenLine,
+            desc: 'Alasan khusus lainnya',
+        },
+    ];
+
+    const activeReasons = mode === 'adjustment' ? opnameReasons : wasteReasons;
+    const [selectedReason, setSelectedReason] = useState<string>(
+        mode === 'adjustment' ? 'stocktake' : 'damage',
+    );
+    const [note, setNote] = useState('');
+
+    // Perhitungan selisih & stok proyeksi
+    let delta = 0;
+    let finalStock = currentStockNum;
+
+    if (mode === 'adjustment') {
+        const physicalNum = Number(physicalInput) || 0;
+        delta = Number((physicalNum - currentStockNum).toFixed(3));
+        finalStock = physicalNum;
+    } else {
+        const wasteNum = Math.abs(Number(wasteInput) || 0);
+        delta = Number((-wasteNum).toFixed(3));
+        finalStock = Number((currentStockNum - wasteNum).toFixed(3));
+    }
 
     function submit() {
-        if (delta === 0) {
-            toast.error('Kuantitas penyesuaian tidak boleh 0.');
-            return;
-        }
-        if (type === 'waste' && delta > 0) {
-            toast.error(
-                'Kuantitas waste harus bernilai negatif (pengurangan stok).',
-            );
-            return;
-        }
-        if (preview < 0) {
-            toast.error(
-                'Pengurangan stok melebihi stok yang tersedia saat ini.',
-            );
-            return;
-        }
-        if (!isOwner && type === 'adjustment') {
+        if (!isOwner && mode === 'adjustment') {
             toast.error(
                 'Hanya pemilik (owner) yang berhak melakukan penyesuaian opname.',
             );
             return;
         }
-        if (!reason.trim()) {
-            toast.error('Alasan wajib diisi.');
-            return;
+
+        if (mode === 'adjustment') {
+            const physicalNum = Number(physicalInput);
+            if (isNaN(physicalNum) || physicalInput.trim() === '') {
+                toast.error('Masukkan jumlah stok fisik yang valid.');
+                return;
+            }
+            if (physicalNum < 0) {
+                toast.error('Stok fisik tidak boleh bernilai negatif.');
+                return;
+            }
+            if (delta === 0) {
+                toast.error(
+                    'Stok fisik sama dengan stok sistem (selisih 0). Tidak ada perubahan yang perlu disimpan.',
+                );
+                return;
+            }
+        } else {
+            const wasteNum = Number(wasteInput);
+            if (!wasteNum || wasteNum <= 0) {
+                toast.error('Kuantitas waste harus lebih besar dari 0.');
+                return;
+            }
+            if (wasteNum > currentStockNum) {
+                toast.error(
+                    `Pengurangan waste (${wasteNum}) melebihi stok yang tersedia (${currentStockNum}).`,
+                );
+                return;
+            }
         }
-        onSubmit(target, type, delta, reason.trim());
+
+        const reasonObj = activeReasons.find((r) => r.id === selectedReason);
+        const reasonTag = reasonObj?.label ?? 'Penyesuaian';
+        const fullReason = note.trim()
+            ? `${reasonTag}: ${note.trim()}`
+            : reasonTag;
+
+        onSubmit(target, mode, delta, fullReason.slice(0, 255));
     }
 
     return (
         <FxModal
             open
             onOpenChange={(o) => !o && onClose()}
-            title={`Sesuaikan stok ${target.name}`}
-            description={`Waste, rusak, atau hasil stock opname. Stok saat ini ${formatQty(target.current_stock)} ${unitShort[target.base_unit]}.`}
+            title="Audit Stok Bahan"
+            description={`Pencatatan stock opname fisik, selisih persediaan, atau waste untuk ${target.name}.`}
+            className="max-h-[92vh] overflow-y-auto sm:max-w-4xl lg:max-w-5xl"
             footer={
-                <>
-                    <FxButton variant="soft" onClick={onClose}>
-                        Batal
-                    </FxButton>
-                    <FxButton variant="coral" onClick={submit}>
-                        Catat penyesuaian
-                    </FxButton>
-                </>
+                <div className="flex w-full flex-col-reverse items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Info className="size-3.5 shrink-0 text-primary" />
+                        <span>
+                            {mode === 'adjustment'
+                                ? 'Stok sistem akan disesuaikan menjadi sama persis dengan hasil hitungan fisik.'
+                                : 'Stok akan dipotong otomatis dan dicatat sebagai waste/kerusakan.'}
+                        </span>
+                    </p>
+                    <div className="flex items-center justify-end gap-2">
+                        <FxButton variant="soft" onClick={onClose}>
+                            Batal
+                        </FxButton>
+                        <FxButton variant="coral" onClick={submit}>
+                            Simpan Penyesuaian
+                        </FxButton>
+                    </div>
+                </div>
             }
         >
-            <div className="grid gap-3 sm:grid-cols-2">
-                <FxField label="Jenis">
-                    <FxSelect
-                        value={type}
-                        onChange={(e) =>
-                            setType(e.target.value as 'waste' | 'adjustment')
-                        }
-                    >
-                        <option value="waste">Waste / rusak</option>
-                        {isOwner ? (
-                            <option value="adjustment">Koreksi opname</option>
-                        ) : null}
-                    </FxSelect>
-                </FxField>
-                <FxField
-                    label={`Perubahan (${unitShort[target.base_unit]})`}
-                    hint="Negatif mengurangi stok."
-                >
-                    <FxInput
-                        type="number"
-                        value={qty}
-                        onChange={(e) => setQty(e.target.value)}
-                    />
-                </FxField>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.5fr_1fr]">
+                {/* KOLOM KIRI: Form Input & Kalkulasi */}
+                <div className="flex flex-col gap-5">
+                    {/* Adjustment Type Switcher */}
+                    <div>
+                        <span className="text-xs font-semibold text-muted-foreground">
+                            Jenis Penyesuaian (Adjustment Type)
+                        </span>
+                        <div className="mt-1.5 grid grid-cols-2 gap-2 rounded-2xl bg-secondary p-1">
+                            <button
+                                type="button"
+                                disabled={!isOwner}
+                                onClick={() => {
+                                    setMode('adjustment');
+                                    setSelectedReason('stocktake');
+                                }}
+                                className={cn(
+                                    'flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all',
+                                    mode === 'adjustment'
+                                        ? 'bg-card text-foreground shadow-xs'
+                                        : 'text-muted-foreground hover:text-foreground',
+                                    !isOwner && 'cursor-not-allowed opacity-50',
+                                )}
+                            >
+                                <ClipboardCheck className="size-4 text-primary" />
+                                <span>Opname Fisik</span>
+                                {!isOwner && (
+                                    <span className="text-[10px] text-muted-foreground">
+                                        (Owner)
+                                    </span>
+                                )}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setMode('waste');
+                                    setSelectedReason('damage');
+                                }}
+                                className={cn(
+                                    'flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all',
+                                    mode === 'waste'
+                                        ? 'bg-card text-foreground shadow-xs'
+                                        : 'text-muted-foreground hover:text-foreground',
+                                )}
+                            >
+                                <Trash2 className="size-4 text-danger" />
+                                <span>Waste / Rusak</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* 3 Metric Cards: Physical Count, Available, Discrepancy */}
+                    <div className="grid grid-cols-3 gap-2.5">
+                        {/* Physical Count */}
+                        <div className="flex flex-col justify-between rounded-2xl border border-border/60 bg-card p-3 shadow-2xs">
+                            <span className="text-[11px] font-semibold text-muted-foreground">
+                                {mode === 'adjustment'
+                                    ? 'Hitungan Fisik'
+                                    : 'Stok Akhir'}
+                            </span>
+                            <div className="mt-2">
+                                {mode === 'adjustment' ? (
+                                    <div className="flex items-center">
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            value={physicalInput}
+                                            onChange={(e) =>
+                                                setPhysicalInput(e.target.value)
+                                            }
+                                            className="w-full bg-transparent text-base font-bold text-foreground tabular-nums outline-none focus:underline"
+                                            placeholder="0"
+                                        />
+                                        <span className="ml-1 shrink-0 text-xs font-medium text-muted-foreground">
+                                            {unitShort[target.base_unit]}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <p className="text-base font-bold text-foreground tabular-nums">
+                                        {formatQty(finalStock)}{' '}
+                                        <span className="text-xs font-medium text-muted-foreground">
+                                            {unitShort[target.base_unit]}
+                                        </span>
+                                    </p>
+                                )}
+                            </div>
+                            <span className="mt-1 text-[10px] text-muted-foreground">
+                                {mode === 'adjustment'
+                                    ? 'Ketik hasil hitung'
+                                    : 'Proyeksi sisa'}
+                            </span>
+                        </div>
+
+                        {/* Available */}
+                        <div className="flex flex-col justify-between rounded-2xl border border-border/60 bg-secondary/50 p-3">
+                            <span className="text-[11px] font-semibold text-muted-foreground">
+                                Stok Sistem
+                            </span>
+                            <p className="mt-2 text-base font-bold text-foreground tabular-nums">
+                                {formatQty(target.current_stock)}{' '}
+                                <span className="text-xs font-medium text-muted-foreground">
+                                    {unitShort[target.base_unit]}
+                                </span>
+                            </p>
+                            <span className="mt-1 text-[10px] text-muted-foreground">
+                                Tercatat saat ini
+                            </span>
+                        </div>
+
+                        {/* Discrepancy */}
+                        <div
+                            className={cn(
+                                'flex flex-col justify-between rounded-2xl border p-3',
+                                delta > 0
+                                    ? 'border-success/40 bg-success-soft/30'
+                                    : delta < 0
+                                      ? 'border-danger/40 bg-danger-soft/30'
+                                      : 'border-border/60 bg-secondary/50',
+                            )}
+                        >
+                            <span className="text-[11px] font-semibold text-muted-foreground">
+                                {mode === 'adjustment'
+                                    ? 'Selisih'
+                                    : 'Jumlah Waste'}
+                            </span>
+                            <div className="mt-2">
+                                {mode === 'waste' ? (
+                                    <div className="flex items-center">
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            value={wasteInput}
+                                            onChange={(e) =>
+                                                setWasteInput(e.target.value)
+                                            }
+                                            className="w-full bg-transparent text-base font-bold text-danger tabular-nums outline-none focus:underline"
+                                            placeholder="0"
+                                        />
+                                        <span className="ml-1 shrink-0 text-xs font-medium text-danger">
+                                            {unitShort[target.base_unit]}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <p
+                                        className={cn(
+                                            'text-base font-bold tabular-nums',
+                                            delta > 0
+                                                ? 'text-success'
+                                                : delta < 0
+                                                  ? 'text-danger'
+                                                  : 'text-muted-foreground',
+                                        )}
+                                    >
+                                        {delta > 0 ? `+${delta}` : delta}{' '}
+                                        <span className="text-xs font-medium">
+                                            {unitShort[target.base_unit]}
+                                        </span>
+                                    </p>
+                                )}
+                            </div>
+                            <span
+                                className={cn(
+                                    'mt-1 text-[10px] font-semibold',
+                                    delta > 0
+                                        ? 'text-success'
+                                        : delta < 0
+                                          ? 'text-danger'
+                                          : 'text-muted-foreground',
+                                )}
+                            >
+                                {delta > 0
+                                    ? 'Surplus (+)'
+                                    : delta < 0
+                                      ? 'Defisit (-)'
+                                      : 'Tepat / Cocok'}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Alasan Penyesuaian (Grid of cards) */}
+                    <div>
+                        <div className="mb-2 flex items-center justify-between">
+                            <span className="text-xs font-semibold text-muted-foreground">
+                                Alasan Penyesuaian (Adjustment Reason)
+                            </span>
+                            <span className="text-[11px] text-muted-foreground">
+                                Pilih salah satu
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                            {activeReasons.map((r) => {
+                                const Icon = r.icon;
+                                const isSelected = selectedReason === r.id;
+                                return (
+                                    <button
+                                        key={r.id}
+                                        type="button"
+                                        onClick={() => setSelectedReason(r.id)}
+                                        className={cn(
+                                            'group relative flex flex-col items-start rounded-2xl border p-2.5 text-left transition-all',
+                                            isSelected
+                                                ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                                : 'border-border/60 bg-secondary/30 hover:border-border hover:bg-secondary/70',
+                                        )}
+                                    >
+                                        <div className="flex w-full items-center justify-between">
+                                            <div
+                                                className={cn(
+                                                    'flex size-7 items-center justify-center rounded-lg',
+                                                    isSelected
+                                                        ? 'bg-primary text-white'
+                                                        : 'bg-card text-muted-foreground',
+                                                )}
+                                            >
+                                                <Icon className="size-3.5" />
+                                            </div>
+                                            <div
+                                                className={cn(
+                                                    'flex size-4 items-center justify-center rounded-full border',
+                                                    isSelected
+                                                        ? 'border-primary bg-primary text-white'
+                                                        : 'border-border bg-card',
+                                                )}
+                                            >
+                                                {isSelected && (
+                                                    <Check className="size-2.5 stroke-[3]" />
+                                                )}
+                                            </div>
+                                        </div>
+                                        <p
+                                            className={cn(
+                                                'mt-2 text-xs font-bold',
+                                                isSelected
+                                                    ? 'text-primary'
+                                                    : 'text-foreground',
+                                            )}
+                                        >
+                                            {r.label}
+                                        </p>
+                                        <p className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground">
+                                            {r.desc}
+                                        </p>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Note / Catatan Tambahan */}
+                    <div>
+                        <div className="mb-1.5 flex items-center justify-between">
+                            <span className="text-xs font-semibold text-muted-foreground">
+                                Catatan Tambahan (Note)
+                            </span>
+                            <span className="text-[11px] text-muted-foreground">
+                                {note.length}/200
+                            </span>
+                        </div>
+                        <FxTextarea
+                            rows={3}
+                            maxLength={200}
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            placeholder="Tuliskan keterangan detail jika diperlukan (misal: kemasan bocor saat transit, batch 08/11)..."
+                        />
+                    </div>
+                </div>
+
+                {/* KOLOM KANAN: Detail Bahan & Riwayat Penyesuaian */}
+                <div className="flex flex-col gap-4 border-t border-border/60 pt-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+                    {/* Detail Bahan Card */}
+                    <FxSoft className="p-4">
+                        <span className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                            Detail Bahan
+                        </span>
+                        <div className="mt-2.5 flex items-start gap-3">
+                            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-card shadow-xs">
+                                <Box className="size-5 text-primary" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <h4 className="truncate text-sm font-bold text-foreground">
+                                    {target.name}
+                                </h4>
+                                <p className="text-xs text-muted-foreground">
+                                    Satuan:{' '}
+                                    <span className="font-semibold text-foreground">
+                                        {target.base_unit}
+                                    </span>{' '}
+                                    &bull; Kelas {target.abc_class}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-3.5 grid grid-cols-2 gap-2 text-xs">
+                            <div className="rounded-xl bg-card/70 p-2.5">
+                                <p className="text-[10px] text-muted-foreground">
+                                    Biaya WAC
+                                </p>
+                                <p className="mt-0.5 font-bold text-foreground tabular-nums">
+                                    {formatRupiah(target.cost_per_unit)}
+                                </p>
+                            </div>
+                            <div className="rounded-xl bg-card/70 p-2.5">
+                                <p className="text-[10px] text-muted-foreground">
+                                    Stok Minimum
+                                </p>
+                                <p className="mt-0.5 font-bold text-foreground tabular-nums">
+                                    {formatQty(target.minimum_stock)}{' '}
+                                    {unitShort[target.base_unit]}
+                                </p>
+                            </div>
+                        </div>
+                    </FxSoft>
+
+                    {/* Riwayat Penyesuaian (Stock Adjustment History) */}
+                    <div className="flex min-h-0 flex-1 flex-col">
+                        <div className="mb-2 flex items-center justify-between">
+                            <h4 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                                <History className="size-3.5" />
+                                Riwayat Penyesuaian
+                            </h4>
+                            <span className="text-[10px] text-muted-foreground">
+                                {target.adjustment_history?.length ?? 0} catatan
+                            </span>
+                        </div>
+
+                        <div className="max-h-64 flex-1 space-y-2.5 overflow-y-auto pr-1">
+                            {target.adjustment_history &&
+                            target.adjustment_history.length > 0 ? (
+                                target.adjustment_history.map((item) => {
+                                    const qtyNum = Number(item.qty_change);
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            className="flex items-start gap-2.5 rounded-2xl border border-border/50 bg-secondary/30 p-2.5 text-xs transition-colors hover:bg-secondary/60"
+                                        >
+                                            <div className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-card text-muted-foreground">
+                                                <UserIcon className="size-3.5" />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between gap-1">
+                                                    <span className="truncate font-semibold text-foreground">
+                                                        {item.user_name}
+                                                    </span>
+                                                    <span
+                                                        className={cn(
+                                                            'rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums',
+                                                            qtyNum > 0
+                                                                ? 'bg-success-soft text-success'
+                                                                : 'bg-danger-soft text-danger',
+                                                        )}
+                                                    >
+                                                        {qtyNum > 0
+                                                            ? `+${qtyNum}`
+                                                            : qtyNum}{' '}
+                                                        {
+                                                            unitShort[
+                                                                target.base_unit
+                                                            ]
+                                                        }
+                                                    </span>
+                                                </div>
+                                                <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">
+                                                    {item.reason ?? item.type}
+                                                </p>
+                                                <p className="mt-1 text-[10px] text-muted-foreground/75">
+                                                    {formatAdjustmentDate(
+                                                        item.created_at,
+                                                    )}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 p-6 text-center text-xs text-muted-foreground">
+                                    <History className="mb-1.5 size-6 text-muted-foreground/40" />
+                                    <p>
+                                        Belum ada riwayat penyesuaian untuk
+                                        bahan ini.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
-            <FxField label="Alasan" hint="Wajib diisi (BR-011).">
-                <FxInput
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Contoh: tumpah / hasil opname"
-                />
-            </FxField>
-            <FxSoft className="flex items-center justify-between p-4 text-sm">
-                <span className="text-muted-foreground">
-                    Stok setelah penyesuaian
-                </span>
-                <span
-                    className={`font-bold tabular-nums ${
-                        preview < Number(target.minimum_stock)
-                            ? 'text-danger'
-                            : ''
-                    }`}
-                >
-                    {formatQty(preview)} {unitShort[target.base_unit]}
-                </span>
-            </FxSoft>
         </FxModal>
     );
 }

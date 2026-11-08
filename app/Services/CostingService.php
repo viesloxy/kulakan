@@ -257,7 +257,7 @@ class CostingService
 
     /**
      * Agregat penjualan per menu untuk periode tertentu (BL §7.2).
-     * Hanya pesanan berstatus `completed`. Ranking menurut gross profit (GP) menurun.
+     * Menghitung seluruh pesanan aktif selain `void`. Ranking menurut gross profit (GP) menurun.
      *
      * @return array{rows: list<array<string, mixed>>, totals: array<string, int>}
      */
@@ -266,7 +266,7 @@ class CostingService
         $query = DB::table('sales_items')
             ->join('sales_orders', 'sales_orders.id', '=', 'sales_items.sales_order_id')
             ->join('menus', 'menus.id', '=', 'sales_items.menu_id')
-            ->where('sales_orders.status', 'completed')
+            ->where('sales_orders.status', '!=', 'void')
             ->when($since !== null, fn ($q) => $q->where('sales_orders.created_at', '>=', $since))
             ->groupBy('menus.id', 'menus.name', 'menus.selling_price')
             ->selectRaw('menus.id as menu_id, menus.name as name, menus.selling_price as selling_price')

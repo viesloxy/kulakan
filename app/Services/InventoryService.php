@@ -201,7 +201,7 @@ class InventoryService
                         'user_id' => $user->id,
                         'total_amount' => $total,
                         'payment_method' => $paymentMethod,
-                        'status' => 'completed',
+                        'status' => 'preparing',
                         'idempotency_key' => $idempotencyKey,
                     ]);
 
@@ -254,18 +254,63 @@ class InventoryService
     }
 
     /**
-     * Void pesanan: kembalikan stok dari ledger konsumsi asli (BL §5.5, DEC-13).
-     * Membuat pergerakan `sale_reversal` per bahan; pesanan `void` dikecualikan dari laporan.
+     * Ubah status operasional pesanan: preparing -> ready -> completed.
      *
-     * @throws \InvalidArgumentException bila pesanan bukan berstatus `completed`
+     * @param  'ready'|'completed'  $newStatus
+     *
+     * @throws \InvalidArgumentException bila transisi status tidak valid
      */
-    public function voidOrder(SalesOrder $order, ?User $user = null): SalesOrder
+    public function updateStatus(SalesOrder $order, string $newStatus, ?User $user = null): SalesOrder
     {
-        return DB::transaction(function () use ($order, $user): SalesOrder {
+        return DB::transaction(function () use ($order, $newStatus): SalesOrder {
             $order = SalesOrder::whereKey($order->id)->lockForUpdate()->firstOrFail();
 
-            if ($order->status !== 'completed') {
+            if ($order->status === 'void') {
+                throw new \InvalidArgumentException('Pesanan '.$order->order_number.' sudah dibatalkan (void).');
+            }
+
+            if ($order->status === $newStatus) {
+                return $order;
+            }
+
+            $allowed = [
+                'preparing' => ['ready', 'completed'],
+                'ready' => ['completed'],
+            ];
+
+            if (! isset($allowed[$order->status]) || ! in_array($newStatus, $allowed[$order->status], true)) {
+                throw new \InvalidArgumentException("Transisi status dari '{$order->status}' ke '{$newStatus}' tidak diizinkan.");
+            }
+
+            $order->forceFill(['status' => $newStatus])->save();
+
+            return $order;
+        });
+    }
+
+    /**
+     * Void pesanan: kembalikan stok dari ledger konsumsi asli (BL §5.5, DEC-13).
+     * Mendukung pemulihan stok fisik (restored) atau pencatatan limbah operasional (wasted).
+     *
+     * @param  string  $handling  'restored'|'wasted'
+     *
+     * @throws \InvalidArgumentException bila pesanan sudah dibatalkan atau opsi handling tidak valid
+     */
+    public function voidOrder(
+        SalesOrder $order,
+        string $handling = 'restored',
+        ?string $reason = null,
+        ?User $user = null,
+    ): SalesOrder {
+        return DB::transaction(function () use ($order, $handling, $reason, $user): SalesOrder {
+            $order = SalesOrder::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ($order->status === 'void') {
                 throw new \InvalidArgumentException('Pesanan '.$order->order_number.' sudah dibatalkan.');
+            }
+
+            if (! in_array($handling, ['restored', 'wasted'], true)) {
+                throw new \InvalidArgumentException('Opsi penanganan stok tidak valid: '.$handling);
             }
 
             // Konsumsi asli dibaca dari ledger (bukan dihitung ulang dari BOM terkini).
@@ -279,26 +324,58 @@ class InventoryService
                 ->get()
                 ->keyBy('id');
 
+            $reasonText = $reason !== null && trim($reason) !== '' ? trim($reason) : 'Tanpa alasan';
+
             foreach ($movements as $movement) {
                 /** @var Ingredient $ingredient */
                 $ingredient = $ingredients[$movement->ingredient_id];
-                $restore = bcmul(Number::str($movement->qty_change), '-1', 3);
+                $consumed = bcmul(Number::str($movement->qty_change), '-1', 3);
 
-                $ingredient->forceFill([
-                    'current_stock' => bcadd(Number::str($ingredient->current_stock), $restore, 3),
-                ])->save();
+                if ($handling === 'restored') {
+                    // Pulihkan stok fisik ke rak
+                    $ingredient->forceFill([
+                        'current_stock' => bcadd(Number::str($ingredient->current_stock), $consumed, 3),
+                    ])->save();
 
-                StockMovement::create([
-                    'ingredient_id' => $ingredient->id,
-                    'type' => 'sale_reversal',
-                    'qty_change' => $restore,
-                    'reason' => 'void '.$order->order_number,
-                    'user_id' => $user?->id,
-                    'sales_order_id' => $order->id,
-                ]);
+                    StockMovement::create([
+                        'ingredient_id' => $ingredient->id,
+                        'type' => 'sale_reversal',
+                        'qty_change' => $consumed,
+                        'reason' => 'void '.$order->order_number.': '.$reasonText,
+                        'user_id' => $user?->id,
+                        'sales_order_id' => $order->id,
+                    ]);
+                } else {
+                    // Bahan terlanjur dibuat/terbuang:
+                    // 1. Nihilkan konsumsi penjualan (agar tidak tercatat sebagai menu terjual)
+                    StockMovement::create([
+                        'ingredient_id' => $ingredient->id,
+                        'type' => 'sale_reversal',
+                        'qty_change' => $consumed,
+                        'reason' => 'void waste reversal '.$order->order_number,
+                        'user_id' => $user?->id,
+                        'sales_order_id' => $order->id,
+                    ]);
+
+                    // 2. Catat sebagai limbah operasional (waste) dengan nilai qty negatif
+                    StockMovement::create([
+                        'ingredient_id' => $ingredient->id,
+                        'type' => 'waste',
+                        'qty_change' => bcmul($consumed, '-1', 3),
+                        'reason' => 'Batal pesanan '.$order->order_number.': '.$reasonText,
+                        'user_id' => $user?->id,
+                        'sales_order_id' => $order->id,
+                    ]);
+                }
             }
 
-            $order->forceFill(['status' => 'void'])->save();
+            $order->forceFill([
+                'status' => 'void',
+                'void_reason' => $reasonText,
+                'void_type' => $handling,
+                'voided_at' => now(),
+                'voided_by' => $user?->id,
+            ])->save();
 
             return $order;
         });

@@ -181,7 +181,11 @@ class DemoSeeder extends Seeder
 
             $order = $inventory->processOrder($lines, 'cash', null, $owner);
 
-            $order->forceFill(['created_at' => $at, 'updated_at' => $at])->save();
+            $order->forceFill([
+                'created_at' => $at,
+                'updated_at' => $at,
+                'status' => 'completed',
+            ])->save();
             $order->items()->update(['created_at' => $at, 'updated_at' => $at]);
             StockMovement::where('sales_order_id', $order->id)->update(['created_at' => $at]);
 
