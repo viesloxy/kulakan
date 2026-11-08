@@ -175,13 +175,17 @@ class IngredientController extends Controller
 
     public function adjustments(AdjustIngredientStockRequest $request, Ingredient $ingredient): RedirectResponse
     {
-        $this->inventory->adjust(
-            $ingredient,
-            Number::str($request->validated('qty_change')),
-            $request->validated('type'),
-            $request->validated('reason'),
-            $request->user(),
-        );
+        try {
+            $this->inventory->adjust(
+                $ingredient,
+                Number::str($request->validated('qty_change')),
+                $request->validated('type'),
+                $request->validated('reason'),
+                $request->user(),
+            );
+        } catch (\InvalidArgumentException $e) {
+            return back()->withErrors(['qty_change' => $e->getMessage()]);
+        }
 
         $this->alerts->syncAll();
 

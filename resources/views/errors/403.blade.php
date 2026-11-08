@@ -72,7 +72,7 @@
     <div class="card">
         <div class="badge">403</div>
         <h1>Akses ditolak</h1>
-        <p>Halaman ini hanya tersedia untuk peran <strong>Owner</strong>. Akun Anda tidak memiliki izin untuk membukanya.</p>
+        <p>{{ $exception?->getMessage() ?: 'Halaman ini hanya tersedia untuk peran Owner. Akun Anda tidak memiliki izin untuk membukanya.' }}</p>
         <div class="actions">
             <a class="primary" href="{{ url('/pos') }}">Buka POS Kasir</a>
             <a class="ghost" href="{{ url('/bahan-baku') }}">Lihat Bahan Baku</a>

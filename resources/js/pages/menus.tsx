@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import {
     Coffee,
     CupSoda,
@@ -6,18 +6,20 @@ import {
     Pencil,
     Plus,
     Sandwich,
+    Search,
     Sparkles,
     Trash2,
     UtensilsCrossed,
+    X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { FxField, FxInput, FxModal, FxSelect } from '@/components/fx/fx-form';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
-import PageHeader from '@/components/page-header';
+import PageShell from '@/components/page-shell';
 import StatusBadge, { type MenuStatus } from '@/components/status-badge';
 import { formatPercent, formatRupiah } from '@/lib/format';
 import { isOwner } from '@/lib/permissions';
@@ -77,8 +79,31 @@ export default function Menus({ menus, ingredients }: Props) {
     const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [bomOpen, setBomOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState<'Semua' | Category>(
+        'Semua',
+    );
 
-    const selected = menus.find((m) => m.id === selectedId) ?? menus[0] ?? null;
+    const filteredMenus = useMemo(() => {
+        return menus.filter((m) => {
+            const matchesCategory =
+                categoryFilter === 'Semua' || m.category === categoryFilter;
+            const matchesQuery =
+                searchQuery.trim() === '' ||
+                m.name.toLowerCase().includes(searchQuery.toLowerCase().trim());
+            return matchesCategory && matchesQuery;
+        });
+    }, [menus, categoryFilter, searchQuery]);
+
+    const selected = useMemo(
+        () =>
+            filteredMenus.find((m) => m.id === selectedId) ??
+            menus.find((m) => m.id === selectedId) ??
+            filteredMenus[0] ??
+            menus[0] ??
+            null,
+        [menus, selectedId, filteredMenus],
+    );
 
     function handleCreate(data: CreateMenuData) {
         router.post(
@@ -165,59 +190,123 @@ export default function Menus({ menus, ingredients }: Props) {
     const hasProjection = selected?.projected_hpp !== null;
 
     return (
-        <>
-            <Head title="Menu & Resep" />
-            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <Reveal>
-                    <div className="flex flex-wrap items-end justify-between gap-3">
-                        <PageHeader
-                            title="Menu & Resep"
-                            description="Kelola menu jual dan susun BOM (resep) agar stok dan HPP terhitung otomatis."
-                        />
-                        {owner ? (
-                            <FxButton
-                                variant="coral"
-                                onClick={() => setCreateOpen(true)}
-                            >
-                                <Plus className="size-4" />
-                                Tambah menu
-                            </FxButton>
-                        ) : null}
-                    </div>
-                </Reveal>
+        <PageShell
+            title="Menu & Resep"
+            description="Kelola menu jual dan susun BOM (resep) agar stok dan HPP terhitung otomatis."
+            actions={
+                owner ? (
+                    <FxButton
+                        variant="coral"
+                        onClick={() => setCreateOpen(true)}
+                    >
+                        <Plus className="size-4" />
+                        Tambah menu
+                    </FxButton>
+                ) : null
+            }
+        >
+            {selected === null ? (
+                <FxSoft className="flex flex-col items-center gap-3 p-10 text-center">
+                    <p className="text-sm text-muted-foreground">
+                        Belum ada menu. Tambahkan menu pertama.
+                    </p>
+                    {owner ? (
+                        <FxButton
+                            variant="coral"
+                            onClick={() => setCreateOpen(true)}
+                        >
+                            <Plus className="size-4" />
+                            Tambah menu
+                        </FxButton>
+                    ) : null}
+                </FxSoft>
+            ) : (
+                <div className="grid items-start gap-5 lg:grid-cols-[1fr_1.35fr]">
+                    <Reveal delay={0.05}>
+                        <FxCard className="flex flex-col gap-3 p-5">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-base font-semibold">
+                                    Daftar menu
+                                </h2>
+                                <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
+                                    {filteredMenus.length === menus.length
+                                        ? `${menus.length} menu`
+                                        : `${filteredMenus.length} dari ${menus.length} menu`}
+                                </span>
+                            </div>
 
-                {selected === null ? (
-                    <FxSoft className="flex flex-col items-center gap-3 p-10 text-center">
-                        <p className="text-sm text-muted-foreground">
-                            Belum ada menu. Tambahkan menu pertama.
-                        </p>
-                        {owner ? (
-                            <FxButton
-                                variant="coral"
-                                onClick={() => setCreateOpen(true)}
-                            >
-                                <Plus className="size-4" />
-                                Tambah menu
-                            </FxButton>
-                        ) : null}
-                    </FxSoft>
-                ) : (
-                    <div className="grid items-start gap-5 lg:grid-cols-[1fr_1.35fr]">
-                        <Reveal delay={0.05}>
-                            <FxCard className="flex flex-col gap-3 p-5">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="text-base font-semibold">
-                                        Daftar menu
-                                    </h2>
-                                    <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
-                                        {menus.length} menu
-                                    </span>
-                                </div>
+                            <div className="flex h-10 items-center gap-2 rounded-2xl bg-secondary/60 px-3.5 transition-colors focus-within:bg-secondary focus-within:ring-2 focus-within:ring-primary/20">
+                                <Search className="size-4 shrink-0 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    placeholder="Cari menu..."
+                                    className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                                />
+                                {searchQuery ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchQuery('')}
+                                        className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-hover-soft hover:text-foreground"
+                                        aria-label="Hapus pencarian"
+                                    >
+                                        <X className="size-3.5" />
+                                    </button>
+                                ) : null}
+                            </div>
 
-                                <div className="flex flex-col gap-2">
-                                    {menus.map((m) => {
+                            <div className="flex flex-wrap items-center gap-1.5 pb-0.5">
+                                {(['Semua', ...categories] as const).map(
+                                    (cat) => {
+                                        const active = categoryFilter === cat;
+                                        return (
+                                            <button
+                                                key={cat}
+                                                type="button"
+                                                onClick={() =>
+                                                    setCategoryFilter(cat)
+                                                }
+                                                className={`h-7 rounded-full px-3 text-xs font-semibold transition-all duration-200 ${
+                                                    active
+                                                        ? 'fx-coral'
+                                                        : 'bg-secondary text-foreground hover:bg-hover-soft'
+                                                }`}
+                                            >
+                                                {cat}
+                                            </button>
+                                        );
+                                    },
+                                )}
+                            </div>
+
+                            <div className="flex max-h-[calc(100vh-340px)] min-h-[300px] flex-col gap-2 overflow-y-auto pr-1">
+                                {filteredMenus.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted-foreground">
+                                        <Search className="size-8 text-muted-foreground/40" />
+                                        <p className="text-sm font-medium">
+                                            Menu tidak ditemukan
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Coba kata kunci atau kategori lain.
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSearchQuery('');
+                                                setCategoryFilter('Semua');
+                                            }}
+                                            className="mt-1 text-xs font-semibold text-primary hover:underline"
+                                        >
+                                            Reset filter
+                                        </button>
+                                    </div>
+                                ) : (
+                                    filteredMenus.map((m) => {
                                         const Icon = categoryIcon[m.category];
-                                        const active = m.id === selected.id;
+                                        const active = m.id === selected?.id;
                                         return (
                                             <button
                                                 key={m.id}
@@ -278,290 +367,281 @@ export default function Menus({ menus, ingredients }: Props) {
                                                 </div>
                                             </button>
                                         );
-                                    })}
-                                </div>
-                            </FxCard>
-                        </Reveal>
+                                    })
+                                )}
+                            </div>
+                        </FxCard>
+                    </Reveal>
 
-                        <Reveal delay={0.1}>
-                            <FxCard className="flex flex-col gap-4 p-5">
-                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                    <div className="flex items-center gap-3">
-                                        {selected.image_url ? (
+                    <Reveal delay={0.1}>
+                        <FxCard className="flex flex-col gap-4 p-5">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="items-left flex flex-col gap-3">
+                                    {selected.image_url ? (
+                                        <div className="relative w-full overflow-hidden rounded-2xl border border-border/60 sm:aspect-[16/7]">
                                             <img
                                                 src={selected.image_url}
                                                 alt={selected.name}
-                                                className="size-12 rounded-2xl object-cover"
+                                                className="size-full object-cover"
                                             />
-                                        ) : (
-                                            <IconCircle
-                                                icon={
-                                                    categoryIcon[
-                                                        selected.category
-                                                    ]
-                                                }
-                                                tone="soft"
-                                                size="lg"
-                                            />
-                                        )}
-                                        <div>
-                                            <h2 className="flex items-center gap-2 text-base font-semibold">
-                                                {selected.name}
-                                                {!selected.is_active ? (
-                                                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                                                        Nonaktif
-                                                    </span>
-                                                ) : null}
-                                            </h2>
-                                            <p className="text-xs text-muted-foreground">
-                                                {selected.category} · harga jual{' '}
-                                                {formatRupiah(
-                                                    selected.selling_price,
-                                                )}{' '}
-                                                · yield{' '}
-                                                {selected.yield_portions} porsi
-                                                · sisa{' '}
-                                                {selected.portions_available}
-                                            </p>
+                                            <div className="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent" />
+                                            <div className="absolute bottom-3 left-3 text-white">
+                                                <span className="rounded-full bg-black/40 px-2.5 py-1 text-xs font-medium backdrop-blur-md">
+                                                    {selected.category}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <StatusBadge status={selected.status} />
-                                        {owner ? (
-                                            <>
-                                                <FxButton
-                                                    variant="soft"
-                                                    onClick={() =>
-                                                        setEditOpen(true)
-                                                    }
-                                                >
-                                                    <Pencil className="size-4" />
-                                                    Edit menu
-                                                </FxButton>
-                                                <FxButton
-                                                    variant="soft"
-                                                    onClick={() =>
-                                                        setBomOpen(true)
-                                                    }
-                                                >
-                                                    <UtensilsCrossed className="size-4" />
-                                                    Susun BOM
-                                                </FxButton>
-                                            </>
-                                        ) : null}
+                                    ) : (
+                                        <IconCircle
+                                            icon={
+                                                categoryIcon[selected.category]
+                                            }
+                                            tone="soft"
+                                            size="lg"
+                                        />
+                                    )}
+                                    <div>
+                                        <h2 className="flex items-center gap-2 text-base font-semibold">
+                                            {selected.name}
+                                            {!selected.is_active ? (
+                                                <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                    Nonaktif
+                                                </span>
+                                            ) : null}
+                                        </h2>
+                                        <p className="text-xs text-muted-foreground">
+                                            {selected.category} · harga jual{' '}
+                                            {formatRupiah(
+                                                selected.selling_price,
+                                            )}{' '}
+                                            · yield {selected.yield_portions}{' '}
+                                            porsi · sisa{' '}
+                                            {selected.portions_available}
+                                        </p>
                                     </div>
                                 </div>
-
-                                <div className="grid gap-3 sm:grid-cols-3">
-                                    <FxSoft className="flex flex-col gap-3 p-4">
-                                        <p className="text-xs text-muted-foreground">
-                                            HPP aktual
-                                        </p>
-                                        <p className="text-lg font-bold tabular-nums">
-                                            {formatRupiah(selected.current_hpp)}
-                                        </p>
-                                    </FxSoft>
-                                    <FxSoft className="flex flex-col gap-3 p-4">
-                                        <p className="text-xs text-muted-foreground">
-                                            Margin aktual
-                                        </p>
-                                        <p className="text-lg font-bold tabular-nums">
-                                            {formatPercent(selected.margin_pct)}
-                                        </p>
-                                    </FxSoft>
-                                    <FxSoft className="flex flex-col gap-3 p-4">
-                                        <p className="text-xs text-muted-foreground">
-                                            Kontribusi bahan
-                                        </p>
-                                        <p className="text-lg font-bold tabular-nums">
-                                            {formatRupiah(selected.subtotal)}
-                                        </p>
-                                    </FxSoft>
-                                </div>
-
-                                {selected.bom.length === 0 ? (
-                                    <FxSoft className="flex flex-col items-center gap-2 p-8 text-center">
-                                        <p className="text-sm text-muted-foreground">
-                                            Menu ini belum punya resep. Susun
-                                            BOM agar bisa dijual di POS.
-                                        </p>
-                                        {owner ? (
+                                <div className="flex items-center gap-2">
+                                    <StatusBadge status={selected.status} />
+                                    {owner ? (
+                                        <>
                                             <FxButton
-                                                variant="coral"
+                                                variant="soft"
+                                                onClick={() =>
+                                                    setEditOpen(true)
+                                                }
+                                            >
+                                                <Pencil className="size-4" />
+                                                Edit menu
+                                            </FxButton>
+                                            <FxButton
+                                                variant="soft"
                                                 onClick={() => setBomOpen(true)}
                                             >
-                                                <Plus className="size-4" />
-                                                Susun BOM sekarang
+                                                <UtensilsCrossed className="size-4" />
+                                                Susun BOM
                                             </FxButton>
-                                        ) : null}
-                                    </FxSoft>
-                                ) : (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-sm">
-                                            <thead>
-                                                <tr className="bg-secondary text-left text-xs text-muted-foreground">
-                                                    <th className="rounded-l-xl px-3 py-2.5 font-medium">
-                                                        Bahan
-                                                    </th>
-                                                    <th className="px-3 py-2.5 text-right font-medium">
-                                                        Qty/porsi
-                                                    </th>
-                                                    <th className="px-3 py-2.5 text-right font-medium">
-                                                        Waste
-                                                    </th>
-                                                    <th className="px-3 py-2.5 text-right font-medium">
-                                                        Qty efektif
-                                                    </th>
-                                                    <th className="rounded-r-xl px-3 py-2.5 text-right font-medium">
-                                                        Biaya
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {selected.bom.map((r) => (
-                                                    <tr
-                                                        key={r.ingredient_id}
-                                                        className="border-b border-border/60 last:border-0"
-                                                    >
-                                                        <td className="px-3 py-3">
-                                                            <p className="font-medium">
-                                                                {
-                                                                    r.ingredient_name
-                                                                }
-                                                            </p>
-                                                            <p className="text-xs text-muted-foreground">
-                                                                {formatRupiah(
-                                                                    r.cost_per_unit,
-                                                                )}
-                                                                /
-                                                                {
-                                                                    unitShort[
-                                                                        r
-                                                                            .base_unit
-                                                                    ]
-                                                                }
-                                                            </p>
-                                                        </td>
-                                                        <td className="px-3 py-3 text-right tabular-nums">
-                                                            {fmtQty(
-                                                                r.quantity_needed,
-                                                            )}{' '}
-                                                            {
-                                                                unitShort[
-                                                                    r.base_unit
-                                                                ]
-                                                            }
-                                                        </td>
-                                                        <td className="px-3 py-3 text-right tabular-nums">
-                                                            {formatPercent(
-                                                                Number(
-                                                                    r.waste_factor,
-                                                                ) * 100,
-                                                                0,
-                                                            )}
-                                                        </td>
-                                                        <td className="px-3 py-3 text-right tabular-nums">
-                                                            {fmtQty(
-                                                                r.effective_qty,
-                                                            )}{' '}
-                                                            {
-                                                                unitShort[
-                                                                    r.base_unit
-                                                                ]
-                                                            }
-                                                        </td>
-                                                        <td className="px-3 py-3 text-right tabular-nums">
-                                                            {formatRupiah(
-                                                                r.line_cost,
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                <tr className="border-b border-border/60">
-                                                    <td
-                                                        className="px-3 py-3 text-muted-foreground"
-                                                        colSpan={4}
-                                                    >
-                                                        Subtotal bahan
-                                                    </td>
-                                                    <td className="px-3 py-3 text-right tabular-nums">
-                                                        {formatRupiah(
-                                                            selected.subtotal,
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                                <tr className="border-b border-border/60">
-                                                    <td
-                                                        className="px-3 py-3 text-muted-foreground"
-                                                        colSpan={4}
-                                                    >
-                                                        Overhead standar per
-                                                        porsi
-                                                    </td>
-                                                    <td className="px-3 py-3 text-right tabular-nums">
-                                                        {formatRupiah(
-                                                            selected.overhead,
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td
-                                                        className="px-3 py-3 font-semibold"
-                                                        colSpan={4}
-                                                    >
-                                                        HPP
-                                                    </td>
-                                                    <td className="px-3 py-3 text-right font-bold tabular-nums">
-                                                        {formatRupiah(
-                                                            selected.current_hpp,
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
+                                        </>
+                                    ) : null}
+                                </div>
+                            </div>
 
-                                {hasProjection ? (
-                                    <FxSoft className="flex flex-wrap items-center justify-between gap-3 p-4">
-                                        <span className="inline-flex items-center gap-2 text-sm">
-                                            <IconCircle
-                                                icon={Sparkles}
-                                                tone="soft"
-                                                size="sm"
-                                            />
-                                            <span>
-                                                HPP proyeksi{' '}
-                                                <span className="font-bold tabular-nums">
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <FxSoft className="flex flex-col gap-3 p-4">
+                                    <p className="text-xs text-muted-foreground">
+                                        HPP aktual
+                                    </p>
+                                    <p className="text-lg font-bold tabular-nums">
+                                        {formatRupiah(selected.current_hpp)}
+                                    </p>
+                                </FxSoft>
+                                <FxSoft className="flex flex-col gap-3 p-4">
+                                    <p className="text-xs text-muted-foreground">
+                                        Margin aktual
+                                    </p>
+                                    <p className="text-lg font-bold tabular-nums">
+                                        {formatPercent(selected.margin_pct)}
+                                    </p>
+                                </FxSoft>
+                                <FxSoft className="flex flex-col gap-3 p-4">
+                                    <p className="text-xs text-muted-foreground">
+                                        Kontribusi bahan
+                                    </p>
+                                    <p className="text-lg font-bold tabular-nums">
+                                        {formatRupiah(selected.subtotal)}
+                                    </p>
+                                </FxSoft>
+                            </div>
+
+                            {selected.bom.length === 0 ? (
+                                <FxSoft className="flex flex-col items-center gap-2 p-8 text-center">
+                                    <p className="text-sm text-muted-foreground">
+                                        Menu ini belum punya resep. Susun BOM
+                                        agar bisa dijual di POS.
+                                    </p>
+                                    {owner ? (
+                                        <FxButton
+                                            variant="coral"
+                                            onClick={() => setBomOpen(true)}
+                                        >
+                                            <Plus className="size-4" />
+                                            Susun BOM sekarang
+                                        </FxButton>
+                                    ) : null}
+                                </FxSoft>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="bg-secondary text-left text-xs text-muted-foreground">
+                                                <th className="rounded-l-xl px-3 py-2.5 font-medium">
+                                                    Bahan
+                                                </th>
+                                                <th className="px-3 py-2.5 text-right font-medium">
+                                                    Qty/porsi
+                                                </th>
+                                                <th className="px-3 py-2.5 text-right font-medium">
+                                                    Waste
+                                                </th>
+                                                <th className="px-3 py-2.5 text-right font-medium">
+                                                    Qty efektif
+                                                </th>
+                                                <th className="rounded-r-xl px-3 py-2.5 text-right font-medium">
+                                                    Biaya
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {selected.bom.map((r) => (
+                                                <tr
+                                                    key={r.ingredient_id}
+                                                    className="border-b border-border/60 last:border-0"
+                                                >
+                                                    <td className="px-3 py-3">
+                                                        <p className="font-medium">
+                                                            {r.ingredient_name}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {formatRupiah(
+                                                                r.cost_per_unit,
+                                                            )}
+                                                            /
+                                                            {
+                                                                unitShort[
+                                                                    r.base_unit
+                                                                ]
+                                                            }
+                                                        </p>
+                                                    </td>
+                                                    <td className="px-3 py-3 text-right tabular-nums">
+                                                        {fmtQty(
+                                                            r.quantity_needed,
+                                                        )}{' '}
+                                                        {unitShort[r.base_unit]}
+                                                    </td>
+                                                    <td className="px-3 py-3 text-right tabular-nums">
+                                                        {formatPercent(
+                                                            Number(
+                                                                r.waste_factor,
+                                                            ) * 100,
+                                                            0,
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-3 text-right tabular-nums">
+                                                        {fmtQty(
+                                                            r.effective_qty,
+                                                        )}{' '}
+                                                        {unitShort[r.base_unit]}
+                                                    </td>
+                                                    <td className="px-3 py-3 text-right tabular-nums">
+                                                        {formatRupiah(
+                                                            r.line_cost,
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            <tr className="border-b border-border/60">
+                                                <td
+                                                    className="px-3 py-3 text-muted-foreground"
+                                                    colSpan={4}
+                                                >
+                                                    Subtotal bahan
+                                                </td>
+                                                <td className="px-3 py-3 text-right tabular-nums">
                                                     {formatRupiah(
-                                                        selected.projected_hpp!,
+                                                        selected.subtotal,
                                                     )}
-                                                </span>{' '}
-                                                dari harga penawaran terbaru
-                                            </span>
-                                        </span>
-                                        <span className="inline-flex items-center gap-2">
-                                            <span className="rounded-full bg-warning-soft px-2.5 py-1 text-xs font-semibold text-warning-ink">
-                                                {formatPercent(
-                                                    selected.projected_margin_pct ??
-                                                        0,
+                                                </td>
+                                            </tr>
+                                            <tr className="border-b border-border/60">
+                                                <td
+                                                    className="px-3 py-3 text-muted-foreground"
+                                                    colSpan={4}
+                                                >
+                                                    Overhead standar per porsi
+                                                </td>
+                                                <td className="px-3 py-3 text-right tabular-nums">
+                                                    {formatRupiah(
+                                                        selected.overhead,
+                                                    )}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td
+                                                    className="px-3 py-3 font-semibold"
+                                                    colSpan={4}
+                                                >
+                                                    HPP
+                                                </td>
+                                                <td className="px-3 py-3 text-right font-bold tabular-nums">
+                                                    {formatRupiah(
+                                                        selected.current_hpp,
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {hasProjection ? (
+                                <FxSoft className="flex flex-wrap items-center justify-between gap-3 p-4">
+                                    <span className="inline-flex items-center gap-2 text-sm">
+                                        <IconCircle
+                                            icon={Sparkles}
+                                            tone="soft"
+                                            size="sm"
+                                        />
+                                        <span>
+                                            HPP proyeksi{' '}
+                                            <span className="font-bold tabular-nums">
+                                                {formatRupiah(
+                                                    selected.projected_hpp!,
                                                 )}
-                                            </span>
-                                            {selected.projected_status ? (
-                                                <StatusBadge
-                                                    status={
-                                                        selected.projected_status
-                                                    }
-                                                />
-                                            ) : null}
+                                            </span>{' '}
+                                            dari harga penawaran terbaru
                                         </span>
-                                    </FxSoft>
-                                ) : null}
-                            </FxCard>
-                        </Reveal>
-                    </div>
-                )}
-            </div>
+                                    </span>
+                                    <span className="inline-flex items-center gap-2">
+                                        <span className="rounded-full bg-warning-soft px-2.5 py-1 text-xs font-semibold text-warning-ink">
+                                            {formatPercent(
+                                                selected.projected_margin_pct ??
+                                                    0,
+                                            )}
+                                        </span>
+                                        {selected.projected_status ? (
+                                            <StatusBadge
+                                                status={
+                                                    selected.projected_status
+                                                }
+                                            />
+                                        ) : null}
+                                    </span>
+                                </FxSoft>
+                            ) : null}
+                        </FxCard>
+                    </Reveal>
+                </div>
+            )}
 
             <CreateMenuModal
                 open={createOpen}
@@ -587,7 +667,7 @@ export default function Menus({ menus, ingredients }: Props) {
                     onSave={(items) => handleSaveBom(selected.id, items)}
                 />
             ) : null}
-        </>
+        </PageShell>
     );
 }
 
@@ -624,20 +704,24 @@ function MenuImageField({
             label="Foto menu"
             hint="JPG, PNG, atau WebP maksimal 2 MB. Opsional; tampil di katalog dan POS."
         >
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3">
                 {preview ? (
-                    <img
-                        src={preview}
-                        alt="Pratinjau foto menu"
-                        className="size-14 rounded-2xl object-cover"
-                    />
+                    <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-border/60 bg-secondary shadow-inner">
+                        <img
+                            src={preview}
+                            alt="Pratinjau foto menu"
+                            className="size-full object-cover transition-transform duration-300 hover:scale-105"
+                        />
+                    </div>
                 ) : (
-                    <div className="flex size-14 items-center justify-center rounded-2xl bg-secondary text-muted-foreground">
-                        <ImagePlus className="size-5" />
+                    <div className="flex h-64 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/80 bg-secondary/40 text-muted-foreground">
+                        <ImagePlus className="size-8 stroke-[1.5]" />
+                        <span className="text-xs">Belum ada foto menu</span>
                     </div>
                 )}
-                <div className="flex flex-col items-start gap-1.5">
-                    <label className="flex cursor-pointer items-center gap-1.5 rounded-full bg-secondary px-3 py-2 text-xs font-semibold transition-colors hover:bg-hover-soft">
+
+                <div className="flex items-center gap-2">
+                    <label className="flex cursor-pointer items-center gap-1.5 rounded-full bg-secondary px-3.5 py-2 text-xs font-semibold transition-colors hover:bg-hover-soft">
                         <ImagePlus className="size-3.5" />
                         {preview ? 'Ganti foto' : 'Pilih foto'}
                         <input
@@ -654,7 +738,7 @@ function MenuImageField({
                         <button
                             type="button"
                             onClick={onRemove}
-                            className="text-xs font-medium text-danger transition-opacity hover:opacity-80"
+                            className="rounded-full px-3 py-2 text-xs font-medium text-danger transition-colors hover:bg-danger-soft"
                         >
                             Hapus foto
                         </button>

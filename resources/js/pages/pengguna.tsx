@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { Ban, Plus, RotateCcw, UserCog } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -7,7 +7,7 @@ import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { FxField, FxInput, FxModal, FxSelect } from '@/components/fx/fx-form';
 import { FxIconButton } from '@/components/fx/fx-icon-button';
 import Reveal from '@/components/motion/reveal';
-import PageHeader from '@/components/page-header';
+import PageShell from '@/components/page-shell';
 
 type UserRole = 'owner' | 'staff';
 
@@ -118,168 +118,155 @@ export default function Pengguna({ users }: Props) {
     }
 
     return (
-        <>
-            <Head title="Pengguna" />
-            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <Reveal>
-                    <div className="flex flex-wrap items-end justify-between gap-3">
-                        <PageHeader
-                            title="Pengguna"
-                            description="Kelola akun tim dalam satu lingkungan UMKM: beberapa owner dan banyak staff berbagi data yang sama."
-                        />
-                        <FxButton
-                            variant="coral"
-                            onClick={() => setCreateOpen(true)}
-                        >
-                            <Plus className="size-4" />
-                            Tambah pengguna
-                        </FxButton>
-                    </div>
-                </Reveal>
+        <PageShell
+            title="Pengguna"
+            description="Kelola akun tim dalam satu lingkungan UMKM: beberapa owner dan banyak staff berbagi data yang sama."
+            actions={
+                <FxButton variant="coral" onClick={() => setCreateOpen(true)}>
+                    <Plus className="size-4" />
+                    Tambah pengguna
+                </FxButton>
+            }
+        >
+            <Reveal delay={0.05}>
+                <FxSoft className="flex flex-wrap items-center gap-x-6 gap-y-1 p-4 text-sm">
+                    <span className="text-muted-foreground">
+                        <span className="font-bold text-foreground">
+                            {activeCount}
+                        </span>{' '}
+                        akun aktif
+                    </span>
+                    <span className="text-muted-foreground">
+                        <span className="font-bold text-foreground">
+                            {users.filter((u) => u.role === 'owner').length}
+                        </span>{' '}
+                        owner
+                    </span>
+                    <span className="text-muted-foreground">
+                        <span className="font-bold text-foreground">
+                            {users.filter((u) => u.role === 'staff').length}
+                        </span>{' '}
+                        staff
+                    </span>
+                </FxSoft>
+            </Reveal>
 
-                <Reveal delay={0.05}>
-                    <FxSoft className="flex flex-wrap items-center gap-x-6 gap-y-1 p-4 text-sm">
-                        <span className="text-muted-foreground">
-                            <span className="font-bold text-foreground">
-                                {activeCount}
-                            </span>{' '}
-                            akun aktif
-                        </span>
-                        <span className="text-muted-foreground">
-                            <span className="font-bold text-foreground">
-                                {users.filter((u) => u.role === 'owner').length}
-                            </span>{' '}
-                            owner
-                        </span>
-                        <span className="text-muted-foreground">
-                            <span className="font-bold text-foreground">
-                                {users.filter((u) => u.role === 'staff').length}
-                            </span>{' '}
-                            staff
-                        </span>
-                    </FxSoft>
-                </Reveal>
-
-                <Reveal delay={0.1}>
-                    <FxCard className="flex flex-col gap-4 p-5">
-                        <h2 className="text-base font-semibold">Daftar akun</h2>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="bg-secondary text-left text-xs text-muted-foreground">
-                                        <th className="rounded-l-xl px-3 py-2.5 font-medium">
-                                            Pengguna
-                                        </th>
-                                        <th className="px-3 py-2.5 font-medium">
-                                            Peran
-                                        </th>
-                                        <th className="px-3 py-2.5 font-medium">
-                                            Status
-                                        </th>
-                                        <th className="px-3 py-2.5 font-medium">
-                                            Bergabung
-                                        </th>
-                                        <th className="rounded-r-xl px-3 py-2.5 text-right font-medium">
-                                            Aksi
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {users.map((u) => (
-                                        <tr
-                                            key={u.id}
-                                            className="border-b border-border/60 last:border-0"
-                                        >
-                                            <td className="px-3 py-3">
-                                                <p className="flex items-center gap-2 font-medium">
-                                                    {u.name}
-                                                    {u.is_self ? (
-                                                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                                                            Anda
-                                                        </span>
-                                                    ) : null}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {u.email}
-                                                </p>
-                                            </td>
-                                            <td className="px-3 py-3">
-                                                <span
-                                                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${roleConfig[u.role].cls}`}
-                                                >
-                                                    {roleConfig[u.role].label}
+            <Reveal delay={0.1}>
+                <FxCard className="flex flex-col gap-4 p-5">
+                    <h2 className="text-base font-semibold">Daftar akun</h2>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-secondary text-left text-xs text-muted-foreground">
+                                    <th className="rounded-l-xl px-3 py-2.5 font-medium">
+                                        Pengguna
+                                    </th>
+                                    <th className="px-3 py-2.5 font-medium">
+                                        Peran
+                                    </th>
+                                    <th className="px-3 py-2.5 font-medium">
+                                        Status
+                                    </th>
+                                    <th className="px-3 py-2.5 font-medium">
+                                        Bergabung
+                                    </th>
+                                    <th className="rounded-r-xl px-3 py-2.5 text-right font-medium">
+                                        Aksi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.map((u) => (
+                                    <tr
+                                        key={u.id}
+                                        className="border-b border-border/60 last:border-0"
+                                    >
+                                        <td className="px-3 py-3">
+                                            <p className="flex items-center gap-2 font-medium">
+                                                {u.name}
+                                                {u.is_self ? (
+                                                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                        Anda
+                                                    </span>
+                                                ) : null}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {u.email}
+                                            </p>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <span
+                                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${roleConfig[u.role].cls}`}
+                                            >
+                                                {roleConfig[u.role].label}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            {u.is_active ? (
+                                                <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-xs font-semibold text-success">
+                                                    <span className="size-1.5 rounded-full bg-success" />
+                                                    Aktif
                                                 </span>
-                                            </td>
-                                            <td className="px-3 py-3">
-                                                {u.is_active ? (
-                                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-xs font-semibold text-success">
-                                                        <span className="size-1.5 rounded-full bg-success" />
-                                                        Aktif
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                                                    <span className="size-1.5 rounded-full bg-muted-foreground" />
+                                                    Nonaktif
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-3 py-3 text-muted-foreground tabular-nums">
+                                            {fmtDate(u.created_at)}
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <div className="flex items-center justify-end gap-1">
+                                                {u.is_self ? (
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Kelola lewat Pengaturan
                                                     </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-                                                        <span className="size-1.5 rounded-full bg-muted-foreground" />
-                                                        Nonaktif
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-3 py-3 text-muted-foreground tabular-nums">
-                                                {fmtDate(u.created_at)}
-                                            </td>
-                                            <td className="px-3 py-3">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    {u.is_self ? (
-                                                        <span className="text-xs text-muted-foreground">
-                                                            Kelola lewat
-                                                            Pengaturan
-                                                        </span>
-                                                    ) : u.is_active ? (
-                                                        <>
-                                                            <FxIconButton
-                                                                title="Ubah peran"
-                                                                aria-label="Ubah peran"
-                                                                onClick={() =>
-                                                                    setRoleTarget(
-                                                                        u,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <UserCog className="size-4" />
-                                                            </FxIconButton>
-                                                            <FxIconButton
-                                                                tone="danger"
-                                                                title="Nonaktifkan akun"
-                                                                aria-label="Nonaktifkan akun"
-                                                                onClick={() =>
-                                                                    handleDeactivate(
-                                                                        u,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Ban className="size-4" />
-                                                            </FxIconButton>
-                                                        </>
-                                                    ) : (
+                                                ) : u.is_active ? (
+                                                    <>
                                                         <FxIconButton
-                                                            title="Aktifkan kembali"
-                                                            aria-label="Aktifkan kembali"
+                                                            title="Ubah peran"
+                                                            aria-label="Ubah peran"
                                                             onClick={() =>
-                                                                handleRestore(u)
+                                                                setRoleTarget(u)
                                                             }
                                                         >
-                                                            <RotateCcw className="size-4" />
+                                                            <UserCog className="size-4" />
                                                         </FxIconButton>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </FxCard>
-                </Reveal>
-            </div>
+                                                        <FxIconButton
+                                                            tone="danger"
+                                                            title="Nonaktifkan akun"
+                                                            aria-label="Nonaktifkan akun"
+                                                            onClick={() =>
+                                                                handleDeactivate(
+                                                                    u,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Ban className="size-4" />
+                                                        </FxIconButton>
+                                                    </>
+                                                ) : (
+                                                    <FxIconButton
+                                                        title="Aktifkan kembali"
+                                                        aria-label="Aktifkan kembali"
+                                                        onClick={() =>
+                                                            handleRestore(u)
+                                                        }
+                                                    >
+                                                        <RotateCcw className="size-4" />
+                                                    </FxIconButton>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </FxCard>
+            </Reveal>
 
             <CreateUserModal
                 open={createOpen}
@@ -294,7 +281,7 @@ export default function Pengguna({ users }: Props) {
                     onSave={(role) => handleRole(roleTarget, role)}
                 />
             ) : null}
-        </>
+        </PageShell>
     );
 }
 

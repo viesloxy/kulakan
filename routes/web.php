@@ -18,8 +18,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('profitabilitas', [ProfitabilityController::class, 'index'])->name('profitability');
         Route::get('restock', [RestockController::class, 'index'])->name('restock');
-        Route::post('restock/plans', [RestockController::class, 'store'])->name('restock.store');
-        Route::post('restock/plans/{restockPlan}/purchase', [RestockController::class, 'purchase'])->name('restock.purchase');
+        Route::post('restock/plans', [RestockController::class, 'store'])->middleware('throttle:30,1')->name('restock.store');
+        Route::post('restock/plans/{restockPlan}/purchase', [RestockController::class, 'purchase'])->middleware('throttle:30,1')->name('restock.purchase');
         Route::get('alert', [AlertController::class, 'index'])->name('alerts');
         Route::post('alert/{alert}/resolve', [AlertController::class, 'resolve'])->name('alerts.resolve');
 
@@ -37,7 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('menu/{menu}/recipe', [MenuController::class, 'saveRecipe'])->name('menus.recipe');
 
         // Void pesanan khusus owner (FR-018, DEC-13).
-        Route::post('pos/{salesOrder}/void', [OrderController::class, 'void'])->name('orders.void');
+        Route::post('pos/{salesOrder}/void', [OrderController::class, 'void'])->middleware('throttle:30,1')->name('orders.void');
 
         // Kelola pengguna: multi-owner & staff dalam 1 UMKM (matriks SAD §9).
         Route::get('pengguna', [UserController::class, 'index'])->name('pengguna');
@@ -51,14 +51,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('bahan-baku', [IngredientController::class, 'index'])->name('ingredients');
 
     // Penyesuaian/waste: owner & staff (FR-007).
-    Route::post('bahan-baku/{ingredient}/adjustments', [IngredientController::class, 'adjustments'])->name('ingredients.adjustments');
+    Route::post('bahan-baku/{ingredient}/adjustments', [IngredientController::class, 'adjustments'])
+        ->middleware('throttle:30,1')
+        ->name('ingredients.adjustments');
 
     // Baca menu: owner & staff.
     Route::get('menu', [MenuController::class, 'index'])->name('menus');
 
     // POS kasir: owner & staff (FR-013-017).
     Route::get('pos', [OrderController::class, 'index'])->name('pos');
-    Route::post('pos', [OrderController::class, 'store'])->name('pos.store');
+    Route::post('pos', [OrderController::class, 'store'])
+        ->middleware('throttle:60,1')
+        ->name('pos.store');
 });
 
 require __DIR__.'/settings.php';

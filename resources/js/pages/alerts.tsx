@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import {
     Bell,
     Check,
@@ -11,7 +11,7 @@ import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
-import PageHeader from '@/components/page-header';
+import PageShell from '@/components/page-shell';
 
 type AlertType = 'low_stock' | 'margin_drop' | 'price_hike';
 
@@ -121,125 +121,116 @@ export default function Alerts({ alerts, counts }: Props) {
     }
 
     return (
-        <>
-            <Head title="Alert" />
-            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <Reveal>
-                    <PageHeader
-                        title="Alert"
-                        description="Pantau stok menipis, margin turun, dan kenaikan harga bahan. Dibuat setelah transaksi tersimpan."
-                    />
-                </Reveal>
-
-                <Reveal delay={0.05}>
-                    <div className="grid gap-4 md:grid-cols-4">
-                        {kpis.map((k) => (
-                            <FxCard
-                                key={k.label}
-                                className={`flex flex-col justify-between p-4 ${k.highlight ? 'fx-coral' : ''}`}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <span
-                                        className={`text-sm ${k.highlight ? 'font-medium text-white' : 'text-muted-foreground'}`}
-                                    >
-                                        {k.label}
-                                    </span>
-                                    <IconCircle
-                                        icon={k.icon}
-                                        tone={k.highlight ? 'white' : k.tone}
-                                        size="sm"
-                                    />
-                                </div>
-                                <p
-                                    className={`mt-3 text-2xl font-bold tracking-tight tabular-nums ${k.highlight ? 'text-white' : ''}`}
+        <PageShell
+            title="Alert"
+            description="Pantau stok menipis, margin turun, dan kenaikan harga bahan. Dibuat setelah transaksi tersimpan."
+        >
+            <Reveal delay={0.05}>
+                <div className="grid gap-4 md:grid-cols-4">
+                    {kpis.map((k) => (
+                        <FxCard
+                            key={k.label}
+                            className={`flex flex-col justify-between p-4 ${k.highlight ? 'fx-coral' : ''}`}
+                        >
+                            <div className="flex items-center justify-between">
+                                <span
+                                    className={`text-sm ${k.highlight ? 'font-medium text-white' : 'text-muted-foreground'}`}
                                 >
-                                    {k.value}
-                                </p>
-                                <p
-                                    className={`mt-1 text-[11px] font-semibold ${k.highlight ? 'text-white/85' : 'text-muted-foreground'}`}
-                                >
-                                    aktif
-                                </p>
-                            </FxCard>
-                        ))}
-                    </div>
-                </Reveal>
-
-                <Reveal delay={0.1}>
-                    <FxCard className="flex flex-col gap-3 p-5">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-base font-semibold">
-                                Daftar alert
-                            </h2>
-                            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
-                                {alerts.length} aktif
-                            </span>
-                        </div>
-
-                        {alerts.length === 0 ? (
-                            <FxSoft className="flex flex-col items-center gap-2 p-10 text-center">
-                                <IconCircle icon={Check} tone="success" />
-                                <p className="text-sm text-muted-foreground">
-                                    Tidak ada alert aktif. Semua aman.
-                                </p>
-                            </FxSoft>
-                        ) : (
-                            <div className="flex flex-col gap-3">
-                                {alerts.map((a) => {
-                                    const cfg = typeConfig[a.type];
-                                    return (
-                                        <FxSoft
-                                            key={a.id}
-                                            className="flex flex-wrap items-center gap-3 p-4"
-                                        >
-                                            <IconCircle
-                                                icon={cfg.icon}
-                                                tone={cfg.tone}
-                                            />
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    <p className="font-semibold">
-                                                        {a.title}
-                                                    </p>
-                                                    <span className="rounded-full bg-card px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                                                        {cfg.label}
-                                                    </span>
-                                                </div>
-                                                <p className="mt-1 text-sm text-muted-foreground">
-                                                    {a.description}
-                                                </p>
-                                                <p className="mt-1 text-[11px] text-muted-foreground">
-                                                    AL-{a.id} ·{' '}
-                                                    {timeLabel(a.created_at)}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <FxButton
-                                                    variant="soft"
-                                                    onClick={() =>
-                                                        router.visit(cfg.href)
-                                                    }
-                                                >
-                                                    {cfg.action}
-                                                </FxButton>
-                                                <FxButton
-                                                    variant="soft"
-                                                    onClick={() =>
-                                                        resolve(a.id)
-                                                    }
-                                                >
-                                                    <Check className="size-4" />
-                                                    Selesai
-                                                </FxButton>
-                                            </div>
-                                        </FxSoft>
-                                    );
-                                })}
+                                    {k.label}
+                                </span>
+                                <IconCircle
+                                    icon={k.icon}
+                                    tone={k.highlight ? 'white' : k.tone}
+                                    size="sm"
+                                />
                             </div>
-                        )}
-                    </FxCard>
-                </Reveal>
-            </div>
-        </>
+                            <p
+                                className={`mt-3 text-2xl font-bold tracking-tight tabular-nums ${k.highlight ? 'text-white' : ''}`}
+                            >
+                                {k.value}
+                            </p>
+                            <p
+                                className={`mt-1 text-[11px] font-semibold ${k.highlight ? 'text-white/85' : 'text-muted-foreground'}`}
+                            >
+                                aktif
+                            </p>
+                        </FxCard>
+                    ))}
+                </div>
+            </Reveal>
+
+            <Reveal delay={0.1}>
+                <FxCard className="flex flex-col gap-3 p-5">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-base font-semibold">
+                            Daftar alert
+                        </h2>
+                        <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
+                            {alerts.length} aktif
+                        </span>
+                    </div>
+
+                    {alerts.length === 0 ? (
+                        <FxSoft className="flex flex-col items-center gap-2 p-10 text-center">
+                            <IconCircle icon={Check} tone="success" />
+                            <p className="text-sm text-muted-foreground">
+                                Tidak ada alert aktif. Semua aman.
+                            </p>
+                        </FxSoft>
+                    ) : (
+                        <div className="flex flex-col gap-3">
+                            {alerts.map((a) => {
+                                const cfg = typeConfig[a.type];
+                                return (
+                                    <FxSoft
+                                        key={a.id}
+                                        className="flex flex-wrap items-center gap-3 p-4"
+                                    >
+                                        <IconCircle
+                                            icon={cfg.icon}
+                                            tone={cfg.tone}
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <p className="font-semibold">
+                                                    {a.title}
+                                                </p>
+                                                <span className="rounded-full bg-card px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                    {cfg.label}
+                                                </span>
+                                            </div>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                {a.description}
+                                            </p>
+                                            <p className="mt-1 text-[11px] text-muted-foreground">
+                                                AL-{a.id} ·{' '}
+                                                {timeLabel(a.created_at)}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <FxButton
+                                                variant="soft"
+                                                onClick={() =>
+                                                    router.visit(cfg.href)
+                                                }
+                                            >
+                                                {cfg.action}
+                                            </FxButton>
+                                            <FxButton
+                                                variant="soft"
+                                                onClick={() => resolve(a.id)}
+                                            >
+                                                <Check className="size-4" />
+                                                Selesai
+                                            </FxButton>
+                                        </div>
+                                    </FxSoft>
+                                );
+                            })}
+                        </div>
+                    )}
+                </FxCard>
+            </Reveal>
+        </PageShell>
     );
 }

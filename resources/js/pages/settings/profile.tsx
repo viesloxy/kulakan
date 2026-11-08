@@ -18,9 +18,11 @@ type PageProps = {
 export default function Profile({
     mustVerifyEmail,
     status,
+    isSoleOwner = false,
 }: {
     mustVerifyEmail: boolean;
     status?: string;
+    isSoleOwner?: boolean;
 }) {
     const { auth } = usePage<PageProps>().props;
 
@@ -124,7 +126,7 @@ export default function Profile({
                 </Form>
             </div>
 
-            <DeleteUser />
+            <DeleteUser isSoleOwner={isSoleOwner} />
         </>
     );
 }
