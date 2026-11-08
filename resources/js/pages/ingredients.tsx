@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import {
     ArrowDownToLine,
     Ban,
@@ -285,307 +285,291 @@ export default function Ingredients({ ingredients, meta }: Props) {
             }
         >
             <Reveal delay={0.05}>
-                    <div className="grid gap-4 md:grid-cols-3">
-                        {kpis.map((k) => (
-                            <FxCard
-                                key={k.label}
-                                className={`flex flex-col justify-between p-5 ${k.highlight ? 'fx-coral' : ''}`}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <span
-                                        className={`text-sm ${k.highlight ? 'font-medium text-white' : 'text-muted-foreground'}`}
-                                    >
-                                        {k.label}
-                                    </span>
-                                    <IconCircle
-                                        icon={k.icon}
-                                        tone={k.highlight ? 'white' : k.tone}
-                                        size="sm"
-                                    />
-                                </div>
-                                <p
-                                    className={`mt-3 text-2xl font-bold tracking-tight tabular-nums ${k.highlight ? 'text-white' : ''}`}
+                <div className="grid gap-4 md:grid-cols-3">
+                    {kpis.map((k) => (
+                        <FxCard
+                            key={k.label}
+                            className={`flex flex-col justify-between p-5 ${k.highlight ? 'fx-coral' : ''}`}
+                        >
+                            <div className="flex items-center justify-between">
+                                <span
+                                    className={`text-sm ${k.highlight ? 'font-medium text-white' : 'text-muted-foreground'}`}
                                 >
-                                    {k.value}
-                                </p>
-                                <p
-                                    className={`mt-1 text-[11px] font-semibold ${k.highlight ? 'text-white/85' : 'text-muted-foreground'}`}
-                                >
-                                    {k.label === 'Nilai persediaan'
-                                        ? `dari ${meta.count} bahan aktif`
-                                        : k.label === 'Stok menipis'
-                                          ? 'di bawah stok minimum'
-                                          : `${meta.quote_pending_count} bahan dengan harga penawaran baru`}
-                                </p>
-                            </FxCard>
-                        ))}
-                    </div>
-                </Reveal>
-
-                <Reveal delay={0.1}>
-                    <FxCard className="flex flex-col gap-4 p-5">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <h2 className="text-base font-semibold">
-                                Daftar bahan
-                            </h2>
-                            <div className="flex flex-wrap items-center gap-2">
-                                <div className="flex h-10 items-center gap-2 fx-soft px-4">
-                                    <Search className="size-4 text-muted-foreground" />
-                                    <input
-                                        value={query}
-                                        onChange={(e) =>
-                                            setQuery(e.target.value)
-                                        }
-                                        placeholder="Cari bahan"
-                                        className="w-40 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                                    />
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setLowOnly((v) => !v)}
-                                    className={`h-10 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
-                                        lowOnly
-                                            ? 'fx-coral'
-                                            : 'bg-secondary text-foreground hover:bg-hover-soft'
-                                    }`}
-                                >
-                                    Stok menipis
-                                </button>
+                                    {k.label}
+                                </span>
+                                <IconCircle
+                                    icon={k.icon}
+                                    tone={k.highlight ? 'white' : k.tone}
+                                    size="sm"
+                                />
                             </div>
-                        </div>
+                            <p
+                                className={`mt-3 text-2xl font-bold tracking-tight tabular-nums ${k.highlight ? 'text-white' : ''}`}
+                            >
+                                {k.value}
+                            </p>
+                            <p
+                                className={`mt-1 text-[11px] font-semibold ${k.highlight ? 'text-white/85' : 'text-muted-foreground'}`}
+                            >
+                                {k.label === 'Nilai persediaan'
+                                    ? `dari ${meta.count} bahan aktif`
+                                    : k.label === 'Stok menipis'
+                                      ? 'di bawah stok minimum'
+                                      : `${meta.quote_pending_count} bahan dengan harga penawaran baru`}
+                            </p>
+                        </FxCard>
+                    ))}
+                </div>
+            </Reveal>
 
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="bg-secondary text-left text-xs text-muted-foreground">
-                                        <th className="rounded-l-xl px-3 py-2.5 font-medium">
-                                            Bahan
-                                        </th>
-                                        <th className="px-3 py-2.5 font-medium">
-                                            Kelas
-                                        </th>
-                                        <th className="px-3 py-2.5 text-right font-medium">
-                                            Stok
-                                        </th>
-                                        <th className="px-3 py-2.5 text-right font-medium">
-                                            Min
-                                        </th>
-                                        <th className="px-3 py-2.5 text-right font-medium">
-                                            WAC
-                                        </th>
-                                        <th className="px-3 py-2.5 text-right font-medium">
-                                            Kemasan beli
-                                        </th>
-                                        <th className="px-3 py-2.5 font-medium">
-                                            Status
-                                        </th>
-                                        <th className="rounded-r-xl px-3 py-2.5 text-center font-medium">
-                                            Aksi
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {rows.map((i) => {
-                                        const cfg = stateConfig[i.stock_status];
-                                        const change = Number(
-                                            i.price_change_pct,
-                                        );
-                                        const quoteChange = Number(
-                                            i.quote_change_pct,
-                                        );
-                                        return (
-                                            <tr
-                                                key={i.id}
-                                                className="border-b border-border/60 last:border-0"
-                                            >
-                                                <td className="px-3 py-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <IconCircle
-                                                            icon={Box}
-                                                            tone="soft"
-                                                            size="sm"
-                                                        />
-                                                        <div>
-                                                            <p className="font-medium">
-                                                                {i.name}
-                                                            </p>
-                                                            <p className="text-xs text-muted-foreground">
-                                                                lead time{' '}
-                                                                {
-                                                                    i.lead_time_days
-                                                                }{' '}
-                                                                hari
-                                                            </p>
-                                                        </div>
+            <Reveal delay={0.1}>
+                <FxCard className="flex flex-col gap-4 p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h2 className="text-base font-semibold">
+                            Daftar bahan
+                        </h2>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex h-10 items-center gap-2 fx-soft px-4">
+                                <Search className="size-4 text-muted-foreground" />
+                                <input
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    placeholder="Cari bahan"
+                                    className="w-40 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setLowOnly((v) => !v)}
+                                className={`h-10 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
+                                    lowOnly
+                                        ? 'fx-coral'
+                                        : 'bg-secondary text-foreground hover:bg-hover-soft'
+                                }`}
+                            >
+                                Stok menipis
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-secondary text-left text-xs text-muted-foreground">
+                                    <th className="rounded-l-xl px-3 py-2.5 font-medium">
+                                        Bahan
+                                    </th>
+                                    <th className="px-3 py-2.5 font-medium">
+                                        Kelas
+                                    </th>
+                                    <th className="px-3 py-2.5 text-right font-medium">
+                                        Stok
+                                    </th>
+                                    <th className="px-3 py-2.5 text-right font-medium">
+                                        Min
+                                    </th>
+                                    <th className="px-3 py-2.5 text-right font-medium">
+                                        WAC
+                                    </th>
+                                    <th className="px-3 py-2.5 text-right font-medium">
+                                        Kemasan beli
+                                    </th>
+                                    <th className="px-3 py-2.5 font-medium">
+                                        Status
+                                    </th>
+                                    <th className="rounded-r-xl px-3 py-2.5 text-center font-medium">
+                                        Aksi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((i) => {
+                                    const cfg = stateConfig[i.stock_status];
+                                    const change = Number(i.price_change_pct);
+                                    const quoteChange = Number(
+                                        i.quote_change_pct,
+                                    );
+                                    return (
+                                        <tr
+                                            key={i.id}
+                                            className="border-b border-border/60 last:border-0"
+                                        >
+                                            <td className="px-3 py-3">
+                                                <div className="flex items-center gap-3">
+                                                    <IconCircle
+                                                        icon={Box}
+                                                        tone="soft"
+                                                        size="sm"
+                                                    />
+                                                    <div>
+                                                        <p className="font-medium">
+                                                            {i.name}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            lead time{' '}
+                                                            {i.lead_time_days}{' '}
+                                                            hari
+                                                        </p>
                                                     </div>
-                                                </td>
-                                                <td className="px-3 py-3">
-                                                    <span
-                                                        className={`inline-flex size-6 items-center justify-center rounded-full text-xs font-bold ${abcTone[i.abc_class]}`}
-                                                    >
-                                                        {i.abc_class}
-                                                    </span>
-                                                </td>
-                                                <td className="px-3 py-3 text-right tabular-nums">
-                                                    {formatQty(i.current_stock)}{' '}
-                                                    {unitShort[i.base_unit]}
-                                                </td>
-                                                <td className="px-3 py-3 text-right text-muted-foreground tabular-nums">
-                                                    {formatQty(i.minimum_stock)}
-                                                </td>
-                                                <td className="px-3 py-3 text-right tabular-nums">
-                                                    <span className="whitespace-nowrap">
-                                                        {formatRupiah(
-                                                            i.cost_per_unit,
-                                                        )}
-                                                        /
-                                                        {unitShort[i.base_unit]}
-                                                        {Math.abs(change) >=
-                                                        0.5 ? (
-                                                            <span
-                                                                className={`ml-2 text-[11px] font-semibold ${change > 0 ? 'text-danger' : 'text-success'}`}
-                                                            >
-                                                                {change > 0
-                                                                    ? '+'
-                                                                    : ''}
-                                                                {formatPercent(
-                                                                    change,
-                                                                    1,
-                                                                )}
-                                                            </span>
-                                                        ) : null}
-                                                    </span>
-                                                    {quoteChange >= 1 &&
-                                                    i.last_quote_price ? (
-                                                        <span className="mt-1 block text-[11px] font-semibold text-primary">
-                                                            penawaran{' '}
-                                                            {formatRupiah(
-                                                                i.last_quote_price,
-                                                            )}
-                                                            /
-                                                            {
-                                                                unitShort[
-                                                                    i.base_unit
-                                                                ]
-                                                            }{' '}
-                                                            (+
+                                                </div>
+                                            </td>
+                                            <td className="px-3 py-3">
+                                                <span
+                                                    className={`inline-flex size-6 items-center justify-center rounded-full text-xs font-bold ${abcTone[i.abc_class]}`}
+                                                >
+                                                    {i.abc_class}
+                                                </span>
+                                            </td>
+                                            <td className="px-3 py-3 text-right tabular-nums">
+                                                {formatQty(i.current_stock)}{' '}
+                                                {unitShort[i.base_unit]}
+                                            </td>
+                                            <td className="px-3 py-3 text-right text-muted-foreground tabular-nums">
+                                                {formatQty(i.minimum_stock)}
+                                            </td>
+                                            <td className="px-3 py-3 text-right tabular-nums">
+                                                <span className="whitespace-nowrap">
+                                                    {formatRupiah(
+                                                        i.cost_per_unit,
+                                                    )}
+                                                    /{unitShort[i.base_unit]}
+                                                    {Math.abs(change) >= 0.5 ? (
+                                                        <span
+                                                            className={`ml-2 text-[11px] font-semibold ${change > 0 ? 'text-danger' : 'text-success'}`}
+                                                        >
+                                                            {change > 0
+                                                                ? '+'
+                                                                : ''}
                                                             {formatPercent(
-                                                                quoteChange,
-                                                                0,
+                                                                change,
+                                                                1,
                                                             )}
-                                                            )
                                                         </span>
                                                     ) : null}
-                                                </td>
-                                                <td className="px-3 py-3 text-right text-muted-foreground">
-                                                    {i.package_size
-                                                        ? `${formatQty(i.package_size)} ${unitShort[i.base_unit]}`
-                                                        : '-'}
-                                                    {i.package_price
-                                                        ? ` · ${formatRupiah(i.package_price)}`
-                                                        : ''}
-                                                </td>
-                                                <td className="px-3 py-3">
-                                                    <span
-                                                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.cls}`}
-                                                    >
-                                                        <span
-                                                            className={`size-1.5 rounded-full ${cfg.dot}`}
-                                                        />
-                                                        {cfg.label}
+                                                </span>
+                                                {quoteChange >= 1 &&
+                                                i.last_quote_price ? (
+                                                    <span className="mt-1 block text-[11px] font-semibold text-primary">
+                                                        penawaran{' '}
+                                                        {formatRupiah(
+                                                            i.last_quote_price,
+                                                        )}
+                                                        /
+                                                        {unitShort[i.base_unit]}{' '}
+                                                        (+
+                                                        {formatPercent(
+                                                            quoteChange,
+                                                            0,
+                                                        )}
+                                                        )
                                                     </span>
-                                                </td>
-                                                <td className="px-3 py-3">
-                                                    <div className="flex items-center justify-center gap-1">
-                                                        {owner ? (
-                                                            <FxIconButton
-                                                                title="Edit bahan"
-                                                                aria-label="Edit bahan"
-                                                                onClick={() =>
-                                                                    setEdit(i)
-                                                                }
-                                                            >
-                                                                <Pencil className="size-4" />
-                                                            </FxIconButton>
-                                                        ) : null}
-                                                        {owner ? (
-                                                            <FxIconButton
-                                                                title="Stock-in pembelian"
-                                                                aria-label="Stock-in pembelian"
-                                                                onClick={() =>
-                                                                    setStockIn(
-                                                                        i,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <ArrowDownToLine className="size-4" />
-                                                            </FxIconButton>
-                                                        ) : null}
-                                                        {owner ? (
-                                                            <FxIconButton
-                                                                title="Update harga penawaran"
-                                                                aria-label="Update harga penawaran"
-                                                                onClick={() =>
-                                                                    setQuote(i)
-                                                                }
-                                                            >
-                                                                <Tag className="size-4" />
-                                                            </FxIconButton>
-                                                        ) : null}
+                                                ) : null}
+                                            </td>
+                                            <td className="px-3 py-3 text-right text-muted-foreground">
+                                                {i.package_size
+                                                    ? `${formatQty(i.package_size)} ${unitShort[i.base_unit]}`
+                                                    : '-'}
+                                                {i.package_price
+                                                    ? ` · ${formatRupiah(i.package_price)}`
+                                                    : ''}
+                                            </td>
+                                            <td className="px-3 py-3">
+                                                <span
+                                                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.cls}`}
+                                                >
+                                                    <span
+                                                        className={`size-1.5 rounded-full ${cfg.dot}`}
+                                                    />
+                                                    {cfg.label}
+                                                </span>
+                                            </td>
+                                            <td className="px-3 py-3">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    {owner ? (
                                                         <FxIconButton
-                                                            title="Sesuaikan stok (waste/opname)"
-                                                            aria-label="Sesuaikan stok (waste/opname)"
+                                                            title="Edit bahan"
+                                                            aria-label="Edit bahan"
                                                             onClick={() =>
-                                                                setAdjust(i)
+                                                                setEdit(i)
                                                             }
                                                         >
-                                                            <SlidersHorizontal className="size-4" />
+                                                            <Pencil className="size-4" />
                                                         </FxIconButton>
+                                                    ) : null}
+                                                    {owner ? (
                                                         <FxIconButton
-                                                            title="Riwayat harga"
-                                                            aria-label="Riwayat harga"
+                                                            title="Stock-in pembelian"
+                                                            aria-label="Stock-in pembelian"
                                                             onClick={() =>
-                                                                setHistory(i)
+                                                                setStockIn(i)
                                                             }
                                                         >
-                                                            <Clock className="size-4" />
+                                                            <ArrowDownToLine className="size-4" />
                                                         </FxIconButton>
-                                                        {owner &&
-                                                        i.is_active ? (
-                                                            <FxIconButton
-                                                                tone="danger"
-                                                                title="Nonaktifkan bahan"
-                                                                aria-label="Nonaktifkan bahan"
-                                                                onClick={() =>
-                                                                    handleDeactivate(
-                                                                        i,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Ban className="size-4" />
-                                                            </FxIconButton>
-                                                        ) : null}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                                                    ) : null}
+                                                    {owner ? (
+                                                        <FxIconButton
+                                                            title="Update harga penawaran"
+                                                            aria-label="Update harga penawaran"
+                                                            onClick={() =>
+                                                                setQuote(i)
+                                                            }
+                                                        >
+                                                            <Tag className="size-4" />
+                                                        </FxIconButton>
+                                                    ) : null}
+                                                    <FxIconButton
+                                                        title="Sesuaikan stok (waste/opname)"
+                                                        aria-label="Sesuaikan stok (waste/opname)"
+                                                        onClick={() =>
+                                                            setAdjust(i)
+                                                        }
+                                                    >
+                                                        <SlidersHorizontal className="size-4" />
+                                                    </FxIconButton>
+                                                    <FxIconButton
+                                                        title="Riwayat harga"
+                                                        aria-label="Riwayat harga"
+                                                        onClick={() =>
+                                                            setHistory(i)
+                                                        }
+                                                    >
+                                                        <Clock className="size-4" />
+                                                    </FxIconButton>
+                                                    {owner && i.is_active ? (
+                                                        <FxIconButton
+                                                            tone="danger"
+                                                            title="Nonaktifkan bahan"
+                                                            aria-label="Nonaktifkan bahan"
+                                                            onClick={() =>
+                                                                handleDeactivate(
+                                                                    i,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Ban className="size-4" />
+                                                        </FxIconButton>
+                                                    ) : null}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
 
-                        <FxSoft className="flex flex-wrap items-center justify-between gap-2 p-4 text-xs text-muted-foreground">
-                            <span>
-                                Menampilkan {rows.length} dari{' '}
-                                {ingredients.length} bahan.
-                            </span>
-                            <span>
-                                WAC = Weighted Average Cost dari pembelian
-                                terakhir.
-                            </span>
-                        </FxSoft>
-                    </FxCard>
-                </Reveal>
+                    <FxSoft className="flex flex-wrap items-center justify-between gap-2 p-4 text-xs text-muted-foreground">
+                        <span>
+                            Menampilkan {rows.length} dari {ingredients.length}{' '}
+                            bahan.
+                        </span>
+                        <span>
+                            WAC = Weighted Average Cost dari pembelian terakhir.
+                        </span>
+                    </FxSoft>
+                </FxCard>
+            </Reveal>
 
             <CreateIngredientModal
                 open={createOpen}
@@ -1186,15 +1170,21 @@ function AdjustModal({
             return;
         }
         if (type === 'waste' && delta > 0) {
-            toast.error('Kuantitas waste harus bernilai negatif (pengurangan stok).');
+            toast.error(
+                'Kuantitas waste harus bernilai negatif (pengurangan stok).',
+            );
             return;
         }
         if (preview < 0) {
-            toast.error('Pengurangan stok melebihi stok yang tersedia saat ini.');
+            toast.error(
+                'Pengurangan stok melebihi stok yang tersedia saat ini.',
+            );
             return;
         }
         if (!isOwner && type === 'adjustment') {
-            toast.error('Hanya pemilik (owner) yang berhak melakukan penyesuaian opname.');
+            toast.error(
+                'Hanya pemilik (owner) yang berhak melakukan penyesuaian opname.',
+            );
             return;
         }
         if (!reason.trim()) {

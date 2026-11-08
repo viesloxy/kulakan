@@ -29,7 +29,12 @@ export default function PageShell({
     return (
         <>
             {pageTitle ? <Head title={pageTitle} /> : null}
-            <div className={cn('flex flex-1 flex-col gap-5 p-4 md:p-6', className)}>
+            <div
+                className={cn(
+                    'flex flex-1 flex-col gap-5 p-4 md:p-6',
+                    className,
+                )}
+            >
                 <Reveal>
                     <div
                         className={cn(

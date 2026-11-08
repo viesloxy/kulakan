@@ -36,15 +36,22 @@ export default function DeleteUser({ isSoleOwner = false }: DeleteUserProps) {
                     <div className="flex items-start gap-3">
                         <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
                         <div className="space-y-1">
-                            <p className="font-semibold text-sm">
+                            <p className="text-sm font-semibold">
                                 Akun Pemilik Utama Terkunci
                             </p>
                             <p className="text-sm text-amber-800/90 dark:text-amber-300/80">
-                                Anda adalah satu-satunya Pemilik (Owner) aktif di sistem DapurCerdas. Demi menjaga kelangsungan operasional dan mencegah sistem terkunci permanen, akun ini tidak dapat dihapus sebelum Anda menunjuk akun Pemilik lain di menu Kelola Pengguna.
+                                Anda adalah satu-satunya Pemilik (Owner) aktif
+                                di sistem DapurCerdas. Demi menjaga kelangsungan
+                                operasional dan mencegah sistem terkunci
+                                permanen, akun ini tidak dapat dihapus sebelum
+                                Anda menunjuk akun Pemilik lain di menu Kelola
+                                Pengguna.
                             </p>
                             <div className="pt-2">
                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href="/pengguna">Buka Kelola Pengguna</Link>
+                                    <Link href="/pengguna">
+                                        Buka Kelola Pengguna
+                                    </Link>
                                 </Button>
                             </div>
                         </div>
@@ -55,7 +62,8 @@ export default function DeleteUser({ isSoleOwner = false }: DeleteUserProps) {
                     <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
                         <p className="font-medium">Perhatian</p>
                         <p className="text-sm">
-                            Harap berhati-hati, tindakan ini tidak dapat dibatalkan.
+                            Harap berhati-hati, tindakan ini tidak dapat
+                            dibatalkan.
                         </p>
                     </div>
 
@@ -73,7 +81,9 @@ export default function DeleteUser({ isSoleOwner = false }: DeleteUserProps) {
                                 Apakah Anda yakin ingin menghapus akun?
                             </DialogTitle>
                             <DialogDescription>
-                                Setelah akun Anda dinonaktifkan, Anda tidak akan dapat masuk kembali ke sistem. Masukkan password Anda untuk mengonfirmasi penonaktifan akun.
+                                Setelah akun Anda dinonaktifkan, Anda tidak akan
+                                dapat masuk kembali ke sistem. Masukkan password
+                                Anda untuk mengonfirmasi penonaktifan akun.
                             </DialogDescription>
 
                             <Form
@@ -85,7 +95,11 @@ export default function DeleteUser({ isSoleOwner = false }: DeleteUserProps) {
                                 resetOnSuccess
                                 className="space-y-6"
                             >
-                                {({ resetAndClearErrors, processing, errors }) => (
+                                {({
+                                    resetAndClearErrors,
+                                    processing,
+                                    errors,
+                                }) => (
                                     <>
                                         <div className="grid gap-2">
                                             <Label
@@ -103,7 +117,9 @@ export default function DeleteUser({ isSoleOwner = false }: DeleteUserProps) {
                                                 autoComplete="current-password"
                                             />
 
-                                            <InputError message={errors.password} />
+                                            <InputError
+                                                message={errors.password}
+                                            />
                                         </div>
 
                                         <DialogFooter className="gap-2">

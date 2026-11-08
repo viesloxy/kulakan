@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Ingredient;
 
 use App\Models\Ingredient;
+use App\Support\Number;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -49,7 +50,7 @@ class AdjustIngredientStockRequest extends FormRequest
             }
 
             if ($ingredient instanceof Ingredient && $qty < 0) {
-                $newStock = bcadd((string) $ingredient->current_stock, (string) $this->input('qty_change'), 3);
+                $newStock = bcadd(Number::str($ingredient->current_stock), Number::str($this->input('qty_change')), 3);
                 if (bccomp($newStock, '0', 3) < 0) {
                     $validator->errors()->add('qty_change', 'Pengurangan stok melebihi stok yang tersedia saat ini.');
                 }

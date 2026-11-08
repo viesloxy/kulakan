@@ -12,7 +12,9 @@ export default function PageHeader({
     return (
         <div className={className}>
             {typeof title === 'string' ? (
-                <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
+                <h1 className="text-3xl font-semibold tracking-tight">
+                    {title}
+                </h1>
             ) : (
                 title
             )}
