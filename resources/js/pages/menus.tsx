@@ -6,18 +6,20 @@ import {
     Pencil,
     Plus,
     Sandwich,
+    Search,
     Sparkles,
     Trash2,
     UtensilsCrossed,
+    X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { FxField, FxInput, FxModal, FxSelect } from '@/components/fx/fx-form';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
-import PageHeader from '@/components/page-header';
+import PageShell from '@/components/page-shell';
 import StatusBadge, { type MenuStatus } from '@/components/status-badge';
 import { formatPercent, formatRupiah } from '@/lib/format';
 import { isOwner } from '@/lib/permissions';
@@ -77,8 +79,29 @@ export default function Menus({ menus, ingredients }: Props) {
     const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [bomOpen, setBomOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState<'Semua' | Category>('Semua');
 
-    const selected = menus.find((m) => m.id === selectedId) ?? menus[0] ?? null;
+    const filteredMenus = useMemo(() => {
+        return menus.filter((m) => {
+            const matchesCategory =
+                categoryFilter === 'Semua' || m.category === categoryFilter;
+            const matchesQuery =
+                searchQuery.trim() === '' ||
+                m.name.toLowerCase().includes(searchQuery.toLowerCase().trim());
+            return matchesCategory && matchesQuery;
+        });
+    }, [menus, categoryFilter, searchQuery]);
+
+    const selected = useMemo(
+        () =>
+            filteredMenus.find((m) => m.id === selectedId) ??
+            menus.find((m) => m.id === selectedId) ??
+            filteredMenus[0] ??
+            menus[0] ??
+            null,
+        [menus, selectedId, filteredMenus],
+    );
 
     function handleCreate(data: CreateMenuData) {
         router.post(
@@ -165,28 +188,22 @@ export default function Menus({ menus, ingredients }: Props) {
     const hasProjection = selected?.projected_hpp !== null;
 
     return (
-        <>
-            <Head title="Menu & Resep" />
-            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <Reveal>
-                    <div className="flex flex-wrap items-end justify-between gap-3">
-                        <PageHeader
-                            title="Menu & Resep"
-                            description="Kelola menu jual dan susun BOM (resep) agar stok dan HPP terhitung otomatis."
-                        />
-                        {owner ? (
-                            <FxButton
-                                variant="coral"
-                                onClick={() => setCreateOpen(true)}
-                            >
-                                <Plus className="size-4" />
-                                Tambah menu
-                            </FxButton>
-                        ) : null}
-                    </div>
-                </Reveal>
-
-                {selected === null ? (
+        <PageShell
+            title="Menu & Resep"
+            description="Kelola menu jual dan susun BOM (resep) agar stok dan HPP terhitung otomatis."
+            actions={
+                owner ? (
+                    <FxButton
+                        variant="coral"
+                        onClick={() => setCreateOpen(true)}
+                    >
+                        <Plus className="size-4" />
+                        Tambah menu
+                    </FxButton>
+                ) : null
+            }
+        >
+            {selected === null ? (
                     <FxSoft className="flex flex-col items-center gap-3 p-10 text-center">
                         <p className="text-sm text-muted-foreground">
                             Belum ada menu. Tambahkan menu pertama.
@@ -210,75 +227,146 @@ export default function Menus({ menus, ingredients }: Props) {
                                         Daftar menu
                                     </h2>
                                     <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
-                                        {menus.length} menu
+                                        {filteredMenus.length === menus.length
+                                            ? `${menus.length} menu`
+                                            : `${filteredMenus.length} dari ${menus.length} menu`}
                                     </span>
                                 </div>
 
-                                <div className="flex flex-col gap-2">
-                                    {menus.map((m) => {
-                                        const Icon = categoryIcon[m.category];
-                                        const active = m.id === selected.id;
+                                <div className="flex h-10 items-center gap-2 rounded-2xl bg-secondary/60 px-3.5 transition-colors focus-within:bg-secondary focus-within:ring-2 focus-within:ring-primary/20">
+                                    <Search className="size-4 shrink-0 text-muted-foreground" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) =>
+                                            setSearchQuery(e.target.value)
+                                        }
+                                        placeholder="Cari menu..."
+                                        className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                                    />
+                                    {searchQuery ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearchQuery('')}
+                                            className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-hover-soft hover:text-foreground"
+                                            aria-label="Hapus pencarian"
+                                        >
+                                            <X className="size-3.5" />
+                                        </button>
+                                    ) : null}
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-1.5 pb-0.5">
+                                    {(
+                                        ['Semua', ...categories] as const
+                                    ).map((cat) => {
+                                        const active = categoryFilter === cat;
                                         return (
                                             <button
-                                                key={m.id}
+                                                key={cat}
+                                                type="button"
                                                 onClick={() =>
-                                                    setSelectedId(m.id)
+                                                    setCategoryFilter(cat)
                                                 }
-                                                className={`flex items-center gap-3 rounded-2xl p-3 text-left transition-all duration-200 ${
+                                                className={`h-7 rounded-full px-3 text-xs font-semibold transition-all duration-200 ${
                                                     active
                                                         ? 'fx-coral'
-                                                        : 'fx-soft hover:bg-hover-soft'
+                                                        : 'bg-secondary text-foreground hover:bg-hover-soft'
                                                 }`}
                                             >
-                                                {m.image_url ? (
-                                                    <img
-                                                        src={m.image_url}
-                                                        alt={m.name}
-                                                        className="size-10 rounded-xl object-cover"
-                                                    />
-                                                ) : (
-                                                    <IconCircle
-                                                        icon={Icon}
-                                                        tone={
-                                                            active
-                                                                ? 'white'
-                                                                : 'soft'
-                                                        }
-                                                    />
-                                                )}
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="truncate font-semibold">
-                                                        {m.name}
-                                                    </p>
-                                                    <p
-                                                        className={`text-xs ${active ? 'text-white/70' : 'text-muted-foreground'}`}
-                                                    >
-                                                        HPP{' '}
-                                                        {formatRupiah(
-                                                            m.current_hpp,
-                                                        )}{' '}
-                                                        ·{' '}
-                                                        {formatRupiah(
-                                                            m.selling_price,
-                                                        )}
-                                                    </p>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-sm font-bold tabular-nums">
-                                                        {formatPercent(
-                                                            m.margin_pct,
-                                                            1,
-                                                        )}
-                                                    </p>
-                                                    <p
-                                                        className={`text-[11px] ${active ? 'text-white/70' : 'text-muted-foreground'}`}
-                                                    >
-                                                        margin
-                                                    </p>
-                                                </div>
+                                                {cat}
                                             </button>
                                         );
                                     })}
+                                </div>
+
+                                <div className="flex max-h-[calc(100vh-340px)] min-h-[300px] flex-col gap-2 overflow-y-auto pr-1">
+                                    {filteredMenus.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted-foreground">
+                                            <Search className="size-8 text-muted-foreground/40" />
+                                            <p className="text-sm font-medium">
+                                                Menu tidak ditemukan
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Coba kata kunci atau kategori lain.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSearchQuery('');
+                                                    setCategoryFilter('Semua');
+                                                }}
+                                                className="mt-1 text-xs font-semibold text-primary hover:underline"
+                                            >
+                                                Reset filter
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        filteredMenus.map((m) => {
+                                            const Icon = categoryIcon[m.category];
+                                            const active = m.id === selected?.id;
+                                            return (
+                                                <button
+                                                    key={m.id}
+                                                    onClick={() =>
+                                                        setSelectedId(m.id)
+                                                    }
+                                                    className={`flex items-center gap-3 rounded-2xl p-3 text-left transition-all duration-200 ${
+                                                        active
+                                                            ? 'fx-coral'
+                                                            : 'fx-soft hover:bg-hover-soft'
+                                                    }`}
+                                                >
+                                                    {m.image_url ? (
+                                                        <img
+                                                            src={m.image_url}
+                                                            alt={m.name}
+                                                            className="size-10 rounded-xl object-cover"
+                                                        />
+                                                    ) : (
+                                                        <IconCircle
+                                                            icon={Icon}
+                                                            tone={
+                                                                active
+                                                                    ? 'white'
+                                                                    : 'soft'
+                                                            }
+                                                        />
+                                                    )}
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate font-semibold">
+                                                            {m.name}
+                                                        </p>
+                                                        <p
+                                                            className={`text-xs ${active ? 'text-white/70' : 'text-muted-foreground'}`}
+                                                        >
+                                                            HPP{' '}
+                                                            {formatRupiah(
+                                                                m.current_hpp,
+                                                            )}{' '}
+                                                            ·{' '}
+                                                            {formatRupiah(
+                                                                m.selling_price,
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-sm font-bold tabular-nums">
+                                                            {formatPercent(
+                                                                m.margin_pct,
+                                                                1,
+                                                            )}
+                                                        </p>
+                                                        <p
+                                                            className={`text-[11px] ${active ? 'text-white/70' : 'text-muted-foreground'}`}
+                                                        >
+                                                            margin
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })
+                                    )}
                                 </div>
                             </FxCard>
                         </Reveal>
@@ -286,13 +374,21 @@ export default function Menus({ menus, ingredients }: Props) {
                         <Reveal delay={0.1}>
                             <FxCard className="flex flex-col gap-4 p-5">
                                 <div className="flex flex-wrap items-start justify-between gap-3">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex flex-col items-left gap-3">
                                         {selected.image_url ? (
-                                            <img
-                                                src={selected.image_url}
-                                                alt={selected.name}
-                                                className="size-12 rounded-2xl object-cover"
-                                            />
+                                            <div className="relative w-full overflow-hidden rounded-2xl border border-border/60 sm:aspect-[16/7]">
+                                                <img
+                                                    src={selected.image_url}
+                                                    alt={selected.name}
+                                                    className="size-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent" />
+                                                <div className="absolute bottom-3 left-3 text-white">
+                                                    <span className="rounded-full bg-black/40 px-2.5 py-1 text-xs font-medium backdrop-blur-md">
+                                                        {selected.category}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         ) : (
                                             <IconCircle
                                                 icon={
@@ -561,7 +657,6 @@ export default function Menus({ menus, ingredients }: Props) {
                         </Reveal>
                     </div>
                 )}
-            </div>
 
             <CreateMenuModal
                 open={createOpen}
@@ -587,7 +682,7 @@ export default function Menus({ menus, ingredients }: Props) {
                     onSave={(items) => handleSaveBom(selected.id, items)}
                 />
             ) : null}
-        </>
+        </PageShell>
     );
 }
 
@@ -624,20 +719,24 @@ function MenuImageField({
             label="Foto menu"
             hint="JPG, PNG, atau WebP maksimal 2 MB. Opsional; tampil di katalog dan POS."
         >
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3">
                 {preview ? (
-                    <img
-                        src={preview}
-                        alt="Pratinjau foto menu"
-                        className="size-14 rounded-2xl object-cover"
-                    />
+                    <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-border/60 bg-secondary shadow-inner">
+                        <img
+                            src={preview}
+                            alt="Pratinjau foto menu"
+                            className="size-full object-cover transition-transform duration-300 hover:scale-105"
+                        />
+                    </div>
                 ) : (
-                    <div className="flex size-14 items-center justify-center rounded-2xl bg-secondary text-muted-foreground">
-                        <ImagePlus className="size-5" />
+                    <div className="flex h-64 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/80 bg-secondary/40 text-muted-foreground">
+                        <ImagePlus className="size-8 stroke-[1.5]" />
+                        <span className="text-xs">Belum ada foto menu</span>
                     </div>
                 )}
-                <div className="flex flex-col items-start gap-1.5">
-                    <label className="flex cursor-pointer items-center gap-1.5 rounded-full bg-secondary px-3 py-2 text-xs font-semibold transition-colors hover:bg-hover-soft">
+
+                <div className="flex items-center gap-2">
+                    <label className="flex cursor-pointer items-center gap-1.5 rounded-full bg-secondary px-3.5 py-2 text-xs font-semibold transition-colors hover:bg-hover-soft">
                         <ImagePlus className="size-3.5" />
                         {preview ? 'Ganti foto' : 'Pilih foto'}
                         <input
@@ -654,7 +753,7 @@ function MenuImageField({
                         <button
                             type="button"
                             onClick={onRemove}
-                            className="text-xs font-medium text-danger transition-opacity hover:opacity-80"
+                            className="rounded-full px-3 py-2 text-xs font-medium text-danger transition-colors hover:bg-danger-soft"
                         >
                             Hapus foto
                         </button>

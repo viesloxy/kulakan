@@ -21,7 +21,7 @@ import { FxField, FxInput, FxModal, FxSelect } from '@/components/fx/fx-form';
 import { FxIconButton } from '@/components/fx/fx-icon-button';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
-import PageHeader from '@/components/page-header';
+import PageShell from '@/components/page-shell';
 import { formatPercent, formatRupiah } from '@/lib/format';
 import { isOwner } from '@/lib/permissions';
 
@@ -269,28 +269,22 @@ export default function Ingredients({ ingredients, meta }: Props) {
     ];
 
     return (
-        <>
-            <Head title="Bahan Baku" />
-            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <Reveal>
-                    <div className="flex flex-wrap items-end justify-between gap-3">
-                        <PageHeader
-                            title="Bahan Baku"
-                            description="Master bahan, stok, biaya rata-rata (WAC), dan riwayat harga."
-                        />
-                        {owner ? (
-                            <FxButton
-                                variant="coral"
-                                onClick={() => setCreateOpen(true)}
-                            >
-                                <Plus className="size-4" />
-                                Tambah bahan
-                            </FxButton>
-                        ) : null}
-                    </div>
-                </Reveal>
-
-                <Reveal delay={0.05}>
+        <PageShell
+            title="Bahan Baku"
+            description="Master bahan, stok, biaya rata-rata (WAC), dan riwayat harga."
+            actions={
+                owner ? (
+                    <FxButton
+                        variant="coral"
+                        onClick={() => setCreateOpen(true)}
+                    >
+                        <Plus className="size-4" />
+                        Tambah bahan
+                    </FxButton>
+                ) : null
+            }
+        >
+            <Reveal delay={0.05}>
                     <div className="grid gap-4 md:grid-cols-3">
                         {kpis.map((k) => (
                             <FxCard
@@ -592,7 +586,6 @@ export default function Ingredients({ ingredients, meta }: Props) {
                         </FxSoft>
                     </FxCard>
                 </Reveal>
-            </div>
 
             <CreateIngredientModal
                 open={createOpen}
@@ -630,6 +623,7 @@ export default function Ingredients({ ingredients, meta }: Props) {
                 <AdjustModal
                     key={adjust.id}
                     target={adjust}
+                    isOwner={owner}
                     onClose={() => setAdjust(null)}
                     onSubmit={handleAdjust}
                 />
@@ -643,7 +637,7 @@ export default function Ingredients({ ingredients, meta }: Props) {
                     onSubmit={handleUpdate}
                 />
             ) : null}
-        </>
+        </PageShell>
     );
 }
 
@@ -1165,10 +1159,12 @@ function HistoryModal({
 
 function AdjustModal({
     target,
+    isOwner,
     onClose,
     onSubmit,
 }: {
     target: IngredientRow;
+    isOwner: boolean;
     onClose: () => void;
     onSubmit: (
         target: IngredientRow,
@@ -1187,6 +1183,18 @@ function AdjustModal({
     function submit() {
         if (delta === 0) {
             toast.error('Kuantitas penyesuaian tidak boleh 0.');
+            return;
+        }
+        if (type === 'waste' && delta > 0) {
+            toast.error('Kuantitas waste harus bernilai negatif (pengurangan stok).');
+            return;
+        }
+        if (preview < 0) {
+            toast.error('Pengurangan stok melebihi stok yang tersedia saat ini.');
+            return;
+        }
+        if (!isOwner && type === 'adjustment') {
+            toast.error('Hanya pemilik (owner) yang berhak melakukan penyesuaian opname.');
             return;
         }
         if (!reason.trim()) {
@@ -1222,7 +1230,9 @@ function AdjustModal({
                         }
                     >
                         <option value="waste">Waste / rusak</option>
-                        <option value="adjustment">Koreksi opname</option>
+                        {isOwner ? (
+                            <option value="adjustment">Koreksi opname</option>
+                        ) : null}
                     </FxSelect>
                 </FxField>
                 <FxField

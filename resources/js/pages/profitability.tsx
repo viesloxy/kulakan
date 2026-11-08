@@ -15,7 +15,7 @@ import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { FxField, FxInput, FxModal, FxSelect } from '@/components/fx/fx-form';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
-import PageHeader from '@/components/page-header';
+import PageShell from '@/components/page-shell';
 import StatusBadge, { type MenuStatus } from '@/components/status-badge';
 import { formatPercent, formatRupiah } from '@/lib/format';
 
@@ -150,26 +150,20 @@ export default function Profitability({
     ];
 
     return (
-        <>
-            <Head title="Profitabilitas" />
-            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <Reveal>
-                    <div className="flex flex-wrap items-end justify-between gap-3">
-                        <PageHeader
-                            title="Profitabilitas"
-                            description="Margin dan status tiap menu, dihitung dari HPP terkini."
-                        />
-                        <FxButton
-                            variant="coral"
-                            onClick={() => setSimOpen(true)}
-                        >
-                            <Coins className="size-4" />
-                            Simulasi harga
-                        </FxButton>
-                    </div>
-                </Reveal>
-
-                <Reveal delay={0.05}>
+        <PageShell
+            title="Profitabilitas"
+            description="Margin dan status tiap menu, dihitung dari HPP terkini."
+            actions={
+                <FxButton
+                    variant="coral"
+                    onClick={() => setSimOpen(true)}
+                >
+                    <Coins className="size-4" />
+                    Simulasi harga
+                </FxButton>
+            }
+        >
+            <Reveal delay={0.05}>
                     <div className="grid gap-4 md:grid-cols-4">
                         <FxCard className="flex flex-col justify-between fx-coral p-4">
                             <div className="flex items-center justify-between">
@@ -491,7 +485,6 @@ export default function Profitability({
                         </div>
                     </FxCard>
                 </Reveal>
-            </div>
 
             {simOpen ? (
                 <SimulateModal
@@ -515,7 +508,7 @@ export default function Profitability({
                     }}
                 />
             ) : null}
-        </>
+        </PageShell>
     );
 }
 

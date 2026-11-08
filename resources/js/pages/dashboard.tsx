@@ -12,6 +12,7 @@ import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
+import PageShell from '@/components/page-shell';
 import { formatRupiah } from '@/lib/format';
 
 type MenuCounts = {
@@ -160,21 +161,12 @@ export default function Dashboard({
     }
 
     return (
-        <>
-            <Head title="Dashboard" />
-            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <Reveal>
-                    <div>
-                        <h1 className="text-3xl font-semibold tracking-tight">
-                            Selamat datang, {greeting_name}
-                        </h1>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Ringkasan kas, stok, dan margin dapur hari ini.
-                        </p>
-                    </div>
-                </Reveal>
-
-                <Reveal delay={0.05}>
+        <PageShell
+            title={`Selamat datang, ${greeting_name}`}
+            headTitle="Dashboard"
+            description="Ringkasan kas, stok, dan margin dapur hari ini."
+        >
+            <Reveal delay={0.05}>
                     <section className="grid gap-5 lg:grid-cols-[1fr_1.3fr_1fr]">
                         <FxCard className="p-5">
                             <div className="flex items-start justify-between">
@@ -735,7 +727,6 @@ export default function Dashboard({
                         ) : null}
                     </section>
                 </Reveal>
-            </div>
-        </>
+        </PageShell>
     );
 }

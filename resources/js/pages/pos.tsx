@@ -6,7 +6,7 @@ import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
-import PageHeader from '@/components/page-header';
+import PageShell from '@/components/page-shell';
 import { formatRupiah } from '@/lib/format';
 
 type Category = 'Kopi' | 'Non-Kopi' | 'Makanan';
@@ -103,17 +103,11 @@ export default function Pos({ menus }: Props) {
     }
 
     return (
-        <>
-            <Head title="POS Kasir" />
-            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <Reveal>
-                    <PageHeader
-                        title="POS Kasir"
-                        description="Pilih menu, catat pesanan, stok bahan terpotong otomatis sesuai resep."
-                    />
-                </Reveal>
-
-                <div className="grid items-start gap-5 lg:grid-cols-[1fr_360px]">
+        <PageShell
+            title="POS Kasir"
+            description="Pilih menu, catat pesanan, stok bahan terpotong otomatis sesuai resep."
+        >
+            <div className="grid items-start gap-5 lg:grid-cols-[1fr_360px]">
                     <Reveal delay={0.05}>
                         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             {menus.map((m) => {
@@ -272,7 +266,6 @@ export default function Pos({ menus }: Props) {
                         </FxCard>
                     </Reveal>
                 </div>
-            </div>
-        </>
+        </PageShell>
     );
 }

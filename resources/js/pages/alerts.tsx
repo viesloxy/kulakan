@@ -11,7 +11,7 @@ import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
-import PageHeader from '@/components/page-header';
+import PageShell from '@/components/page-shell';
 
 type AlertType = 'low_stock' | 'margin_drop' | 'price_hike';
 
@@ -121,17 +121,11 @@ export default function Alerts({ alerts, counts }: Props) {
     }
 
     return (
-        <>
-            <Head title="Alert" />
-            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <Reveal>
-                    <PageHeader
-                        title="Alert"
-                        description="Pantau stok menipis, margin turun, dan kenaikan harga bahan. Dibuat setelah transaksi tersimpan."
-                    />
-                </Reveal>
-
-                <Reveal delay={0.05}>
+        <PageShell
+            title="Alert"
+            description="Pantau stok menipis, margin turun, dan kenaikan harga bahan. Dibuat setelah transaksi tersimpan."
+        >
+            <Reveal delay={0.05}>
                     <div className="grid gap-4 md:grid-cols-4">
                         {kpis.map((k) => (
                             <FxCard
@@ -239,7 +233,6 @@ export default function Alerts({ alerts, counts }: Props) {
                         )}
                     </FxCard>
                 </Reveal>
-            </div>
-        </>
+        </PageShell>
     );
 }

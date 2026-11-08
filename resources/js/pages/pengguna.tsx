@@ -7,7 +7,7 @@ import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { FxField, FxInput, FxModal, FxSelect } from '@/components/fx/fx-form';
 import { FxIconButton } from '@/components/fx/fx-icon-button';
 import Reveal from '@/components/motion/reveal';
-import PageHeader from '@/components/page-header';
+import PageShell from '@/components/page-shell';
 
 type UserRole = 'owner' | 'staff';
 
@@ -118,26 +118,20 @@ export default function Pengguna({ users }: Props) {
     }
 
     return (
-        <>
-            <Head title="Pengguna" />
-            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <Reveal>
-                    <div className="flex flex-wrap items-end justify-between gap-3">
-                        <PageHeader
-                            title="Pengguna"
-                            description="Kelola akun tim dalam satu lingkungan UMKM: beberapa owner dan banyak staff berbagi data yang sama."
-                        />
-                        <FxButton
-                            variant="coral"
-                            onClick={() => setCreateOpen(true)}
-                        >
-                            <Plus className="size-4" />
-                            Tambah pengguna
-                        </FxButton>
-                    </div>
-                </Reveal>
-
-                <Reveal delay={0.05}>
+        <PageShell
+            title="Pengguna"
+            description="Kelola akun tim dalam satu lingkungan UMKM: beberapa owner dan banyak staff berbagi data yang sama."
+            actions={
+                <FxButton
+                    variant="coral"
+                    onClick={() => setCreateOpen(true)}
+                >
+                    <Plus className="size-4" />
+                    Tambah pengguna
+                </FxButton>
+            }
+        >
+            <Reveal delay={0.05}>
                     <FxSoft className="flex flex-wrap items-center gap-x-6 gap-y-1 p-4 text-sm">
                         <span className="text-muted-foreground">
                             <span className="font-bold text-foreground">
@@ -279,7 +273,6 @@ export default function Pengguna({ users }: Props) {
                         </div>
                     </FxCard>
                 </Reveal>
-            </div>
 
             <CreateUserModal
                 open={createOpen}
@@ -294,7 +287,7 @@ export default function Pengguna({ users }: Props) {
                     onSave={(role) => handleRole(roleTarget, role)}
                 />
             ) : null}
-        </>
+        </PageShell>
     );
 }
 

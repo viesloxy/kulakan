@@ -11,6 +11,8 @@ use App\Models\SalesOrder;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Support\Number;
+use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -88,8 +90,13 @@ class InventoryService
             $ingredient = Ingredient::whereKey($ingredient->id)->lockForUpdate()->firstOrFail();
             $qtyChange = Number::str($qtyChange);
 
+            $newStock = bcadd(Number::str($ingredient->current_stock), $qtyChange, 3);
+            if (bccomp($newStock, '0', 3) < 0) {
+                throw new \InvalidArgumentException('Stok bahan baku tidak boleh menjadi negatif.');
+            }
+
             $ingredient->forceFill([
-                'current_stock' => bcadd(Number::str($ingredient->current_stock), $qtyChange, 3),
+                'current_stock' => $newStock,
             ])->save();
 
             return StockMovement::create([
@@ -122,100 +129,128 @@ class InventoryService
             }
         }
 
-        return DB::transaction(function () use ($lines, $paymentMethod, $idempotencyKey, $user) {
-            $menuIds = array_map(fn ($line) => (int) $line['menu_id'], $lines);
-            $menus = Menu::with('recipe.items')->whereIn('id', $menuIds)->get()->keyBy('id');
+        $attempts = 0;
+        while ($attempts < 3) {
+            $attempts++;
 
-            /** @var array<int, numeric-string> $needs ingredient_id => kuantitas dibutuhkan */
-            $needs = [];
-            $orderLines = [];
-            $total = 0;
+            try {
+                return DB::transaction(function () use ($lines, $paymentMethod, $idempotencyKey, $user) {
+                    if ($idempotencyKey !== null) {
+                        $existing = SalesOrder::where('idempotency_key', $idempotencyKey)->first();
+                        if ($existing !== null) {
+                            return $existing->load('items');
+                        }
+                    }
 
-            foreach ($lines as $line) {
-                $menu = $menus[(int) $line['menu_id']] ?? null;
-                $quantity = (int) $line['quantity'];
+                    $menuIds = array_map(fn ($line) => (int) $line['menu_id'], $lines);
+                    $menus = Menu::with('recipe.items')->whereIn('id', $menuIds)->get()->keyBy('id');
 
-                if ($menu === null || ! $menu->is_active || $menu->recipe === null || $menu->recipe->items->isEmpty()) {
-                    throw new \InvalidArgumentException('Menu tidak valid, tidak aktif, atau belum punya BOM (FR-012).');
+                    /** @var array<int, numeric-string> $needs ingredient_id => kuantitas dibutuhkan */
+                    $needs = [];
+                    $orderLines = [];
+                    $total = 0;
+
+                    foreach ($lines as $line) {
+                        $menu = $menus[(int) $line['menu_id']] ?? null;
+                        $quantity = (int) $line['quantity'];
+
+                        if ($menu === null || ! $menu->is_active || $menu->recipe === null || $menu->recipe->items->isEmpty()) {
+                            throw new \InvalidArgumentException('Menu tidak valid, tidak aktif, atau belum punya BOM (FR-012).');
+                        }
+
+                        $orderLines[] = ['menu' => $menu, 'quantity' => $quantity];
+                        $total += $menu->selling_price * $quantity;
+
+                        foreach ($menu->recipe->items as $bom) {
+                            $perPortion = $this->costing->effectiveQty((string) $bom->quantity_needed, (string) $bom->waste_factor);
+                            $needed = bcmul($perPortion, Number::str($quantity), 6);
+                            $needs[$bom->ingredient_id] = bcadd($needs[$bom->ingredient_id] ?? '0', $needed, 6);
+                        }
+                    }
+
+                    // Kunci bahan urut id menaik untuk cegah deadlock (BR-031).
+                    ksort($needs);
+                    $ingredients = Ingredient::whereIn('id', array_keys($needs))
+                        ->orderBy('id')
+                        ->lockForUpdate()
+                        ->get()
+                        ->keyBy('id');
+
+                    $shortages = [];
+                    foreach ($needs as $ingredientId => $needed) {
+                        $ingredient = $ingredients[$ingredientId];
+                        $available = Number::str($ingredient->current_stock);
+
+                        if (bccomp($available, $needed, 6) < 0) {
+                            $shortages[] = [
+                                'ingredient_id' => $ingredientId,
+                                'name' => $ingredient->name,
+                                'needed' => bcadd($needed, '0', 3),
+                                'available' => bcadd($available, '0', 3),
+                                'shortage' => bcsub($needed, $available, 3),
+                            ];
+                        }
+                    }
+
+                    if ($shortages !== []) {
+                        throw new InsufficientStockException($shortages);
+                    }
+
+                    $order = SalesOrder::create([
+                        'order_number' => $this->nextOrderNumber(),
+                        'user_id' => $user->id,
+                        'total_amount' => $total,
+                        'payment_method' => $paymentMethod,
+                        'status' => 'completed',
+                        'idempotency_key' => $idempotencyKey,
+                    ]);
+
+                    foreach ($orderLines as $orderLine) {
+                        $menu = $orderLine['menu'];
+                        $currentHpp = Number::str($menu->current_hpp);
+                        $hpp = bccomp($currentHpp, '0', 2) > 0 ? $currentHpp : $this->costing->menuHpp($menu);
+
+                        SalesItem::create([
+                            'sales_order_id' => $order->id,
+                            'menu_id' => $menu->id,
+                            'quantity' => $orderLine['quantity'],
+                            'unit_price' => $menu->selling_price,
+                            'unit_hpp_at_sale' => $hpp,
+                        ]);
+                    }
+
+                    foreach ($needs as $ingredientId => $needed) {
+                        $ingredient = $ingredients[$ingredientId];
+                        $ingredient->forceFill([
+                            'current_stock' => bcsub(Number::str($ingredient->current_stock), $needed, 3),
+                        ])->save();
+
+                        StockMovement::create([
+                            'ingredient_id' => $ingredientId,
+                            'type' => 'sale',
+                            'qty_change' => bcmul($needed, '-1', 3),
+                            'sales_order_id' => $order->id,
+                        ]);
+                    }
+
+                    return $order->load('items');
+                });
+            } catch (UniqueConstraintViolationException|QueryException $e) {
+                // Proteksi SEC-05: Tangani benturan konkurensi idempotency key atau order_number
+                if ($idempotencyKey !== null) {
+                    $existing = SalesOrder::where('idempotency_key', $idempotencyKey)->first();
+                    if ($existing !== null) {
+                        return $existing->load('items');
+                    }
                 }
 
-                $orderLines[] = ['menu' => $menu, 'quantity' => $quantity];
-                $total += $menu->selling_price * $quantity;
-
-                foreach ($menu->recipe->items as $bom) {
-                    $perPortion = $this->costing->effectiveQty((string) $bom->quantity_needed, (string) $bom->waste_factor);
-                    $needed = bcmul($perPortion, Number::str($quantity), 6);
-                    $needs[$bom->ingredient_id] = bcadd($needs[$bom->ingredient_id] ?? '0', $needed, 6);
+                if ($attempts >= 3) {
+                    throw $e;
                 }
             }
+        }
 
-            // Kunci bahan urut id menaik untuk cegah deadlock (BR-031).
-            ksort($needs);
-            $ingredients = Ingredient::whereIn('id', array_keys($needs))
-                ->orderBy('id')
-                ->lockForUpdate()
-                ->get()
-                ->keyBy('id');
-
-            $shortages = [];
-            foreach ($needs as $ingredientId => $needed) {
-                $ingredient = $ingredients[$ingredientId];
-                $available = Number::str($ingredient->current_stock);
-
-                if (bccomp($available, $needed, 6) < 0) {
-                    $shortages[] = [
-                        'ingredient_id' => $ingredientId,
-                        'name' => $ingredient->name,
-                        'needed' => bcadd($needed, '0', 3),
-                        'available' => bcadd($available, '0', 3),
-                        'shortage' => bcsub($needed, $available, 3),
-                    ];
-                }
-            }
-
-            if ($shortages !== []) {
-                throw new InsufficientStockException($shortages);
-            }
-
-            $order = SalesOrder::create([
-                'order_number' => $this->nextOrderNumber(),
-                'user_id' => $user->id,
-                'total_amount' => $total,
-                'payment_method' => $paymentMethod,
-                'status' => 'completed',
-                'idempotency_key' => $idempotencyKey,
-            ]);
-
-            foreach ($orderLines as $orderLine) {
-                $menu = $orderLine['menu'];
-                $currentHpp = Number::str($menu->current_hpp);
-                $hpp = bccomp($currentHpp, '0', 2) > 0 ? $currentHpp : $this->costing->menuHpp($menu);
-
-                SalesItem::create([
-                    'sales_order_id' => $order->id,
-                    'menu_id' => $menu->id,
-                    'quantity' => $orderLine['quantity'],
-                    'unit_price' => $menu->selling_price,
-                    'unit_hpp_at_sale' => $hpp,
-                ]);
-            }
-
-            foreach ($needs as $ingredientId => $needed) {
-                $ingredient = $ingredients[$ingredientId];
-                $ingredient->forceFill([
-                    'current_stock' => bcsub(Number::str($ingredient->current_stock), $needed, 3),
-                ])->save();
-
-                StockMovement::create([
-                    'ingredient_id' => $ingredientId,
-                    'type' => 'sale',
-                    'qty_change' => bcmul($needed, '-1', 3),
-                    'sales_order_id' => $order->id,
-                ]);
-            }
-
-            return $order->load('items');
-        });
+        throw new \RuntimeException('Gagal memproses pesanan setelah beberapa percobaan.');
     }
 
     /**
@@ -274,6 +309,13 @@ class InventoryService
         $date = now()->format('Ymd');
         $countToday = SalesOrder::whereDate('created_at', now()->toDateString())->count() + 1;
 
-        return sprintf('ORD-%s-%04d', $date, $countToday);
+        // Proteksi SEC-05: Entropi acak 2-karakter heksadesimal + pengecekan keunikan (panjang 19 karakter <= varchar(20))
+        do {
+            $entropy = strtoupper(bin2hex(random_bytes(1)));
+            $candidate = sprintf('ORD-%s-%04d%s', $date, $countToday % 10000, $entropy);
+            $countToday++;
+        } while (SalesOrder::where('order_number', $candidate)->exists());
+
+        return $candidate;
     }
 }

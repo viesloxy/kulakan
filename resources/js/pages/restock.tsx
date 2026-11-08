@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import Reveal from '@/components/motion/reveal';
-import PageHeader from '@/components/page-header';
+import PageShell from '@/components/page-shell';
 import { formatRupiah } from '@/lib/format';
 
 type Abc = 'A' | 'B' | 'C';
@@ -175,17 +175,11 @@ export default function Restock({
     }
 
     return (
-        <>
-            <Head title="Restock Planner" />
-            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <Reveal>
-                    <PageHeader
-                        title="Restock Planner"
-                        description="Masukkan kas, sistem menyusun rencana belanja sesuai urgensi dan kelas ABC."
-                    />
-                </Reveal>
-
-                <Reveal delay={0.05}>
+        <PageShell
+            title="Restock Planner"
+            description="Masukkan kas, sistem menyusun rencana belanja sesuai urgensi dan kelas ABC."
+        >
+            <Reveal delay={0.05}>
                     <div className="grid gap-5 lg:grid-cols-[1fr_1.4fr]">
                         <FxCard className="p-5">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -396,7 +390,6 @@ export default function Restock({
                         </FxCard>
                     </div>
                 </Reveal>
-            </div>
-        </>
+        </PageShell>
     );
 }
