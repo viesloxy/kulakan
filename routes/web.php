@@ -28,17 +28,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('alert/{alert}/resolve', [AlertController::class, 'resolve'])->name('alerts.resolve');
 
         // Mutasi bahan baku khusus owner (FR-004/006/008).
-        Route::post('bahan-baku', [IngredientController::class, 'store'])->name('ingredients.store');
-        Route::put('bahan-baku/{ingredient}', [IngredientController::class, 'update'])->name('ingredients.update');
-        Route::delete('bahan-baku/{ingredient}', [IngredientController::class, 'destroy'])->name('ingredients.destroy');
-        Route::post('bahan-baku/{ingredient}/stock-in', [IngredientController::class, 'stockIn'])->name('ingredients.stock-in');
-        Route::post('bahan-baku/{ingredient}/quote', [IngredientController::class, 'quote'])->name('ingredients.quote');
+        Route::post('bahan-baku', [IngredientController::class, 'store'])->middleware('throttle:30,1')->name('ingredients.store');
+        Route::put('bahan-baku/{ingredient}', [IngredientController::class, 'update'])->middleware('throttle:30,1')->name('ingredients.update');
+        Route::delete('bahan-baku/{ingredient}', [IngredientController::class, 'destroy'])->middleware('throttle:30,1')->name('ingredients.destroy');
+        Route::post('bahan-baku/{ingredient}/stock-in', [IngredientController::class, 'stockIn'])->middleware('throttle:30,1')->name('ingredients.stock-in');
+        Route::post('bahan-baku/{ingredient}/quote', [IngredientController::class, 'quote'])->middleware('throttle:30,1')->name('ingredients.quote');
 
         // Mutasi menu & resep khusus owner (FR-011/012).
-        Route::post('menu', [MenuController::class, 'store'])->name('menus.store');
-        Route::put('menu/{menu}', [MenuController::class, 'update'])->name('menus.update');
-        Route::delete('menu/{menu}', [MenuController::class, 'destroy'])->name('menus.destroy');
-        Route::post('menu/{menu}/recipe', [MenuController::class, 'saveRecipe'])->name('menus.recipe');
+        Route::post('menu', [MenuController::class, 'store'])->middleware('throttle:30,1')->name('menus.store');
+        Route::put('menu/{menu}', [MenuController::class, 'update'])->middleware('throttle:30,1')->name('menus.update');
+        Route::delete('menu/{menu}', [MenuController::class, 'destroy'])->middleware('throttle:30,1')->name('menus.destroy');
+        Route::post('menu/{menu}/recipe', [MenuController::class, 'saveRecipe'])->middleware('throttle:30,1')->name('menus.recipe');
 
         // Void pesanan khusus owner (FR-018, DEC-13).
         Route::post('pos/{salesOrder}/void', [OrderController::class, 'void'])->middleware('throttle:30,1')->name('orders.void');
@@ -46,10 +46,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Kelola pengguna: multi-owner & staff dalam 1 UMKM (matriks SAD §9).
         Route::get('pengguna', [UserController::class, 'index'])->name('pengguna');
-        Route::post('pengguna', [UserController::class, 'store'])->name('pengguna.store');
-        Route::put('pengguna/{user}', [UserController::class, 'update'])->name('pengguna.update');
-        Route::delete('pengguna/{user}', [UserController::class, 'destroy'])->name('pengguna.destroy');
-        Route::post('pengguna/{userId}/restore', [UserController::class, 'restore'])->name('pengguna.restore');
+        Route::post('pengguna', [UserController::class, 'store'])->middleware('throttle:30,1')->name('pengguna.store');
+        Route::put('pengguna/{user}', [UserController::class, 'update'])->middleware('throttle:30,1')->name('pengguna.update');
+        Route::delete('pengguna/{user}', [UserController::class, 'destroy'])->middleware('throttle:30,1')->name('pengguna.destroy');
+        Route::post('pengguna/{userId}/restore', [UserController::class, 'restore'])->middleware('throttle:30,1')->name('pengguna.restore');
     });
 
     // Baca bahan baku: owner & staff.
@@ -71,7 +71,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Riwayat pesanan: owner & staff.
     Route::get('pesanan', [OrderController::class, 'history'])->name('orders.history');
-    Route::patch('pesanan/{salesOrder}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::patch('pesanan/{salesOrder}/status', [OrderController::class, 'updateStatus'])->middleware('throttle:30,1')->name('orders.update-status');
     Route::get('pesanan/{salesOrder}/cetak', [OrderController::class, 'print'])->name('orders.print');
 });
 
