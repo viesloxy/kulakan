@@ -10,7 +10,6 @@ import {
     CookingPot,
     Gauge,
     Layers,
-    Menu,
     Moon,
     Package,
     RefreshCw,
