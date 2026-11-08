@@ -174,6 +174,61 @@ it('dapat membuat purchase order lengkap dengan rincian shipment dan item kustom
         ->and($plan->items()->count())->toBe(1);
 });
 
+it('purchase dengan actual_package_price memperbarui WAC bahan baku (PENTEST-03)', function () {
+    $ingredient = Ingredient::firstOrFail();
+
+    $this->actingAs($this->owner)->post('/restock/plans', [
+        'cash_amount' => 500000,
+        'items' => [
+            [
+                'ingredient_id' => $ingredient->id,
+                'recommended_packages' => 1,
+            ],
+        ],
+    ])->assertRedirect();
+
+    $plan = RestockPlan::with('items')->orderByDesc('id')->firstOrFail();
+
+    $newPackagePrice = 200000;
+    $this->actingAs($this->owner)->post("/restock/plans/{$plan->id}/purchase", [
+        'items' => [
+            [
+                'ingredient_id' => $ingredient->id,
+                'purchased_packages' => 1,
+                'actual_package_price' => $newPackagePrice,
+            ],
+        ],
+    ])->assertRedirect();
+
+    $item = RestockPlanItem::where('restock_plan_id', $plan->id)->where('ingredient_id', $ingredient->id)->firstOrFail();
+    expect($item->actual_cost)->toBe($newPackagePrice);
+});
+
+it('purchase menolak kuantitas paket negatif atau di luar batas (PENTEST-03)', function () {
+    $ingredient = Ingredient::firstOrFail();
+
+    $this->actingAs($this->owner)->post('/restock/plans', [
+        'cash_amount' => 500000,
+        'items' => [
+            [
+                'ingredient_id' => $ingredient->id,
+                'recommended_packages' => 1,
+            ],
+        ],
+    ])->assertRedirect();
+
+    $plan = RestockPlan::orderByDesc('id')->firstOrFail();
+
+    $this->actingAs($this->owner)->post("/restock/plans/{$plan->id}/purchase", [
+        'items' => [
+            [
+                'ingredient_id' => $ingredient->id,
+                'purchased_packages' => -5,
+            ],
+        ],
+    ])->assertSessionHasErrors('items.0.purchased_packages');
+});
+
 it('tamu diarahkan ke halaman login', function () {
     $this->get('/restock')->assertRedirect('/login');
 });

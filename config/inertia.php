@@ -67,4 +67,18 @@ return [
 
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | DevTools (PENTEST-01 Defense-in-Depth)
+    |--------------------------------------------------------------------------
+    |
+    | Nonaktifkan telemetri devtools secara default agar tidak terekspos ke
+    | publik pada rute /_inertia/devtools/entries meskipun APP_ENV=local.
+    |
+    */
+
+    'devtools' => [
+        'enabled' => env('INERTIA_DEVTOOLS_ENABLED', false),
+    ],
+
 ];

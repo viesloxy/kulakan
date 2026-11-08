@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Restock\PurchaseRestockPlanRequest;
 use App\Http\Requests\Restock\StoreRestockPlanRequest;
 use App\Models\Ingredient;
 use App\Models\RestockPlan;
@@ -232,8 +233,12 @@ class RestockController extends Controller
 
     public function order(Request $request, RestockPlan $restockPlan): RedirectResponse
     {
+        $validated = $request->validate([
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
         try {
-            DB::transaction(function () use ($restockPlan, $request): void {
+            DB::transaction(function () use ($restockPlan, $validated): void {
                 /** @var RestockPlan $plan */
                 $plan = RestockPlan::whereKey($restockPlan->id)->lockForUpdate()->firstOrFail();
 
@@ -241,7 +246,7 @@ class RestockController extends Controller
                     throw new \InvalidArgumentException('Rencana ini tidak dapat diubah ke status dipesan.');
                 }
 
-                $notes = $request->input('notes');
+                $notes = $validated['notes'] ?? null;
 
                 $plan->forceFill([
                     'status' => 'ordered',
@@ -258,8 +263,12 @@ class RestockController extends Controller
 
     public function cancel(Request $request, RestockPlan $restockPlan): RedirectResponse
     {
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:1000'],
+        ]);
+
         try {
-            DB::transaction(function () use ($restockPlan, $request): void {
+            DB::transaction(function () use ($restockPlan, $validated): void {
                 /** @var RestockPlan $plan */
                 $plan = RestockPlan::whereKey($restockPlan->id)->lockForUpdate()->firstOrFail();
 
@@ -267,7 +276,7 @@ class RestockController extends Controller
                     throw new \InvalidArgumentException('Rencana yang sudah dibeli atau dibatalkan tidak dapat diubah.');
                 }
 
-                $reason = $request->input('reason', 'Dibatalkan oleh pengguna');
+                $reason = $validated['reason'] ?? 'Dibatalkan oleh pengguna';
 
                 $plan->forceFill([
                     'status' => 'cancelled',
@@ -282,10 +291,12 @@ class RestockController extends Controller
         return back()->with('success', 'Rencana #'.$restockPlan->id.' berhasil dibatalkan.');
     }
 
-    public function purchase(Request $request, RestockPlan $restockPlan): RedirectResponse
+    public function purchase(PurchaseRestockPlanRequest $request, RestockPlan $restockPlan): RedirectResponse
     {
+        $validated = $request->validated();
+
         try {
-            DB::transaction(function () use ($restockPlan, $request): void {
+            DB::transaction(function () use ($restockPlan, $validated, $request): void {
                 /** @var RestockPlan $plan */
                 $plan = RestockPlan::whereKey($restockPlan->id)->lockForUpdate()->firstOrFail();
 
@@ -298,7 +309,7 @@ class RestockController extends Controller
                     throw new \InvalidArgumentException('Rencana yang dibatalkan tidak dapat dieksekusi.');
                 }
 
-                $submittedItems = $request->input('items');
+                $submittedItems = $validated['items'] ?? null;
                 $indexedSubmitted = [];
                 if (is_array($submittedItems)) {
                     foreach ($submittedItems as $sItem) {
@@ -335,7 +346,10 @@ class RestockController extends Controller
                         $ingredient = $item->ingredient;
                         $packageSize = Number::str($ingredient->package_size ?? '1');
                         $quantity = bcmul(Number::str($purchasedPackages), $packageSize, 3);
-                        $unitPrice = Number::str($ingredient->last_quote_price ?? $ingredient->cost_per_unit);
+                        // PENTEST-03: Turunkan unitPrice dari actual_package_price per package_size untuk sinkronisasi WAC
+                        $unitPrice = $packagePrice > 0 && bccomp($packageSize, '0', 3) > 0
+                            ? bcdiv(Number::str($packagePrice), $packageSize, 4)
+                            : Number::str($ingredient->last_quote_price ?? $ingredient->cost_per_unit);
 
                         $this->inventory->stockIn($ingredient, $quantity, $unitPrice, $request->user(), 'restock');
                     }
@@ -347,7 +361,7 @@ class RestockController extends Controller
                     ])->save();
                 }
 
-                $planNotes = $request->input('notes');
+                $planNotes = $validated['notes'] ?? null;
 
                 $plan->forceFill([
                     'status' => 'purchased',
