@@ -13,12 +13,9 @@ services:
             POSTGRES_DB: ${DB_DATABASE:-kulakan}
             POSTGRES_USER: ${DB_USERNAME:-postgres}
             POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
-            # dev only: nonaktifkan password auth (kompatibilitas pdo_pgsql Windows vs scram PG16).
-            # Produksi wajib pakai password sungguhan, jangan pakai trust.
-            POSTGRES_HOST_AUTH_METHOD: trust
         ports:
             # host 5433 diikat ke loopback lokal 127.0.0.1 (SEC-06 / PENTEST-04)
-            - '127.0.0.1:5433:5432'
+            - '127.0.0.1:${DB_PORT:-5433}:5432'
         volumes:
             - pgdata:/var/lib/postgresql/data
         healthcheck:

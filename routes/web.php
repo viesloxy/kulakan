@@ -25,7 +25,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('restock/plans/{restockPlan}/cancel', [RestockController::class, 'cancel'])->middleware('throttle:30,1')->name('restock.cancel');
         Route::post('restock/plans/{restockPlan}/purchase', [RestockController::class, 'purchase'])->middleware('throttle:30,1')->name('restock.purchase');
         Route::get('alert', [AlertController::class, 'index'])->name('alerts');
-        Route::post('alert/{alert}/resolve', [AlertController::class, 'resolve'])->name('alerts.resolve');
+        Route::post('alert/{alert}/resolve', [AlertController::class, 'resolve'])->middleware('throttle:30,1')->name('alerts.resolve');
 
         // Mutasi bahan baku khusus owner (FR-004/006/008).
         Route::post('bahan-baku', [IngredientController::class, 'store'])->middleware('throttle:30,1')->name('ingredients.store');
