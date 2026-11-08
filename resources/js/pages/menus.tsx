@@ -197,6 +197,7 @@ export default function Menus({ menus, ingredients }: Props) {
                 owner ? (
                     <FxButton
                         variant="coral"
+                        className="w-full sm:w-auto"
                         onClick={() => setCreateOpen(true)}
                     >
                         <Plus className="size-4" />
@@ -221,14 +222,14 @@ export default function Menus({ menus, ingredients }: Props) {
                     ) : null}
                 </FxSoft>
             ) : (
-                <div className="grid items-start gap-5 lg:grid-cols-[1fr_1.35fr]">
-                    <Reveal delay={0.05}>
-                        <FxCard className="flex flex-col gap-3 p-5">
+                <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[1fr_1.35fr]">
+                    <Reveal delay={0.05} className="w-full min-w-0">
+                        <FxCard className="flex min-w-0 flex-col gap-3 p-3.5 sm:p-5">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-base font-semibold">
                                     Daftar menu
                                 </h2>
-                                <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
+                                <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold sm:px-3 sm:py-1">
                                     {filteredMenus.length === menus.length
                                         ? `${menus.length} menu`
                                         : `${filteredMenus.length} dari ${menus.length} menu`}
@@ -258,7 +259,7 @@ export default function Menus({ menus, ingredients }: Props) {
                                 ) : null}
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-1.5 pb-0.5">
+                            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:flex-wrap">
                                 {(['Semua', ...categories] as const).map(
                                     (cat) => {
                                         const active = categoryFilter === cat;
@@ -269,7 +270,7 @@ export default function Menus({ menus, ingredients }: Props) {
                                                 onClick={() =>
                                                     setCategoryFilter(cat)
                                                 }
-                                                className={`h-7 rounded-full px-3 text-xs font-semibold transition-all duration-200 ${
+                                                className={`h-7 shrink-0 rounded-full px-3 text-xs font-semibold transition-all duration-200 ${
                                                     active
                                                         ? 'fx-coral'
                                                         : 'bg-secondary text-foreground hover:bg-hover-soft'
@@ -282,7 +283,7 @@ export default function Menus({ menus, ingredients }: Props) {
                                 )}
                             </div>
 
-                            <div className="flex max-h-[calc(100vh-340px)] min-h-[300px] flex-col gap-2 overflow-y-auto pr-1">
+                            <div className="flex max-h-[260px] min-h-[200px] flex-col gap-2 overflow-y-auto pr-1 sm:max-h-[340px] sm:min-h-[280px] lg:max-h-[calc(100vh-340px)]">
                                 {filteredMenus.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted-foreground">
                                         <Search className="size-8 text-muted-foreground/40" />
@@ -313,7 +314,7 @@ export default function Menus({ menus, ingredients }: Props) {
                                                 onClick={() =>
                                                     setSelectedId(m.id)
                                                 }
-                                                className={`flex items-center gap-3 rounded-2xl p-3 text-left transition-all duration-200 ${
+                                                className={`flex w-full min-w-0 items-center gap-2.5 rounded-2xl p-2.5 text-left transition-all duration-200 sm:gap-3 sm:p-3 ${
                                                     active
                                                         ? 'fx-coral'
                                                         : 'fx-soft hover:bg-hover-soft'
@@ -323,11 +324,13 @@ export default function Menus({ menus, ingredients }: Props) {
                                                     <img
                                                         src={m.image_url}
                                                         alt={m.name}
-                                                        className="size-10 rounded-xl object-cover"
+                                                        className="size-9 shrink-0 rounded-xl object-cover sm:size-10"
                                                     />
                                                 ) : (
                                                     <IconCircle
                                                         icon={Icon}
+                                                        size="sm"
+                                                        className="shrink-0"
                                                         tone={
                                                             active
                                                                 ? 'white'
@@ -335,12 +338,12 @@ export default function Menus({ menus, ingredients }: Props) {
                                                         }
                                                     />
                                                 )}
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="truncate font-semibold">
+                                                <div className="min-w-0 flex-1 overflow-hidden">
+                                                    <p className="truncate text-sm font-semibold sm:text-base">
                                                         {m.name}
                                                     </p>
                                                     <p
-                                                        className={`text-xs ${active ? 'text-white/70' : 'text-muted-foreground'}`}
+                                                        className={`truncate text-[11px] sm:text-xs ${active ? 'text-white/70' : 'text-muted-foreground'}`}
                                                     >
                                                         HPP{' '}
                                                         {formatRupiah(
@@ -352,15 +355,15 @@ export default function Menus({ menus, ingredients }: Props) {
                                                         )}
                                                     </p>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="text-sm font-bold tabular-nums">
+                                                <div className="shrink-0 pl-1 text-right">
+                                                    <p className="text-xs font-bold tabular-nums sm:text-sm">
                                                         {formatPercent(
                                                             m.margin_pct,
                                                             1,
                                                         )}
                                                     </p>
                                                     <p
-                                                        className={`text-[11px] ${active ? 'text-white/70' : 'text-muted-foreground'}`}
+                                                        className={`text-[10px] sm:text-[11px] ${active ? 'text-white/70' : 'text-muted-foreground'}`}
                                                     >
                                                         margin
                                                     </p>
@@ -373,23 +376,17 @@ export default function Menus({ menus, ingredients }: Props) {
                         </FxCard>
                     </Reveal>
 
-                    <Reveal delay={0.1}>
-                        <FxCard className="flex flex-col gap-4 p-5">
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div className="items-left flex flex-col gap-3">
+                    <Reveal delay={0.1} className="w-full min-w-0">
+                        <FxCard className="flex min-w-0 flex-col gap-4 p-3.5 sm:p-5">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="flex min-w-0 items-start gap-3">
                                     {selected.image_url ? (
-                                        <div className="relative w-full overflow-hidden rounded-2xl border border-border/60 sm:aspect-[16/7]">
+                                        <div className="relative size-14 shrink-0 overflow-hidden rounded-2xl border border-border/60 sm:size-20">
                                             <img
                                                 src={selected.image_url}
                                                 alt={selected.name}
                                                 className="size-full object-cover"
                                             />
-                                            <div className="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent" />
-                                            <div className="absolute bottom-3 left-3 text-white">
-                                                <span className="rounded-full bg-black/40 px-2.5 py-1 text-xs font-medium backdrop-blur-md">
-                                                    {selected.category}
-                                                </span>
-                                            </div>
                                         </div>
                                     ) : (
                                         <IconCircle
@@ -398,18 +395,19 @@ export default function Menus({ menus, ingredients }: Props) {
                                             }
                                             tone="soft"
                                             size="lg"
+                                            className="shrink-0"
                                         />
                                     )}
-                                    <div>
-                                        <h2 className="flex items-center gap-2 text-base font-semibold">
-                                            {selected.name}
+                                    <div className="min-w-0 flex-1">
+                                        <h2 className="flex flex-wrap items-center gap-2 text-base font-semibold">
+                                            <span>{selected.name}</span>
                                             {!selected.is_active ? (
                                                 <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                                                     Nonaktif
                                                 </span>
                                             ) : null}
                                         </h2>
-                                        <p className="text-xs text-muted-foreground">
+                                        <p className="mt-0.5 text-xs text-muted-foreground">
                                             {selected.category} · harga jual{' '}
                                             {formatRupiah(
                                                 selected.selling_price,
@@ -420,24 +418,26 @@ export default function Menus({ menus, ingredients }: Props) {
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                     <StatusBadge status={selected.status} />
                                     {owner ? (
                                         <>
                                             <FxButton
                                                 variant="soft"
+                                                className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm"
                                                 onClick={() =>
                                                     setEditOpen(true)
                                                 }
                                             >
-                                                <Pencil className="size-4" />
+                                                <Pencil className="size-3.5 sm:size-4" />
                                                 Edit menu
                                             </FxButton>
                                             <FxButton
                                                 variant="soft"
+                                                className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm"
                                                 onClick={() => setBomOpen(true)}
                                             >
-                                                <UtensilsCrossed className="size-4" />
+                                                <UtensilsCrossed className="size-3.5 sm:size-4" />
                                                 Susun BOM
                                             </FxButton>
                                         </>
@@ -445,28 +445,28 @@ export default function Menus({ menus, ingredients }: Props) {
                                 </div>
                             </div>
 
-                            <div className="grid gap-3 sm:grid-cols-3">
-                                <FxSoft className="flex flex-col gap-3 p-4">
-                                    <p className="text-xs text-muted-foreground">
+                            <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+                                <FxSoft className="flex flex-col justify-between gap-1 p-2 text-center sm:gap-3 sm:p-4 sm:text-left">
+                                    <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
                                         HPP aktual
                                     </p>
-                                    <p className="text-lg font-bold tabular-nums">
+                                    <p className="truncate text-xs font-bold tabular-nums sm:text-lg">
                                         {formatRupiah(selected.current_hpp)}
                                     </p>
                                 </FxSoft>
-                                <FxSoft className="flex flex-col gap-3 p-4">
-                                    <p className="text-xs text-muted-foreground">
+                                <FxSoft className="flex flex-col justify-between gap-1 p-2 text-center sm:gap-3 sm:p-4 sm:text-left">
+                                    <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
                                         Margin aktual
                                     </p>
-                                    <p className="text-lg font-bold tabular-nums">
+                                    <p className="text-xs font-bold tabular-nums sm:text-lg">
                                         {formatPercent(selected.margin_pct)}
                                     </p>
                                 </FxSoft>
-                                <FxSoft className="flex flex-col gap-3 p-4">
-                                    <p className="text-xs text-muted-foreground">
-                                        Kontribusi bahan
+                                <FxSoft className="flex flex-col justify-between gap-1 p-2 text-center sm:gap-3 sm:p-4 sm:text-left">
+                                    <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
+                                        Bahan
                                     </p>
-                                    <p className="text-lg font-bold tabular-nums">
+                                    <p className="truncate text-xs font-bold tabular-nums sm:text-lg">
                                         {formatRupiah(selected.subtotal)}
                                     </p>
                                 </FxSoft>
@@ -489,8 +489,8 @@ export default function Menus({ menus, ingredients }: Props) {
                                     ) : null}
                                 </FxSoft>
                             ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm">
+                                <div className="w-full max-w-full overflow-x-auto rounded-xl">
+                                    <table className="w-full min-w-[420px] text-sm">
                                         <thead>
                                             <tr className="bg-secondary text-left text-xs text-muted-foreground">
                                                 <th className="rounded-l-xl px-3 py-2.5 font-medium">
@@ -604,8 +604,8 @@ export default function Menus({ menus, ingredients }: Props) {
                             )}
 
                             {hasProjection ? (
-                                <FxSoft className="flex flex-wrap items-center justify-between gap-3 p-4">
-                                    <span className="inline-flex items-center gap-2 text-sm">
+                                <FxSoft className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+                                    <span className="inline-flex items-center gap-2 text-xs sm:text-sm">
                                         <IconCircle
                                             icon={Sparkles}
                                             tone="soft"
@@ -834,12 +834,18 @@ function CreateMenuModal({
                     </FxSelect>
                 </FxField>
                 <FxField label="Harga jual">
-                    <FxInput
-                        type="number"
-                        min="0"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                    />
+                    <div className="relative flex items-center">
+                        <span className="pointer-events-none absolute left-4 text-sm font-semibold text-muted-foreground select-none">
+                            Rp
+                        </span>
+                        <FxInput
+                            type="number"
+                            min="0"
+                            className="pl-11"
+                            value={price}
+                            onChange={(e) => setPrice(e.target.value)}
+                        />
+                    </div>
                 </FxField>
             </div>
             <FxField
@@ -955,12 +961,18 @@ function EditMenuModal({
                     </FxSelect>
                 </FxField>
                 <FxField label="Harga jual">
-                    <FxInput
-                        type="number"
-                        min="0"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                    />
+                    <div className="relative flex items-center">
+                        <span className="pointer-events-none absolute left-4 text-sm font-semibold text-muted-foreground select-none">
+                            Rp
+                        </span>
+                        <FxInput
+                            type="number"
+                            min="0"
+                            className="pl-11"
+                            value={price}
+                            onChange={(e) => setPrice(e.target.value)}
+                        />
+                    </div>
                 </FxField>
             </div>
             <FxField

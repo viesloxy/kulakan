@@ -19,6 +19,15 @@ class StoreRestockPlanRequest extends FormRequest
         return [
             'cash_amount' => ['required', 'integer', 'min:0'],
             'max_days_lead_time' => ['nullable', 'integer', 'min:0', 'max:365'],
+            'delivery_date' => ['nullable', 'string', 'max:50'],
+            'assigned_user_id' => ['nullable', 'exists:users,id'],
+            'payment_terms' => ['nullable', 'string', 'max:50'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'status' => ['nullable', 'in:draft,approved,ordered'],
+            'items' => ['nullable', 'array'],
+            'items.*.ingredient_id' => ['required_with:items', 'exists:ingredients,id'],
+            'items.*.recommended_packages' => ['required_with:items', 'integer', 'min:0'],
+            'items.*.estimated_cost' => ['nullable', 'integer', 'min:0'],
         ];
     }
 

@@ -9,6 +9,7 @@ use App\Http\Requests\Ingredient\UpdateIngredientQuoteRequest;
 use App\Http\Requests\Ingredient\UpdateIngredientRequest;
 use App\Models\Ingredient;
 use App\Models\PriceHistory;
+use App\Models\StockMovement;
 use App\Services\AlertService;
 use App\Services\CostingService;
 use App\Services\InventoryService;
@@ -49,8 +50,22 @@ class IngredientController extends Controller
             ->get()
             ->groupBy('ingredient_id');
 
+        $adjustmentHistories = StockMovement::with('user:id,name,role')
+            ->whereIn('ingredient_id', $ingredients->pluck('id'))
+            ->whereIn('type', ['waste', 'adjustment'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('ingredient_id');
+
         $rows = $ingredients->map(
-            fn (Ingredient $i) => $this->resource($i, $abc[$i->id] ?? 'C', $lastChanges[$i->id] ?? null, $histories[$i->id] ?? collect())
+            fn (Ingredient $i) => $this->resource(
+                $i,
+                $abc[$i->id] ?? 'C',
+                $lastChanges[$i->id] ?? null,
+                $histories[$i->id] ?? collect(),
+                $adjustmentHistories[$i->id] ?? collect(),
+            )
         );
 
         $inventoryValue = $ingredients->reduce(
@@ -194,10 +209,16 @@ class IngredientController extends Controller
 
     /**
      * @param  Collection<int, PriceHistory>  $history
+     * @param  Collection<int, StockMovement>  $adjustmentHistory
      * @return array<string, mixed>
      */
-    private function resource(Ingredient $ingredient, string $abcClass, ?PriceHistory $lastPurchase, Collection $history): array
-    {
+    private function resource(
+        Ingredient $ingredient,
+        string $abcClass,
+        ?PriceHistory $lastPurchase,
+        Collection $history,
+        Collection $adjustmentHistory = new Collection,
+    ): array {
         $stock = Number::str($ingredient->current_stock);
         $minimum = Number::str($ingredient->minimum_stock);
         $cost = Number::str($ingredient->cost_per_unit);
@@ -235,6 +256,16 @@ class IngredientController extends Controller
                     'new_value' => bcadd($new, '0', 4),
                     'reason' => $entry->reason,
                     'change_pct' => $old !== null && bccomp($old, '0', 8) > 0 ? $this->pct($old, $new) : null,
+                    'created_at' => $entry->created_at?->toIso8601String(),
+                ];
+            })->values(),
+            'adjustment_history' => $adjustmentHistory->take(6)->map(function (StockMovement $entry): array {
+                return [
+                    'id' => $entry->id,
+                    'type' => $entry->type,
+                    'qty_change' => Number::str($entry->qty_change),
+                    'reason' => $entry->reason,
+                    'user_name' => $entry->user->name ?? 'Staff',
                     'created_at' => $entry->created_at?->toIso8601String(),
                 ];
             })->values(),

@@ -10,9 +10,16 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property Carbon|null $created_at
+ * @property Carbon|null $approved_at
+ * @property Carbon|null $ordered_at
  * @property Carbon|null $purchased_at
+ * @property Carbon|null $cancelled_at
  */
-#[Fillable(['user_id', 'cash_amount', 'total_cost', 'remaining_cash', 'status', 'purchased_at'])]
+#[Fillable([
+    'user_id', 'cash_amount', 'total_cost', 'actual_cost', 'remaining_cash',
+    'status', 'approved_at', 'ordered_at', 'purchased_at', 'cancelled_at',
+    'cancellation_reason', 'notes',
+])]
 class RestockPlan extends Model
 {
     protected function casts(): array
@@ -20,7 +27,10 @@ class RestockPlan extends Model
         return [
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'approved_at' => 'datetime',
+            'ordered_at' => 'datetime',
             'purchased_at' => 'datetime',
+            'cancelled_at' => 'datetime',
         ];
     }
 

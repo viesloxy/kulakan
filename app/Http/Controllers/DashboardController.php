@@ -56,10 +56,10 @@ class DashboardController extends Controller
         ];
 
         $today = now()->toDateString();
-        $ordersToday = SalesOrder::whereDate('created_at', $today)->where('status', 'completed')->count();
-        $salesToday = (int) SalesOrder::whereDate('created_at', $today)->where('status', 'completed')->sum('total_amount');
-        $cashToday = (int) SalesOrder::whereDate('created_at', $today)->where('status', 'completed')->where('payment_method', 'cash')->sum('total_amount');
-        $qrisToday = (int) SalesOrder::whereDate('created_at', $today)->where('status', 'completed')->where('payment_method', 'qris')->sum('total_amount');
+        $ordersToday = SalesOrder::whereDate('created_at', $today)->where('status', '!=', 'void')->count();
+        $salesToday = (int) SalesOrder::whereDate('created_at', $today)->where('status', '!=', 'void')->sum('total_amount');
+        $cashToday = (int) SalesOrder::whereDate('created_at', $today)->where('status', '!=', 'void')->where('payment_method', 'cash')->sum('total_amount');
+        $qrisToday = (int) SalesOrder::whereDate('created_at', $today)->where('status', '!=', 'void')->where('payment_method', 'qris')->sum('total_amount');
 
         $activeAlerts = Alert::where('status', 'active')->count();
 
@@ -70,7 +70,7 @@ class DashboardController extends Controller
                 'date' => $day->toDateString(),
                 'label' => $this->dayLabel((int) $day->dayOfWeek),
                 'total' => (int) SalesOrder::whereDate('created_at', $day->toDateString())
-                    ->where('status', 'completed')
+                    ->where('status', '!=', 'void')
                     ->sum('total_amount'),
             ];
         }
@@ -125,7 +125,7 @@ class DashboardController extends Controller
             'description' => $description,
             'total' => (int) $order->total_amount,
             'status' => $order->status,
-            'can_void' => $order->status === 'completed',
+            'can_void' => in_array($order->status, ['preparing', 'ready', 'completed'], true),
         ];
     }
 
@@ -146,7 +146,7 @@ class DashboardController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        $completed = $orders->where('status', 'completed');
+        $activeOrders = $orders->where('status', '!=', 'void');
 
         $purchases = StockMovement::with('ingredient')
             ->where('type', 'purchase')
@@ -166,11 +166,11 @@ class DashboardController extends Controller
         return [
             'date' => $reportDate,
             'sales' => [
-                'orders' => $completed->count(),
-                'revenue' => (int) $completed->sum('total_amount'),
-                'items' => (int) $completed->sum(fn (SalesOrder $order): int => (int) $order->items->sum('quantity')),
-                'cash' => (int) $completed->where('payment_method', 'cash')->sum('total_amount'),
-                'qris' => (int) $completed->where('payment_method', 'qris')->sum('total_amount'),
+                'orders' => $activeOrders->count(),
+                'revenue' => (int) $activeOrders->sum('total_amount'),
+                'items' => (int) $activeOrders->sum(fn (SalesOrder $order): int => (int) $order->items->sum('quantity')),
+                'cash' => (int) $activeOrders->where('payment_method', 'cash')->sum('total_amount'),
+                'qris' => (int) $activeOrders->where('payment_method', 'qris')->sum('total_amount'),
             ],
             'purchases' => [
                 'count' => $purchases->count(),
