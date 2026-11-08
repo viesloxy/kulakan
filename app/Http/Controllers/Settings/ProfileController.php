@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,9 +20,14 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        $isSoleOwner = $user?->role === 'owner'
+            && User::where('role', 'owner')->count() <= 1;
+
         return Inertia::render('settings/profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'isSoleOwner' => $isSoleOwner,
         ]);
     }
 
@@ -49,6 +55,13 @@ class ProfileController extends Controller
     public function destroy(ProfileDeleteRequest $request): RedirectResponse
     {
         $user = $request->user();
+
+        // Proteksi SEC-01: Cegah pemilik tunggal menghapus akunnya sendiri (Opsi A)
+        if ($user->role === 'owner' && User::where('role', 'owner')->count() <= 1) {
+            return back()->withErrors([
+                'password' => 'Akun tidak dapat dihapus karena Anda adalah satu-satunya Pemilik (Owner) aktif di sistem. Tunjuk akun Pemilik lain terlebih dahulu di menu Kelola Pengguna sebelum menghapus akun ini.',
+            ]);
+        }
 
         Auth::logout();
 

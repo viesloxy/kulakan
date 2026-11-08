@@ -86,36 +86,44 @@ class RestockController extends Controller
 
     public function purchase(Request $request, RestockPlan $restockPlan): RedirectResponse
     {
-        if ($restockPlan->status === 'purchased') {
-            return back()->withErrors(['plan' => 'Rencana ini sudah ditandai dibeli.']);
-        }
+        try {
+            DB::transaction(function () use ($restockPlan, $request): void {
+                /** @var RestockPlan $plan */
+                $plan = RestockPlan::whereKey($restockPlan->id)->lockForUpdate()->firstOrFail();
 
-        $items = $restockPlan->items()->with('ingredient')->get();
-
-        DB::transaction(function () use ($restockPlan, $items, $request): void {
-            foreach ($items as $item) {
-                if ($item->recommended_packages <= 0) {
-                    $item->forceFill(['purchased_packages' => 0])->save();
-
-                    continue;
+                // Proteksi SEC-03: Cegah TOCTOU race condition pada eksekusi restock
+                if ($plan->status === 'purchased') {
+                    throw new \InvalidArgumentException('Rencana ini sudah ditandai dibeli.');
                 }
 
-                /** @var Ingredient $ingredient */
-                $ingredient = $item->ingredient;
-                $packageSize = Number::str($ingredient->package_size ?? '1');
-                $quantity = bcmul(Number::str($item->recommended_packages), $packageSize, 3);
-                $unitPrice = Number::str($ingredient->last_quote_price ?? $ingredient->cost_per_unit);
+                $items = $plan->items()->with('ingredient')->get();
 
-                $this->inventory->stockIn($ingredient, $quantity, $unitPrice, $request->user(), 'restock');
+                foreach ($items as $item) {
+                    if ($item->recommended_packages <= 0) {
+                        $item->forceFill(['purchased_packages' => 0])->save();
 
-                $item->forceFill(['purchased_packages' => $item->recommended_packages])->save();
-            }
+                        continue;
+                    }
 
-            $restockPlan->forceFill([
-                'status' => 'purchased',
-                'purchased_at' => now(),
-            ])->save();
-        });
+                    /** @var Ingredient $ingredient */
+                    $ingredient = $item->ingredient;
+                    $packageSize = Number::str($ingredient->package_size ?? '1');
+                    $quantity = bcmul(Number::str($item->recommended_packages), $packageSize, 3);
+                    $unitPrice = Number::str($ingredient->last_quote_price ?? $ingredient->cost_per_unit);
+
+                    $this->inventory->stockIn($ingredient, $quantity, $unitPrice, $request->user(), 'restock');
+
+                    $item->forceFill(['purchased_packages' => $item->recommended_packages])->save();
+                }
+
+                $plan->forceFill([
+                    'status' => 'purchased',
+                    'purchased_at' => now(),
+                ])->save();
+            });
+        } catch (\InvalidArgumentException $e) {
+            return back()->withErrors(['plan' => $e->getMessage()]);
+        }
 
         $this->alerts->syncAll();
 

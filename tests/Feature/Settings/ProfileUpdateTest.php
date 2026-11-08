@@ -100,4 +100,43 @@ class ProfileUpdateTest extends TestCase
 
         $this->assertNotNull($user->fresh());
     }
+
+    public function test_sole_owner_cannot_delete_their_own_account()
+    {
+        $owner = User::factory()->create(['role' => 'owner']);
+
+        $response = $this
+            ->actingAs($owner)
+            ->from(route('profile.edit'))
+            ->delete(route('profile.destroy'), [
+                'password' => 'password',
+            ]);
+
+        $response
+            ->assertSessionHasErrors('password')
+            ->assertRedirect(route('profile.edit'));
+
+        $this->assertNotNull($owner->fresh());
+        $this->assertNull($owner->fresh()->deleted_at);
+    }
+
+    public function test_owner_can_delete_account_if_another_owner_exists()
+    {
+        $owner1 = User::factory()->create(['role' => 'owner']);
+        $owner2 = User::factory()->create(['role' => 'owner']);
+
+        $response = $this
+            ->actingAs($owner1)
+            ->delete(route('profile.destroy'), [
+                'password' => 'password',
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('home'));
+
+        $this->assertGuest();
+        $this->assertNotNull($owner1->fresh()?->deleted_at);
+        $this->assertNull($owner2->fresh()?->deleted_at);
+    }
 }
