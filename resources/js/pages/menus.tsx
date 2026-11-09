@@ -19,6 +19,7 @@ import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { FxField, FxInput, FxModal, FxSelect } from '@/components/fx/fx-form';
 import { IconCircle } from '@/components/fx/fx-icon';
+import { FxTableWrap } from '@/components/fx/fx-table-wrap';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
 import StatusBadge, { type MenuStatus } from '@/components/status-badge';
@@ -495,7 +496,7 @@ export default function Menus({ menus, ingredients }: Props) {
                                     ) : null}
                                 </FxSoft>
                             ) : (
-                                <div className="w-full max-w-full overflow-x-auto rounded-xl">
+                                <FxTableWrap className="w-full max-w-full rounded-xl">
                                     <table className="w-full min-w-[420px] text-sm">
                                         <thead>
                                             <tr className="bg-secondary text-left text-xs text-muted-foreground">
@@ -606,7 +607,7 @@ export default function Menus({ menus, ingredients }: Props) {
                                             </tr>
                                         </tbody>
                                     </table>
-                                </div>
+                                </FxTableWrap>
                             )}
 
                             {hasProjection ? (

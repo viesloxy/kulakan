@@ -38,6 +38,7 @@ import {
     FxTextarea,
 } from '@/components/fx/fx-form';
 import { FxIconButton } from '@/components/fx/fx-icon-button';
+import { FxTableWrap } from '@/components/fx/fx-table-wrap';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
@@ -485,7 +486,7 @@ export default function Ingredients({ ingredients, meta }: Props) {
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    <FxTableWrap>
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-secondary text-left text-xs text-muted-foreground">
@@ -744,7 +745,7 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                 )}
                             </tbody>
                         </table>
-                    </div>
+                    </FxTableWrap>
 
                     <FxSoft className="flex flex-col gap-3 p-4 text-xs text-muted-foreground">
                         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1460,7 +1461,7 @@ function HistoryModal({
                     Belum ada riwayat harga.
                 </p>
             ) : (
-                <div className="overflow-x-auto">
+                <FxTableWrap>
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="bg-secondary text-left text-xs text-muted-foreground">
@@ -1532,7 +1533,7 @@ function HistoryModal({
                             })}
                         </tbody>
                     </table>
-                </div>
+                </FxTableWrap>
             )}
         </FxModal>
     );
