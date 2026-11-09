@@ -10,6 +10,8 @@ use App\Models\SalesOrder;
 use App\Services\AlertService;
 use App\Services\CostingService;
 use App\Services\InventoryService;
+use App\Services\QrisService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -23,6 +25,7 @@ class OrderController extends Controller
         private readonly CostingService $costing,
         private readonly InventoryService $inventory,
         private readonly AlertService $alerts,
+        private readonly QrisService $qris,
     ) {}
 
     public function index(): Response
@@ -41,9 +44,40 @@ class OrderController extends Controller
                 'portions_available' => $this->costing->portionsAvailable($m),
             ])->values();
 
+        $staticQris = $this->qris->getStoreDefaultStaticQris();
+        $merchantInfo = $this->qris->extractMerchant($staticQris);
+
         return Inertia::render('pos', [
             'menus' => $menus,
             'active_queue_count' => SalesOrder::whereIn('status', ['preparing', 'ready'])->count(),
+            'merchant_qris' => [
+                'merchant_name' => $merchantInfo['merchant_name'],
+                'merchant_city' => $merchantInfo['merchant_city'],
+                'static_payload' => $staticQris,
+            ],
+        ]);
+    }
+
+    public function qrisPayload(Request $request): JsonResponse
+    {
+        $amount = (float) $request->validate([
+            'amount' => ['required', 'numeric', 'min:1'],
+            'invoice_id' => ['nullable', 'string', 'max:50'],
+        ])['amount'];
+
+        $invoiceId = $request->string('invoice_id')->trim()->toString();
+        $invoiceId = $invoiceId !== '' ? $invoiceId : null;
+
+        $staticQris = $this->qris->getStoreDefaultStaticQris();
+        $dynamicPayload = $this->qris->convertToDynamic($staticQris, $amount, $invoiceId);
+        $merchantInfo = $this->qris->extractMerchant($dynamicPayload);
+
+        return response()->json([
+            'qris_payload' => $dynamicPayload,
+            'merchant_name' => $merchantInfo['merchant_name'],
+            'merchant_city' => $merchantInfo['merchant_city'],
+            'amount' => $amount,
+            'invoice_id' => $merchantInfo['invoice_id'],
         ]);
     }
 
@@ -239,7 +273,25 @@ class OrderController extends Controller
 
         $this->alerts->syncAll();
 
-        return back()->with('success', 'Pesanan '.$order->order_number.' tersimpan. Stok bahan terpotong otomatis.');
+        $cashReceived = $request->integer('cash_received');
+        $effectiveCashReceived = $cashReceived > 0 ? $cashReceived : (int) $order->total_amount;
+        $change = max(0, $effectiveCashReceived - (int) $order->total_amount);
+
+        $createdOrder = [
+            'id' => $order->order_number,
+            'db_id' => $order->id,
+            'total_amount' => (int) $order->total_amount,
+            'payment_method' => $order->payment_method,
+            'cash_received' => $effectiveCashReceived,
+            'change' => $change,
+            'items_count' => (int) $order->items->sum('quantity'),
+            'created_at' => $order->created_at?->format('Y-m-d H:i') ?? '-',
+            'customer_name' => $request->string('customer_name')->trim()->toString(),
+        ];
+
+        return back()
+            ->with('success', 'Pesanan '.$order->order_number.' tersimpan. Stok bahan terpotong otomatis.')
+            ->with('created_order', $createdOrder);
     }
 
     public function updateStatus(Request $request, SalesOrder $salesOrder): RedirectResponse

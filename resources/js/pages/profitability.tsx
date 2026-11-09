@@ -671,7 +671,7 @@ export default function Profitability({
                                 </h2>
                                 <p className="text-xs text-muted-foreground">
                                     Klik baris menu untuk melihat rincian bahan
-                                    resep (*Cost Driver Breakdown*).
+                                    resep (<i>Cost Driver Breakdown</i>).
                                 </p>
                             </div>
 
@@ -1857,13 +1857,13 @@ function SimulateModal({
                         <span className="pointer-events-none absolute left-4 text-sm font-semibold text-muted-foreground select-none">
                             Rp
                         </span>
-                    <FxInput
-                        type="number"
-                        min="0"
-                        value={price}
-                        className="pl-11"
-                        onChange={(e) => setPrice(e.target.value)}
-                    />
+                        <FxInput
+                            type="number"
+                            min="0"
+                            value={price}
+                            className="pl-11"
+                            onChange={(e) => setPrice(e.target.value)}
+                        />
                     </div>
                 </FxField>
             </div>

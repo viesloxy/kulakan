@@ -1,4 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
+import { Info } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -7,21 +8,75 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 export function FxField({
     label,
     hint,
+    tooltip,
     children,
 }: {
-    label: string;
+    label: ReactNode;
     hint?: string;
+    tooltip?: {
+        title?: string;
+        description: string;
+    };
     children: ReactNode;
 }) {
     return (
         <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">
-                {label}
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                <span>{label}</span>
+                {tooltip ? (
+                    <TooltipProvider delayDuration={150}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span
+                                    tabIndex={0}
+                                    role="button"
+                                    aria-label={
+                                        tooltip.title || 'Informasi bantuan'
+                                    }
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (
+                                            e.key === 'Enter' ||
+                                            e.key === ' '
+                                        ) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    className="inline-flex cursor-help items-center text-muted-foreground/70 transition-colors hover:text-foreground focus:outline-none"
+                                >
+                                    <Info className="size-3.5" />
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent
+                                side="top"
+                                className="max-w-[240px] rounded-xl bg-card p-3 text-xs text-foreground shadow-md ring-1 ring-border [&>svg]:fill-card"
+                            >
+                                {tooltip.title ? (
+                                    <p className="font-semibold text-foreground">
+                                        {tooltip.title}
+                                    </p>
+                                ) : null}
+                                <p className="mt-1 leading-relaxed text-muted-foreground">
+                                    {tooltip.description}
+                                </p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                ) : null}
             </span>
             {children}
             {hint ? (
