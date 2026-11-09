@@ -3,6 +3,7 @@ import {
     Coffee,
     CupSoda,
     ImagePlus,
+    Info,
     Pencil,
     Plus,
     Sandwich,
@@ -21,6 +22,11 @@ import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
 import StatusBadge, { type MenuStatus } from '@/components/status-badge';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { formatPercent, formatRupiah } from '@/lib/format';
 import { isOwner } from '@/lib/permissions';
 
@@ -618,7 +624,41 @@ export default function Menus({ menus, ingredients }: Props) {
                                                     selected.projected_hpp!,
                                                 )}
                                             </span>{' '}
-                                            dari harga penawaran terbaru
+                                            dari{' '}
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <span
+                                                        tabIndex={0}
+                                                        className="inline-flex cursor-help items-center gap-1 font-medium text-foreground underline decoration-muted-foreground/60 decoration-dotted underline-offset-4 transition-colors hover:text-primary focus:text-primary focus:outline-none"
+                                                    >
+                                                        harga penawaran terbaru
+                                                        <Info className="size-3.5 text-muted-foreground" />
+                                                    </span>
+                                                </TooltipTrigger>
+                                                <TooltipContent
+                                                    side="top"
+                                                    className="max-w-[280px] rounded-xl bg-card p-3 text-xs text-foreground shadow-md ring-1 ring-border [&>svg]:fill-card"
+                                                >
+                                                    <p className="font-semibold text-foreground">
+                                                        Asal Harga Penawaran
+                                                        Terbaru
+                                                    </p>
+                                                    <p className="mt-1 leading-relaxed text-muted-foreground">
+                                                        Dihitung dari harga
+                                                        penawaran/kuotasi
+                                                        supplier terbaru atau
+                                                        harga beli aktual
+                                                        terakhir pada bahan baku
+                                                        penyusun resep ini
+                                                        (bukan dari rata-rata
+                                                        modal stok lama / WAC),
+                                                        sehingga membantu
+                                                        mengantisipasi penurunan
+                                                        margin sebelum belanja
+                                                        stok berikutnya.
+                                                    </p>
+                                                </TooltipContent>
+                                            </Tooltip>
                                         </span>
                                     </span>
                                     <span className="inline-flex items-center gap-2">
