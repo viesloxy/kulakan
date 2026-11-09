@@ -1507,7 +1507,7 @@ function CostDriverModal({
             title={`Rincian HPP: ${menu.name}`}
             description="Komposisi bahan baku resep dan analisis kontributor biaya utama (Cost Driver)."
             footer={
-                <div className="flex w-full items-center justify-between">
+                <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <FxButton variant="soft" onClick={onClose}>
                         Tutup
                     </FxButton>

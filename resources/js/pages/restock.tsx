@@ -1160,7 +1160,7 @@ export default function Restock({
                 wide={true}
                 className="sm:max-w-4xl lg:max-w-5xl"
                 footer={
-                    <div className="flex w-full items-center justify-between">
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         {wizardStep > 1 ? (
                             <FxButton
                                 variant="soft"
@@ -1184,7 +1184,7 @@ export default function Restock({
                             </FxButton>
                         )}
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
                             {wizardStep === 1 ? (
                                 <FxButton
                                     variant="coral"

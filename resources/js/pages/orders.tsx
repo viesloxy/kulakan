@@ -1130,7 +1130,7 @@ export default function Orders({ orders, summary, filters, is_owner }: Props) {
                 description={selectedOrder?.id}
                 className="max-w-md"
                 footer={
-                    <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                         <FxButton
                             variant="soft"
                             size="sm"
@@ -1140,7 +1140,7 @@ export default function Orders({ orders, summary, filters, is_owner }: Props) {
                             <Printer className="size-4" />
                             Cetak Struk
                         </FxButton>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
                             {selectedOrder?.can_mark_ready ? (
                                 <FxButton
                                     variant="soft"
@@ -1409,7 +1409,7 @@ export default function Orders({ orders, summary, filters, is_owner }: Props) {
                 description={voidConfirmOrder?.id}
                 className="max-w-lg"
                 footer={
-                    <div className="flex w-full items-center justify-end gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
                         <FxButton
                             variant="soft"
                             size="sm"
