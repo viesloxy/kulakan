@@ -23,6 +23,7 @@ it('merangkum dashboard eksekutif dari data DB (FR-036)', function () {
             ->where('active_alerts_count', 4)
             ->where('orders_today_count', 1)
             ->where('inventory_value', fn ($value) => $value > 0)
+            ->has('top_profitable_menus')
             ->has('chart', 7)
             ->has('recent_orders', 5)
             ->has('wallets.cash')
