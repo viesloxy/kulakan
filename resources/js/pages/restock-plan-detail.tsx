@@ -1254,7 +1254,7 @@ export default function RestockPlanDetail({ plan, recent_plans }: Props) {
                                 {formatRupiah(calculatedActualTotal)}
                             </strong>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
                             <FxButton
                                 variant="soft"
                                 onClick={() => setReceivingOpen(false)}
@@ -1447,7 +1447,7 @@ export default function RestockPlanDetail({ plan, recent_plans }: Props) {
                         >
                             Tandai Dipesan Saja
                         </FxButton>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
                             <FxButton
                                 variant="soft"
                                 onClick={() => setDispatchOpen(false)}
@@ -1648,7 +1648,7 @@ export default function RestockPlanDetail({ plan, recent_plans }: Props) {
                 title="Batalkan Rencana Restock"
                 description="Rencana yang dibatalkan akan ditandai nonaktif dan tidak dapat dieksekusi untuk penambahan stok."
                 footer={
-                    <div className="flex w-full items-center justify-end gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
                         <FxButton
                             variant="soft"
                             onClick={() => setCancelOpen(false)}

@@ -301,7 +301,7 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                 </FxButton>
             }
         >
-            <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px]">
+            <div className="grid grid-cols-1 items-start gap-4 sm:gap-5 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px]">
                 {/* Kolom Kiri: Katalog Produk & Filter */}
                 <div className="flex flex-col gap-4">
                     <Reveal delay={0.05}>
@@ -386,7 +386,7 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                             </div>
                         ) : (
                             <div className="flex flex-col gap-5">
-                                <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-3 sm:gap-3.5">
+                                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
                                     {paginatedMenus.map((m) => {
                                         const inCartQty = cart[m.id] ?? 0;
                                         const isOutOfStock =
@@ -662,7 +662,7 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                                     {items.map(({ menu, qty }) => (
                                         <div
                                             key={menu.id}
-                                            className="flex items-center gap-3 rounded-2xl border border-border/40 bg-secondary/20 p-2.5 transition-colors hover:bg-secondary/40"
+                                            className="flex items-center gap-2.5 rounded-2xl bg-secondary/40 p-2.5 transition-colors hover:bg-secondary/60"
                                         >
                                             {/* Thumbnail Foto Menu */}
                                             {menu.image_url ? (
@@ -685,64 +685,74 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                                                 </div>
                                             )}
 
-                                            {/* Deskripsi & Harga Satuan */}
+                                            {/* Nama, Harga Satuan & Subtotal */}
                                             <div className="min-w-0 flex-1">
                                                 <p className="truncate text-xs font-semibold text-foreground">
                                                     {menu.name}
                                                 </p>
-                                                <p className="text-[11px] text-muted-foreground tabular-nums">
-                                                    {formatRupiah(
-                                                        menu.selling_price,
-                                                    )}
+                                                <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                                    <span className="tabular-nums">
+                                                        {formatRupiah(
+                                                            menu.selling_price,
+                                                        )}
+                                                    </span>
+                                                    <span aria-hidden>·</span>
+                                                    <span className="font-semibold text-foreground tabular-nums">
+                                                        {formatRupiah(
+                                                            Number(
+                                                                menu.selling_price,
+                                                            ) * qty,
+                                                        )}
+                                                    </span>
                                                 </p>
                                             </div>
 
-                                            {/* Stepper Kuantitas */}
-                                            <div className="flex items-center gap-1 rounded-full bg-secondary p-1">
+                                            {/* Stepper Kuantitas + Hapus */}
+                                            <div className="flex shrink-0 items-center gap-1.5">
+                                                <div className="flex items-center gap-1 rounded-full bg-secondary p-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setQty(
+                                                                menu.id,
+                                                                qty - 1,
+                                                            )
+                                                        }
+                                                        className="flex size-5 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
+                                                        aria-label="Kurangi"
+                                                    >
+                                                        <Minus className="size-3" />
+                                                    </button>
+                                                    <span className="w-4 text-center text-xs font-bold tabular-nums">
+                                                        {qty}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setQty(
+                                                                menu.id,
+                                                                qty + 1,
+                                                            )
+                                                        }
+                                                        className="flex size-5 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
+                                                        aria-label="Tambah"
+                                                    >
+                                                        <Plus className="size-3" />
+                                                    </button>
+                                                </div>
+
+                                                {/* Delete Button */}
                                                 <button
                                                     type="button"
                                                     onClick={() =>
-                                                        setQty(menu.id, qty - 1)
+                                                        setQty(menu.id, 0)
                                                     }
-                                                    className="flex size-5 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
-                                                    aria-label="Kurangi"
+                                                    className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-danger-soft hover:text-danger"
+                                                    aria-label="Hapus item"
                                                 >
-                                                    <Minus className="size-3" />
-                                                </button>
-                                                <span className="w-4 text-center text-xs font-bold tabular-nums">
-                                                    {qty}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setQty(menu.id, qty + 1)
-                                                    }
-                                                    className="flex size-5 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
-                                                    aria-label="Tambah"
-                                                >
-                                                    <Plus className="size-3" />
+                                                    <Trash2 className="size-3.5" />
                                                 </button>
                                             </div>
-
-                                            {/* Subtotal Item */}
-                                            <span className="w-16 text-right text-xs font-bold text-foreground tabular-nums">
-                                                {formatRupiah(
-                                                    Number(menu.selling_price) *
-                                                        qty,
-                                                )}
-                                            </span>
-
-                                            {/* Delete Button */}
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setQty(menu.id, 0)
-                                                }
-                                                className="text-muted-foreground transition-colors hover:text-danger"
-                                                aria-label="Hapus item"
-                                            >
-                                                <Trash2 className="size-3.5" />
-                                            </button>
                                         </div>
                                     ))}
                                 </div>

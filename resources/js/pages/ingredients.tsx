@@ -1727,7 +1727,7 @@ function AdjustModal({
                                 : 'Stok akan dipotong otomatis dan dicatat sebagai waste/kerusakan.'}
                         </span>
                     </p>
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
                         <FxButton variant="soft" onClick={onClose}>
                             Batal
                         </FxButton>
