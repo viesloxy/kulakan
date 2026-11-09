@@ -509,7 +509,10 @@ export default function Menus({ menus, ingredients }: Props) {
                                         <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 p-3 text-xs font-medium text-amber-600 dark:text-amber-400">
                                             <Info className="size-4 shrink-0" />
                                             <span>
-                                                Menu ini menggunakan bahan baku yang dinonaktifkan dan saat ini tidak dapat dipesan di POS kasir.
+                                                Menu ini menggunakan bahan baku
+                                                yang dinonaktifkan dan saat ini
+                                                tidak dapat dipesan di POS
+                                                kasir.
                                             </span>
                                         </div>
                                     ) : null}
@@ -543,9 +546,12 @@ export default function Menus({ menus, ingredients }: Props) {
                                                         <td className="px-3 py-3">
                                                             <div className="flex items-center gap-1.5 font-medium">
                                                                 <span>
-                                                                    {r.ingredient_name}
+                                                                    {
+                                                                        r.ingredient_name
+                                                                    }
                                                                 </span>
-                                                                {r.is_active === false ? (
+                                                                {r.is_active ===
+                                                                false ? (
                                                                     <span className="rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
                                                                         Nonaktif
                                                                     </span>
@@ -558,80 +564,90 @@ export default function Menus({ menus, ingredients }: Props) {
                                                                 /
                                                                 {
                                                                     unitShort[
-                                                                        r.base_unit
+                                                                        r
+                                                                            .base_unit
                                                                     ]
                                                                 }
                                                             </p>
                                                         </td>
-                                                    <td className="px-3 py-3 text-right tabular-nums">
-                                                        {fmtQty(
-                                                            r.quantity_needed,
-                                                        )}{' '}
-                                                        {unitShort[r.base_unit]}
-                                                    </td>
-                                                    <td className="px-3 py-3 text-right tabular-nums">
-                                                        {formatPercent(
-                                                            Number(
-                                                                r.waste_factor,
-                                                            ) * 100,
-                                                            0,
-                                                        )}
-                                                    </td>
-                                                    <td className="px-3 py-3 text-right tabular-nums">
-                                                        {fmtQty(
-                                                            r.effective_qty,
-                                                        )}{' '}
-                                                        {unitShort[r.base_unit]}
+                                                        <td className="px-3 py-3 text-right tabular-nums">
+                                                            {fmtQty(
+                                                                r.quantity_needed,
+                                                            )}{' '}
+                                                            {
+                                                                unitShort[
+                                                                    r.base_unit
+                                                                ]
+                                                            }
+                                                        </td>
+                                                        <td className="px-3 py-3 text-right tabular-nums">
+                                                            {formatPercent(
+                                                                Number(
+                                                                    r.waste_factor,
+                                                                ) * 100,
+                                                                0,
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3 py-3 text-right tabular-nums">
+                                                            {fmtQty(
+                                                                r.effective_qty,
+                                                            )}{' '}
+                                                            {
+                                                                unitShort[
+                                                                    r.base_unit
+                                                                ]
+                                                            }
+                                                        </td>
+                                                        <td className="px-3 py-3 text-right tabular-nums">
+                                                            {formatRupiah(
+                                                                r.line_cost,
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="border-b border-border/60">
+                                                    <td
+                                                        className="px-3 py-3 text-muted-foreground"
+                                                        colSpan={4}
+                                                    >
+                                                        Subtotal bahan
                                                     </td>
                                                     <td className="px-3 py-3 text-right tabular-nums">
                                                         {formatRupiah(
-                                                            r.line_cost,
+                                                            selected.subtotal,
                                                         )}
                                                     </td>
                                                 </tr>
-                                            ))}
-                                            <tr className="border-b border-border/60">
-                                                <td
-                                                    className="px-3 py-3 text-muted-foreground"
-                                                    colSpan={4}
-                                                >
-                                                    Subtotal bahan
-                                                </td>
-                                                <td className="px-3 py-3 text-right tabular-nums">
-                                                    {formatRupiah(
-                                                        selected.subtotal,
-                                                    )}
-                                                </td>
-                                            </tr>
-                                            <tr className="border-b border-border/60">
-                                                <td
-                                                    className="px-3 py-3 text-muted-foreground"
-                                                    colSpan={4}
-                                                >
-                                                    Overhead standar per porsi
-                                                </td>
-                                                <td className="px-3 py-3 text-right tabular-nums">
-                                                    {formatRupiah(
-                                                        selected.overhead,
-                                                    )}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td
-                                                    className="px-3 py-3 font-semibold"
-                                                    colSpan={4}
-                                                >
-                                                    HPP
-                                                </td>
-                                                <td className="px-3 py-3 text-right font-bold tabular-nums">
-                                                    {formatRupiah(
-                                                        selected.current_hpp,
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </FxTableWrap>
+                                                <tr className="border-b border-border/60">
+                                                    <td
+                                                        className="px-3 py-3 text-muted-foreground"
+                                                        colSpan={4}
+                                                    >
+                                                        Overhead standar per
+                                                        porsi
+                                                    </td>
+                                                    <td className="px-3 py-3 text-right tabular-nums">
+                                                        {formatRupiah(
+                                                            selected.overhead,
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td
+                                                        className="px-3 py-3 font-semibold"
+                                                        colSpan={4}
+                                                    >
+                                                        HPP
+                                                    </td>
+                                                    <td className="px-3 py-3 text-right font-bold tabular-nums">
+                                                        {formatRupiah(
+                                                            selected.current_hpp,
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </FxTableWrap>
                                 </div>
                             )}
 
@@ -1197,7 +1213,9 @@ function BomModal({
                     <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 p-3 text-xs font-medium text-amber-600 dark:text-amber-400">
                         <Info className="size-4 shrink-0" />
                         <span>
-                            Resep ini mengandung bahan baku yang dinonaktifkan. Menu ini tidak dapat dijual di POS sampai bahan diganti atau diaktifkan kembali.
+                            Resep ini mengandung bahan baku yang dinonaktifkan.
+                            Menu ini tidak dapat dijual di POS sampai bahan
+                            diganti atau diaktifkan kembali.
                         </span>
                     </div>
                 ) : null}

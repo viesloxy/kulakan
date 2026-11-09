@@ -202,7 +202,9 @@ export default function Ingredients({ ingredients, meta }: Props) {
     const owner = isOwner(usePage().props.auth.user);
     const [query, setQuery] = useState('');
     const [lowOnly, setLowOnly] = useState(false);
-    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+    const [statusFilter, setStatusFilter] = useState<
+        'all' | 'active' | 'inactive'
+    >('all');
     const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -212,7 +214,8 @@ export default function Ingredients({ ingredients, meta }: Props) {
     const [history, setHistory] = useState<IngredientRow | null>(null);
     const [adjust, setAdjust] = useState<IngredientRow | null>(null);
     const [edit, setEdit] = useState<IngredientRow | null>(null);
-    const [deactivateTarget, setDeactivateTarget] = useState<IngredientRow | null>(null);
+    const [deactivateTarget, setDeactivateTarget] =
+        useState<IngredientRow | null>(null);
     const [cascadeMenus, setCascadeMenus] = useState(false);
 
     const activeCount = useMemo(
@@ -828,8 +831,12 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                                                 title="Nonaktifkan bahan"
                                                                 aria-label="Nonaktifkan bahan"
                                                                 onClick={() => {
-                                                                    setCascadeMenus(false);
-                                                                    setDeactivateTarget(i);
+                                                                    setCascadeMenus(
+                                                                        false,
+                                                                    );
+                                                                    setDeactivateTarget(
+                                                                        i,
+                                                                    );
                                                                 }}
                                                             >
                                                                 <Ban className="size-4" />
@@ -842,7 +849,9 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                                                 aria-label="Aktifkan kembali"
                                                                 className="hover:bg-emerald-600 hover:text-white"
                                                                 onClick={() =>
-                                                                    handleRestore(i)
+                                                                    handleRestore(
+                                                                        i,
+                                                                    )
                                                                 }
                                                             >
                                                                 <RotateCcw className="size-4" />
@@ -1096,7 +1105,10 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                     Peringatan Penonaktifan Bahan
                                 </span>
                                 <span>
-                                    Menonaktifkan bahan baku akan menghentikan ketersediaan bahan ini untuk menu terkait. Riwayat stok dan mutasi sebelumnya tetap tersimpan secara aman.
+                                    Menonaktifkan bahan baku akan menghentikan
+                                    ketersediaan bahan ini untuk menu terkait.
+                                    Riwayat stok dan mutasi sebelumnya tetap
+                                    tersimpan secara aman.
                                 </span>
                             </div>
                         </div>
@@ -1105,23 +1117,27 @@ export default function Ingredients({ ingredients, meta }: Props) {
                         deactivateTarget.dependent_menus.length > 0 ? (
                             <div className="flex flex-col gap-3 rounded-2xl border border-border/70 p-4">
                                 <p className="font-medium text-foreground">
-                                    Bahan ini saat ini aktif digunakan pada menu:
+                                    Bahan ini saat ini aktif digunakan pada
+                                    menu:
                                 </p>
                                 <div className="flex flex-wrap gap-1.5">
-                                    {deactivateTarget.dependent_menus.map((m) => (
-                                        <span
-                                            key={m}
-                                            className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-foreground"
-                                        >
-                                            {m}
-                                        </span>
-                                    ))}
+                                    {deactivateTarget.dependent_menus.map(
+                                        (m) => (
+                                            <span
+                                                key={m}
+                                                className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-foreground"
+                                            >
+                                                {m}
+                                            </span>
+                                        ),
+                                    )}
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                    Menu di atas tidak akan dapat dipesan di POS kasir selama bahan ini dinonaktifkan.
+                                    Menu di atas tidak akan dapat dipesan di POS
+                                    kasir selama bahan ini dinonaktifkan.
                                 </p>
 
-                                <label className="mt-2 flex items-start gap-2.5 cursor-pointer">
+                                <label className="mt-2 flex cursor-pointer items-start gap-2.5">
                                     <input
                                         type="checkbox"
                                         checked={cascadeMenus}
@@ -1131,13 +1147,15 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                         className="mt-0.5 rounded border-border"
                                     />
                                     <span className="text-xs font-medium text-foreground">
-                                        Nonaktifkan juga menu terkait di atas secara otomatis
+                                        Nonaktifkan juga menu terkait di atas
+                                        secara otomatis
                                     </span>
                                 </label>
                             </div>
                         ) : (
                             <p className="text-xs text-muted-foreground">
-                                Bahan ini tidak sedang digunakan oleh menu aktif mana pun.
+                                Bahan ini tidak sedang digunakan oleh menu aktif
+                                mana pun.
                             </p>
                         )}
                     </div>
