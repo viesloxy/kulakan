@@ -31,14 +31,18 @@ class SecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
+        $isLocal = app()->environment('local');
+        $viteUrls = $isLocal ? 'http://127.0.0.1:5173 http://localhost:5173 http://[::1]:5173' : '';
+        $viteWs = $isLocal ? 'ws://127.0.0.1:5173 ws://localhost:5173 ws://[::1]:5173' : '';
+
         // Content-Security-Policy dasar untuk membatasi eksekusi sumber daya berbahaya
         $csp = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
-            "style-src 'self' 'unsafe-inline' https://fonts.bunny.net",
-            "font-src 'self' data: https://fonts.bunny.net",
-            "img-src 'self' data: blob:",
-            "connect-src 'self' ws: wss:",
+            trim("script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net {$viteUrls}"),
+            trim("style-src 'self' 'unsafe-inline' https://fonts.bunny.net {$viteUrls}"),
+            trim("font-src 'self' data: https://fonts.bunny.net {$viteUrls}"),
+            trim("img-src 'self' data: blob: {$viteUrls}"),
+            trim("connect-src 'self' ws: wss: {$viteUrls} {$viteWs}"),
             "object-src 'none'",
             "base-uri 'self'",
             "frame-ancestors 'self'",

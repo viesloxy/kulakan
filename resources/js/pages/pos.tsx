@@ -13,7 +13,7 @@ import {
     Trash2,
     X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
@@ -21,6 +21,11 @@ import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
 import { formatRupiah } from '@/lib/format';
+import {
+    POS_CART_STORAGE_KEY,
+    type PosCartItem,
+    type PosStoredSession,
+} from '@/pages/pos-checkout';
 
 type Category = 'Kopi' | 'Non-Kopi' | 'Makanan';
 type OrderType = 'dine-in' | 'takeaway' | 'delivery';
@@ -37,6 +42,12 @@ type PosMenu = {
 type Props = {
     menus: PosMenu[];
     active_queue_count?: number;
+    merchant_qris?: {
+        merchant_name: string;
+        merchant_city: string;
+        nmid?: string;
+        static_payload: string;
+    };
 };
 
 const categoryIcon = { Kopi: Coffee, 'Non-Kopi': CupSoda, Makanan: Sandwich };
@@ -52,9 +63,29 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
         'Semua',
     );
     const [inStockOnly, setInStockOnly] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
 
-    // Idempotency key (FR-016): dibuat saat submit, dipakai ulang bila retry, dibersihkan saat sukses.
-    const idempotencyKey = useRef<string | null>(null);
+    // Pulihkan keranjang dari sessionStorage saat komponen dimuat (misal setelah klik Kembali dari Checkout)
+    useEffect(() => {
+        try {
+            const raw = sessionStorage.getItem(POS_CART_STORAGE_KEY);
+            if (raw) {
+                const parsed: PosStoredSession = JSON.parse(raw);
+                if (parsed && typeof parsed === 'object') {
+                    if (parsed.cart) setCart(parsed.cart);
+                    if (parsed.orderType) setOrderType(parsed.orderType);
+                    if (typeof parsed.customerName === 'string') {
+                        setCustomerName(parsed.customerName);
+                    }
+                    if (parsed.paymentMethod) setPayment(parsed.paymentMethod);
+                }
+            }
+        } catch {
+            // Abaikan kesalahan parsing
+        } finally {
+            setIsLoaded(true);
+        }
+    }, []);
 
     const filteredMenus = useMemo(() => {
         return menus.filter((m) => {
@@ -112,6 +143,41 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
         [items],
     );
 
+    // Sinkronisasi perubahan keranjang ke sessionStorage
+    useEffect(() => {
+        if (!isLoaded) return;
+        try {
+            if (Object.keys(cart).length === 0) {
+                sessionStorage.removeItem(POS_CART_STORAGE_KEY);
+            } else {
+                const storedItems: PosCartItem[] = items.map(
+                    ({ menu, qty }) => ({
+                        menu_id: menu.id,
+                        name: menu.name,
+                        price: Number(menu.selling_price),
+                        qty,
+                        image_url: menu.image_url,
+                        category: menu.category,
+                    }),
+                );
+
+                const payload: PosStoredSession = {
+                    cart,
+                    items: storedItems,
+                    orderType,
+                    customerName,
+                    paymentMethod: payment,
+                };
+                sessionStorage.setItem(
+                    POS_CART_STORAGE_KEY,
+                    JSON.stringify(payload),
+                );
+            }
+        } catch {
+            // Abaikan kesalahan storage
+        }
+    }, [cart, items, orderType, customerName, payment, isLoaded]);
+
     function add(menu: PosMenu) {
         if (menu.portions_available <= 0) {
             toast.warning(`Stok bahan untuk ${menu.name} habis.`);
@@ -152,54 +218,46 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
     function clearCart() {
         setCart({});
         setCustomerName('');
+        try {
+            sessionStorage.removeItem(POS_CART_STORAGE_KEY);
+        } catch {
+            // Abaikan kesalahan storage
+        }
     }
 
-    function submit() {
+    function handleOpenCheckout() {
         if (items.length === 0) {
             toast.error('Belum ada item di pesanan.');
             return;
         }
 
-        if (idempotencyKey.current === null) {
-            idempotencyKey.current = (
-                globalThis.crypto?.randomUUID?.() ??
-                `ord-${Date.now()}-${Math.random().toString(36).slice(2)}`
-            ).slice(0, 64);
+        const storedItems: PosCartItem[] = items.map(({ menu, qty }) => ({
+            menu_id: menu.id,
+            name: menu.name,
+            price: Number(menu.selling_price),
+            qty,
+            image_url: menu.image_url,
+            category: menu.category,
+        }));
+
+        const payload: PosStoredSession = {
+            cart,
+            items: storedItems,
+            orderType,
+            customerName,
+            paymentMethod: payment,
+        };
+
+        try {
+            sessionStorage.setItem(
+                POS_CART_STORAGE_KEY,
+                JSON.stringify(payload),
+            );
+        } catch {
+            // Abaikan kesalahan storage
         }
 
-        router.post(
-            '/pos',
-            {
-                lines: items.map(({ menu, qty }) => ({
-                    menu_id: menu.id,
-                    quantity: qty,
-                })),
-                payment_method: payment,
-                idempotency_key: idempotencyKey.current,
-            },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    idempotencyKey.current = null;
-                    const custInfo = customerName.trim()
-                        ? ` (${customerName.trim()})`
-                        : '';
-                    setCart({});
-                    setCustomerName('');
-                    toast.success('Pesanan tersimpan', {
-                        description: `${items.length} menu${custInfo}, total ${formatRupiah(total)}. Stok bahan terpotong otomatis.`,
-                        action: {
-                            label: 'Riwayat',
-                            onClick: () => router.visit('/pesanan'),
-                        },
-                    });
-                },
-                onError: (errors) =>
-                    toast.error(
-                        Object.values(errors)[0] ?? 'Gagal menyimpan pesanan.',
-                    ),
-            },
-        );
+        router.visit('/pos/checkout');
     }
 
     return (
@@ -225,7 +283,7 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
             }
         >
             <div className="grid items-start gap-5 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px]">
-                {/* Kolom Kiri: Katalog Produk & Filter (Referensi Tave POS Opsi A) */}
+                {/* Kolom Kiri: Katalog Produk & Filter */}
                 <div className="flex flex-col gap-4">
                     <Reveal delay={0.05}>
                         {/* Header Toolbar: Kategori Pills + Search & Filter Ketersediaan */}
@@ -298,82 +356,55 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                     {/* Grid Kartu Produk */}
                     <Reveal delay={0.1}>
                         {filteredMenus.length === 0 ? (
-                            <FxSoft className="flex flex-col items-center justify-center gap-2 rounded-3xl p-12 text-center text-muted-foreground">
-                                <Search className="size-8 text-muted-foreground/40" />
-                                <p className="text-sm font-semibold text-foreground">
-                                    Tidak ada menu yang sesuai
+                            <div className="flex flex-col items-center justify-center gap-2 rounded-3xl bg-secondary/30 p-12 text-center text-muted-foreground">
+                                <p className="text-sm font-medium">
+                                    Menu tidak ditemukan
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                     Coba ubah kata kunci pencarian atau ganti
                                     kategori filter.
                                 </p>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setSearchQuery('');
-                                        setCategoryFilter('Semua');
-                                        setInStockOnly(false);
-                                    }}
-                                    className="mt-2 text-xs font-semibold text-primary hover:underline"
-                                >
-                                    Reset semua filter
-                                </button>
-                            </FxSoft>
+                            </div>
                         ) : (
-                            <div>
-                                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <div className="flex flex-col gap-5">
+                                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-3">
                                     {paginatedMenus.map((m) => {
-                                        const Icon = categoryIcon[m.category];
+                                        const inCartQty = cart[m.id] ?? 0;
                                         const isOutOfStock =
                                             m.portions_available <= 0;
-                                        const isLowStock =
-                                            m.portions_available > 0 &&
-                                            m.portions_available <= 3;
-                                        const inCartQty = cart[m.id] ?? 0;
+                                        const Icon = categoryIcon[m.category];
 
                                         return (
                                             <FxCard
                                                 key={m.id}
-                                                className={`group relative flex flex-col justify-between overflow-hidden p-4 transition-all duration-200 ${
-                                                    inCartQty > 0
-                                                        ? 'shadow-xs ring-2 ring-primary/25'
-                                                        : ''
-                                                } ${
+                                                className={`group flex flex-col justify-between p-3.5 transition-all duration-200 ${
                                                     isOutOfStock
-                                                        ? 'opacity-60 grayscale-[30%]'
-                                                        : 'hover:-translate-y-0.5 hover:shadow-md'
+                                                        ? 'opacity-50'
+                                                        : 'hover:shadow-md'
                                                 }`}
                                             >
-                                                {/* Top Bar Kartu: Kategori & Ketersediaan Stok */}
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                {/* Bagian Atas: Kategori Badge & Ketersediaan Porsi */}
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <span className="rounded-full bg-secondary/80 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                                                         {m.category}
                                                     </span>
                                                     <span
-                                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                                                        className={`text-[11px] font-semibold ${
                                                             isOutOfStock
-                                                                ? 'bg-danger-soft text-danger'
-                                                                : isLowStock
-                                                                  ? 'bg-warning-soft text-warning-ink'
-                                                                  : 'bg-success-soft text-success'
+                                                                ? 'text-danger'
+                                                                : m.portions_available <=
+                                                                    3
+                                                                  ? 'text-amber-500'
+                                                                  : 'text-muted-foreground'
                                                         }`}
                                                     >
-                                                        <span
-                                                            className={`size-1.5 rounded-full ${
-                                                                isOutOfStock
-                                                                    ? 'bg-danger'
-                                                                    : isLowStock
-                                                                      ? 'bg-warning'
-                                                                      : 'bg-success'
-                                                            }`}
-                                                        />
                                                         {isOutOfStock
                                                             ? 'Habis'
-                                                            : `Sisa ${m.portions_available}`}
+                                                            : `${m.portions_available} porsi`}
                                                     </span>
                                                 </div>
 
-                                                {/* Foto Produk Besar (Gaya Opsi A) */}
+                                                {/* Foto Menu Produk */}
                                                 <div
                                                     onClick={() =>
                                                         !isOutOfStock && add(m)
@@ -415,50 +446,49 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                                                         </p>
                                                     </div>
 
-                                                    {/* Kontrol Kuantitas: Stepper (- / qty / +) jika sudah dipilih, atau tombol (+) jika belum */}
+                                                    {/* Stepper Kuantitas */}
                                                     {inCartQty > 0 ? (
-                                                        <div
-                                                            onClick={(e) =>
-                                                                e.stopPropagation()
-                                                            }
-                                                            className="flex items-center gap-1 rounded-xl bg-primary/10 p-1 text-primary ring-1 ring-primary/25"
-                                                        >
+                                                        <div className="flex items-center gap-1 rounded-full bg-secondary p-1">
                                                             <button
                                                                 type="button"
-                                                                onClick={() =>
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
+                                                                    e.stopPropagation();
                                                                     setQty(
                                                                         m.id,
                                                                         inCartQty -
                                                                             1,
-                                                                    )
-                                                                }
-                                                                className="flex size-7 items-center justify-center rounded-lg bg-card text-foreground transition-all duration-150 hover:bg-danger-soft hover:text-danger active:scale-90"
-                                                                aria-label={`Kurangi ${m.name}`}
+                                                                    );
+                                                                }}
+                                                                className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
+                                                                aria-label="Kurangi"
                                                             >
-                                                                <Minus className="size-3.5" />
+                                                                <Minus className="size-3" />
                                                             </button>
-                                                            <span className="w-5 text-center text-xs font-bold text-primary tabular-nums">
+                                                            <span className="w-5 text-center text-xs font-bold tabular-nums">
                                                                 {inCartQty}
                                                             </span>
                                                             <button
                                                                 type="button"
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
+                                                                    e.stopPropagation();
+                                                                    setQty(
+                                                                        m.id,
+                                                                        inCartQty +
+                                                                            1,
+                                                                    );
+                                                                }}
                                                                 disabled={
-                                                                    isOutOfStock ||
-                                                                    inCartQty >=
-                                                                        m.portions_available
-                                                                }
-                                                                onClick={() =>
-                                                                    add(m)
-                                                                }
-                                                                className={`flex size-7 items-center justify-center rounded-lg bg-card text-foreground transition-all duration-150 hover:bg-hover-soft active:scale-90 ${
                                                                     inCartQty >=
                                                                     m.portions_available
-                                                                        ? 'cursor-not-allowed opacity-40'
-                                                                        : ''
-                                                                }`}
-                                                                aria-label={`Tambah ${m.name}`}
+                                                                }
+                                                                className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft disabled:opacity-30"
+                                                                aria-label="Tambah"
                                                             >
-                                                                <Plus className="size-3.5" />
+                                                                <Plus className="size-3" />
                                                             </button>
                                                         </div>
                                                     ) : (
@@ -471,12 +501,8 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                                                                 e.stopPropagation();
                                                                 add(m);
                                                             }}
+                                                            className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground transition-all duration-200 hover:bg-primary hover:text-primary-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                                                             aria-label={`Tambah ${m.name}`}
-                                                            className={`flex size-9 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground transition-all duration-200 hover:bg-hover-soft active:scale-95 ${
-                                                                isOutOfStock
-                                                                    ? 'cursor-not-allowed opacity-40'
-                                                                    : ''
-                                                            }`}
                                                         >
                                                             <Plus className="size-4" />
                                                         </button>
@@ -487,73 +513,30 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                                     })}
                                 </div>
 
-                                {/* Pagination Controls */}
+                                {/* Pagination Kontrol */}
                                 {totalPages > 1 ? (
-                                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-4">
-                                        <p className="text-xs text-muted-foreground">
-                                            Menampilkan{' '}
-                                            <span className="font-semibold text-foreground">
-                                                {startIndex + 1} -{' '}
-                                                {Math.min(
-                                                    startIndex + ITEMS_PER_PAGE,
-                                                    filteredMenus.length,
-                                                )}
-                                            </span>{' '}
-                                            dari{' '}
-                                            <span className="font-semibold text-foreground">
-                                                {filteredMenus.length}
-                                            </span>{' '}
-                                            menu
-                                        </p>
-
+                                    <div className="flex items-center justify-between border-t border-border/50 pt-3 text-xs text-muted-foreground">
+                                        <span>
+                                            Halaman {validPage} dari{' '}
+                                            {totalPages} ({filteredMenus.length}{' '}
+                                            menu)
+                                        </span>
                                         <div className="flex items-center gap-1.5">
                                             <button
                                                 type="button"
-                                                disabled={validPage <= 1}
                                                 onClick={() =>
                                                     setCurrentPage((p) =>
                                                         Math.max(1, p - 1),
                                                     )
                                                 }
-                                                className="flex size-8 items-center justify-center rounded-xl bg-secondary text-foreground transition-colors hover:bg-hover-soft disabled:cursor-not-allowed disabled:opacity-40"
+                                                disabled={validPage <= 1}
+                                                className="flex size-7 items-center justify-center rounded-lg bg-secondary text-foreground transition-colors hover:bg-hover-soft disabled:cursor-not-allowed disabled:opacity-40"
                                                 aria-label="Halaman sebelumnya"
                                             >
                                                 <ChevronLeft className="size-4" />
                                             </button>
-
-                                            <div className="flex items-center gap-1">
-                                                {Array.from(
-                                                    { length: totalPages },
-                                                    (_, i) => i + 1,
-                                                ).map((pageNum) => {
-                                                    const isActive =
-                                                        pageNum === validPage;
-                                                    return (
-                                                        <button
-                                                            key={pageNum}
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setCurrentPage(
-                                                                    pageNum,
-                                                                )
-                                                            }
-                                                            className={`flex size-8 items-center justify-center rounded-xl text-xs font-semibold transition-all duration-200 ${
-                                                                isActive
-                                                                    ? 'fx-coral font-bold shadow-xs'
-                                                                    : 'bg-secondary text-foreground hover:bg-hover-soft'
-                                                            }`}
-                                                        >
-                                                            {pageNum}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-
                                             <button
                                                 type="button"
-                                                disabled={
-                                                    validPage >= totalPages
-                                                }
                                                 onClick={() =>
                                                     setCurrentPage((p) =>
                                                         Math.min(
@@ -562,7 +545,10 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                                                         ),
                                                     )
                                                 }
-                                                className="flex size-8 items-center justify-center rounded-xl bg-secondary text-foreground transition-colors hover:bg-hover-soft disabled:cursor-not-allowed disabled:opacity-40"
+                                                disabled={
+                                                    validPage >= totalPages
+                                                }
+                                                className="flex size-7 items-center justify-center rounded-lg bg-secondary text-foreground transition-colors hover:bg-hover-soft disabled:cursor-not-allowed disabled:opacity-40"
                                                 aria-label="Halaman berikutnya"
                                             >
                                                 <ChevronRight className="size-4" />
@@ -575,10 +561,10 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                     </Reveal>
                 </div>
 
-                {/* Kolom Kanan: Detail Pesanan / Keranjang (Referensi Order Detail Opsi A) */}
+                {/* Kolom Kanan: Detail Pesanan / Keranjang */}
                 <Reveal delay={0.1}>
                     <FxCard className="sticky top-4 flex flex-col gap-4 p-5 shadow-sm">
-                        {/* Header Keranjang: Judul, Counter & Reset Button */}
+                        {/* Header Keranjang */}
                         <div className="flex items-center justify-between border-b border-border/50 pb-3">
                             <div>
                                 <h2 className="text-base font-bold tracking-tight">
@@ -600,7 +586,7 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                             ) : null}
                         </div>
 
-                        {/* Segmented Control Tipe Pesanan (Dine-in / Takeaway / Delivery) */}
+                        {/* Segmented Control Tipe Pesanan */}
                         <div className="grid grid-cols-3 gap-1 rounded-2xl bg-secondary/80 p-1 text-xs font-semibold">
                             {[
                                 { id: 'dine-in', label: 'Dine In' },
@@ -643,7 +629,7 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                             />
                         </div>
 
-                        {/* Daftar Item Pesanan */}
+                        {/* Daftar Item Pesanan di Keranjang */}
                         <div className="flex flex-col">
                             <p className="mb-2 text-xs font-semibold text-muted-foreground">
                                 Item Pesanan
@@ -750,10 +736,10 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                             )}
                         </div>
 
-                        {/* Rincian Pembayaran (Payment Details) */}
+                        {/* Rincian Metode Default Pembayaran di Sidebar */}
                         <div className="border-t border-border/50 pt-3">
                             <p className="mb-2 text-xs font-semibold text-muted-foreground">
-                                Metode Pembayaran
+                                Metode Pembayaran Awal
                             </p>
                             <div className="grid grid-cols-2 gap-2">
                                 {(
@@ -796,15 +782,15 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                             </span>
                         </FxSoft>
 
-                        {/* Tombol Eksekusi Order (Gaya Opsi A: Process order →) */}
+                        {/* Tombol Eksekusi Order -> Navigasi ke Rute /pos/checkout */}
                         <FxButton
                             variant="coral"
                             size="lg"
                             disabled={items.length === 0}
-                            onClick={submit}
+                            onClick={handleOpenCheckout}
                             className="w-full gap-2 text-sm font-semibold shadow-sm"
                         >
-                            <span>Proses Pesanan</span>
+                            <span>Lanjut Bayar ({formatRupiah(total)})</span>
                             <ArrowRight className="size-4" />
                         </FxButton>
                     </FxCard>

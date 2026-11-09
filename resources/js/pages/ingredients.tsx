@@ -6,6 +6,7 @@ import {
     Check,
     ClipboardCheck,
     Clock,
+    Filter,
     History,
     Info,
     Layers,
@@ -425,13 +426,36 @@ export default function Ingredients({ ingredients, meta }: Props) {
                             <button
                                 type="button"
                                 onClick={() => setLowOnly((v) => !v)}
-                                className={`h-10 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
+                                className={`inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
                                     lowOnly
-                                        ? 'fx-coral'
+                                        ? 'fx-coral shadow-sm'
                                         : 'bg-secondary text-foreground hover:bg-hover-soft'
                                 }`}
+                                title={
+                                    lowOnly
+                                        ? 'Tampilkan semua bahan'
+                                        : 'Filter hanya bahan dengan stok menipis'
+                                }
                             >
-                                Stok menipis
+                                <Filter
+                                    className={`size-3.5 transition-transform ${
+                                        lowOnly
+                                            ? 'scale-110'
+                                            : 'text-muted-foreground'
+                                    }`}
+                                />
+                                <span>Stok menipis</span>
+                                {meta.low_stock_count > 0 ? (
+                                    <span
+                                        className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs leading-none font-bold ${
+                                            lowOnly
+                                                ? 'bg-white/20 text-white'
+                                                : 'bg-primary/10 text-primary'
+                                        }`}
+                                    >
+                                        {meta.low_stock_count}
+                                    </span>
+                                ) : null}
                             </button>
                         </div>
                     </div>
@@ -806,7 +830,14 @@ function CreateIngredientModal({
                         <option value="pcs">pcs</option>
                     </FxSelect>
                 </FxField>
-                <FxField label="Lead time (hari)">
+                <FxField
+                    label="Lead time (hari)"
+                    tooltip={{
+                        title: 'Lead Time (Hari)',
+                        description:
+                            'Estimasi durasi (dalam hari) sejak Purchase Order dikirim ke supplier hingga bahan tiba di outlet. Digunakan sistem untuk menghitung batas restok aman (Reorder Point).',
+                    }}
+                >
                     <FxInput
                         type="number"
                         min="0"
@@ -1138,7 +1169,14 @@ function EditIngredientModal({
                         onBlur={handleDecimalBlur(setMinStock, '0.00')}
                     />
                 </FxField>
-                <FxField label="Lead time (hari)">
+                <FxField
+                    label="Lead time (hari)"
+                    tooltip={{
+                        title: 'Lead Time (Hari)',
+                        description:
+                            'Estimasi durasi (dalam hari) sejak Purchase Order dikirim ke supplier hingga bahan tiba di outlet. Digunakan sistem untuk menghitung batas restok aman (Reorder Point).',
+                    }}
+                >
                     <FxInput
                         type="number"
                         min="0"
