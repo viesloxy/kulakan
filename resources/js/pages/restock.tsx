@@ -800,7 +800,7 @@ export default function Restock({
         >
             <Reveal delay={0.05}>
                 <div className="grid gap-5 lg:grid-cols-[1fr_1.4fr]">
-                    <FxCard className="p-5">
+                    <FxCard className="min-w-0 p-5">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                                 <SlidersHorizontal className="size-4" />
@@ -1040,7 +1040,7 @@ export default function Restock({
                         ) : null}
                     </FxCard>
 
-                    <FxCard className="flex flex-col p-5">
+                    <FxCard className="flex min-w-0 flex-col p-5">
                         <div className="mb-3 flex items-center justify-between">
                             <h2 className="text-base font-semibold">
                                 Rekomendasi belanja

@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Alert;
+use App\Support\AlertPresenter;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -42,6 +44,36 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user()?->only(['id', 'name', 'email', 'role']),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'notifications' => $this->notifications($request),
+        ];
+    }
+
+    /**
+     * Ringkasan alert aktif untuk lonceng notifikasi di header.
+     * Hanya untuk owner (Alert Center owner-only, matriks SAD §9); staff tidak
+     * memiliki konteks alert sehingga tombol ikut disembunyikan di UI.
+     *
+     * @return array{count: int, items: list<array<string, mixed>>}|null
+     */
+    private function notifications(Request $request): ?array
+    {
+        $user = $request->user();
+
+        if ($user === null || $user->role !== 'owner') {
+            return null;
+        }
+
+        $active = Alert::where('status', 'active')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
+
+        return [
+            'count' => $active->count(),
+            'items' => $active->take(4)
+                ->map(fn (Alert $alert) => AlertPresenter::present($alert))
+                ->values()
+                ->all(),
         ];
     }
 }

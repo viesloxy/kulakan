@@ -12,8 +12,7 @@ import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
-
-type AlertType = 'low_stock' | 'margin_drop' | 'price_hike';
+import { alertTypeConfig, type AlertType } from '@/lib/alert-display';
 
 type AlertRow = {
     id: number;
@@ -35,39 +34,6 @@ type Counts = {
 };
 
 type Props = { alerts: AlertRow[]; counts: Counts };
-
-const typeConfig: Record<
-    AlertType,
-    {
-        icon: typeof Bell;
-        tone: 'soft' | 'danger' | 'warning' | 'coral';
-        label: string;
-        action: string;
-        href: string;
-    }
-> = {
-    low_stock: {
-        icon: PackageMinus,
-        tone: 'danger',
-        label: 'Stok rendah',
-        action: 'Susun restock',
-        href: '/restock',
-    },
-    margin_drop: {
-        icon: TrendingDown,
-        tone: 'warning',
-        label: 'Margin turun',
-        action: 'Lihat menu',
-        href: '/menu',
-    },
-    price_hike: {
-        icon: TrendingUp,
-        tone: 'soft',
-        label: 'Harga naik',
-        action: 'Lihat bahan',
-        href: '/bahan-baku',
-    },
-};
 
 function timeLabel(iso: string | null): string {
     if (!iso) {
@@ -180,7 +146,7 @@ export default function Alerts({ alerts, counts }: Props) {
                     ) : (
                         <div className="flex flex-col gap-3">
                             {alerts.map((a) => {
-                                const cfg = typeConfig[a.type];
+                                const cfg = alertTypeConfig[a.type];
                                 return (
                                     <FxSoft
                                         key={a.id}
