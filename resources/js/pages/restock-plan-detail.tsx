@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { FxField, FxInput, FxModal, FxTextarea } from '@/components/fx/fx-form';
+import { FxTableWrap } from '@/components/fx/fx-table-wrap';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
 import { formatPercent, formatRupiah } from '@/lib/format';
@@ -922,7 +923,7 @@ export default function RestockPlanDetail({ plan, recent_plans }: Props) {
                         </div>
 
                         {/* Table */}
-                        <div className="w-full max-w-full overflow-x-auto rounded-xl">
+                        <FxTableWrap className="w-full max-w-full rounded-xl">
                             <table className="w-full min-w-[620px] text-sm">
                                 <thead>
                                     <tr className="bg-secondary text-left text-xs text-muted-foreground">
@@ -1084,7 +1085,7 @@ export default function RestockPlanDetail({ plan, recent_plans }: Props) {
                                     )}
                                 </tbody>
                             </table>
-                        </div>
+                        </FxTableWrap>
                     </FxCard>
                 </Reveal>
 
@@ -1276,7 +1277,10 @@ export default function RestockPlanDetail({ plan, recent_plans }: Props) {
                 }
             >
                 <div className="flex flex-col gap-3">
-                    <div className="max-h-[360px] overflow-y-auto rounded-xl border border-border">
+                    <FxTableWrap
+                        className="rounded-xl border border-border"
+                        viewportClassName="max-h-[360px] overflow-y-auto"
+                    >
                         <table className="w-full text-xs">
                             <thead className="sticky top-0 bg-secondary text-left text-muted-foreground">
                                 <tr>
@@ -1413,7 +1417,7 @@ export default function RestockPlanDetail({ plan, recent_plans }: Props) {
                                 })}
                             </tbody>
                         </table>
-                    </div>
+                    </FxTableWrap>
 
                     <FxField label="Catatan Penerimaan / Supplier">
                         <FxInput

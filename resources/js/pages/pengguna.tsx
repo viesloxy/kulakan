@@ -6,6 +6,7 @@ import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { FxField, FxInput, FxModal, FxSelect } from '@/components/fx/fx-form';
 import { FxIconButton } from '@/components/fx/fx-icon-button';
+import { FxTableWrap } from '@/components/fx/fx-table-wrap';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
 
@@ -154,7 +155,7 @@ export default function Pengguna({ users }: Props) {
             <Reveal delay={0.1}>
                 <FxCard className="flex flex-col gap-4 p-5">
                     <h2 className="text-base font-semibold">Daftar akun</h2>
-                    <div className="overflow-x-auto">
+                    <FxTableWrap>
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-secondary text-left text-xs text-muted-foreground">
@@ -264,7 +265,7 @@ export default function Pengguna({ users }: Props) {
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                    </FxTableWrap>
                 </FxCard>
             </Reveal>
 

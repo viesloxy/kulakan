@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { IconCircle } from '@/components/fx/fx-icon';
+import { FxTableWrap } from '@/components/fx/fx-table-wrap';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
 import { formatPercent, formatRupiah } from '@/lib/format';
@@ -746,7 +747,7 @@ export default function Dashboard({
                                 </button>
                             </div>
                         </div>
-                        <div className="w-full overflow-x-auto">
+                        <FxTableWrap className="w-full">
                             <table className="w-full min-w-[480px] text-xs sm:min-w-full sm:text-sm">
                                 <thead>
                                     <tr className="bg-secondary text-left text-[11px] text-muted-foreground sm:text-xs">
@@ -846,7 +847,7 @@ export default function Dashboard({
                                     ))}
                                 </tbody>
                             </table>
-                        </div>
+                        </FxTableWrap>
                     </FxCard>
                 </section>
             </Reveal>
@@ -970,7 +971,7 @@ export default function Dashboard({
                                 {daily_report.orders.length} pesanan
                             </span>
                         </div>
-                        <div className="w-full overflow-x-auto">
+                        <FxTableWrap className="w-full">
                             <table className="w-full min-w-[480px] text-xs sm:min-w-full sm:text-sm">
                                 <thead>
                                     <tr className="bg-secondary text-left text-[11px] text-muted-foreground sm:text-xs">
@@ -1074,7 +1075,7 @@ export default function Dashboard({
                                     )}
                                 </tbody>
                             </table>
-                        </div>
+                        </FxTableWrap>
                     </FxCard>
 
                     {daily_report.purchases.items.length > 0 ? (
@@ -1084,7 +1085,7 @@ export default function Dashboard({
                                     Pembelian {daily_report.date}
                                 </h3>
                             </div>
-                            <div className="w-full overflow-x-auto">
+                            <FxTableWrap className="w-full">
                                 <table className="w-full min-w-[520px] text-xs sm:min-w-full sm:text-sm">
                                     <thead>
                                         <tr className="bg-secondary text-left text-[11px] text-muted-foreground sm:text-xs">
@@ -1135,7 +1136,7 @@ export default function Dashboard({
                                         )}
                                     </tbody>
                                 </table>
-                            </div>
+                            </FxTableWrap>
                         </FxCard>
                     ) : null}
                 </section>

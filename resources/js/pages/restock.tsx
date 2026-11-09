@@ -36,6 +36,7 @@ import {
     FxSelect,
     FxTextarea,
 } from '@/components/fx/fx-form';
+import { FxTableWrap } from '@/components/fx/fx-table-wrap';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
 import { formatRupiah } from '@/lib/format';
@@ -1049,7 +1050,7 @@ export default function Restock({
                                 {plan.items.length} bahan
                             </span>
                         </div>
-                        <div className="overflow-x-auto">
+                        <FxTableWrap>
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="bg-secondary text-left text-xs text-muted-foreground">
@@ -1120,7 +1121,7 @@ export default function Restock({
                                     })}
                                 </tbody>
                             </table>
-                        </div>
+                        </FxTableWrap>
 
                         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                             <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">

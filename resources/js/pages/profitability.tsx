@@ -28,6 +28,7 @@ import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
 import { FxField, FxInput, FxModal, FxSelect } from '@/components/fx/fx-form';
 import { IconCircle } from '@/components/fx/fx-icon';
+import { FxTableWrap } from '@/components/fx/fx-table-wrap';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
 import StatusBadge, { type MenuStatus } from '@/components/status-badge';
@@ -796,7 +797,10 @@ export default function Profitability({
                         </div>
 
                         {/* Interactive Table with Sticky Header & Sorting */}
-                        <div className="max-h-[500px] overflow-auto rounded-xl border border-border/70">
+                        <FxTableWrap
+                            className="rounded-xl border border-border/70"
+                            viewportClassName="max-h-[500px] overflow-y-auto"
+                        >
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="sticky top-0 z-10 bg-secondary/95 text-left text-xs text-muted-foreground shadow-xs backdrop-blur">
@@ -1045,7 +1049,7 @@ export default function Profitability({
                                     )}
                                 </tbody>
                             </table>
-                        </div>
+                        </FxTableWrap>
 
                         {sortedMenus.length > displayedMenus.length ? (
                             <p className="text-center text-xs text-muted-foreground">
@@ -1145,7 +1149,10 @@ export default function Profitability({
                             </FxSoft>
                         </div>
 
-                        <div className="max-h-[500px] overflow-auto rounded-xl border border-border/70">
+                        <FxTableWrap
+                            className="rounded-xl border border-border/70"
+                            viewportClassName="max-h-[500px] overflow-y-auto"
+                        >
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="sticky top-0 z-10 bg-secondary/95 text-left text-xs text-muted-foreground shadow-xs backdrop-blur">
@@ -1437,7 +1444,7 @@ export default function Profitability({
                                     )}
                                 </tbody>
                             </table>
-                        </div>
+                        </FxTableWrap>
                     </FxCard>
                 </Reveal>
 
@@ -1635,7 +1642,7 @@ function CostDriverModal({
                 ) : null}
 
                 {/* Items Table */}
-                <div className="overflow-x-auto rounded-xl border border-border/80">
+                <FxTableWrap className="rounded-xl border border-border/80">
                     <table className="w-full text-xs">
                         <thead>
                             <tr className="bg-secondary/70 text-left text-muted-foreground">
@@ -1745,7 +1752,7 @@ function CostDriverModal({
                             ) : null}
                         </tbody>
                     </table>
-                </div>
+                </FxTableWrap>
             </div>
         </FxModal>
     );
@@ -1873,7 +1880,7 @@ function SimulateModal({
                     Bahan ini belum dipakai di menu mana pun.
                 </p>
             ) : (
-                <div className="overflow-x-auto">
+                <FxTableWrap>
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="bg-secondary text-left text-xs text-muted-foreground">
@@ -1933,7 +1940,7 @@ function SimulateModal({
                             ))}
                         </tbody>
                     </table>
-                </div>
+                </FxTableWrap>
             )}
 
             <FxSoft className="p-4 text-xs text-muted-foreground">
