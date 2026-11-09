@@ -276,7 +276,7 @@ export default function Profitability({
             </Reveal>
 
             <Reveal delay={0.15}>
-                <FxCard className="overflow-hidden">
+                <FxCard className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="bg-secondary text-left text-xs text-muted-foreground">

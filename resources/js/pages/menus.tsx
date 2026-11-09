@@ -1170,9 +1170,9 @@ function BomModal({
                     return (
                         <div
                             key={index}
-                            className="grid grid-cols-12 items-end gap-2"
+                            className="grid grid-cols-[1fr_1fr_auto] items-end gap-2 sm:grid-cols-12"
                         >
-                            <div className="col-span-6">
+                            <div className="col-span-3 sm:col-span-6">
                                 <FxField label="Bahan">
                                     <FxSelect
                                         value={row.ingredient_id}
@@ -1193,7 +1193,7 @@ function BomModal({
                                     </FxSelect>
                                 </FxField>
                             </div>
-                            <div className="col-span-3">
+                            <div className="sm:col-span-3">
                                 <FxField label={`Qty (${unitShort[unit]})`}>
                                     <FxInput
                                         type="number"
@@ -1207,7 +1207,7 @@ function BomModal({
                                     />
                                 </FxField>
                             </div>
-                            <div className="col-span-2">
+                            <div className="sm:col-span-2">
                                 <FxField label="Waste %">
                                     <FxInput
                                         type="number"
@@ -1222,7 +1222,7 @@ function BomModal({
                                     />
                                 </FxField>
                             </div>
-                            <div className="col-span-1 flex justify-center pb-1">
+                            <div className="flex justify-center pb-1 sm:col-span-1">
                                 <button
                                     type="button"
                                     onClick={() => removeRow(index)}

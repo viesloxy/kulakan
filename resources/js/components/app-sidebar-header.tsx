@@ -1,5 +1,5 @@
-import { Bell } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { NotificationMenu } from '@/components/notification-menu';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
@@ -18,13 +18,7 @@ export function AppSidebarHeader({
 
             <div className="ml-auto flex items-center gap-2">
                 <ThemeToggle />
-                <button
-                    type="button"
-                    aria-label="Notifikasi"
-                    className="flex size-11 items-center justify-center fx-pill text-muted-foreground transition-colors hover:text-primary"
-                >
-                    <Bell className="size-[18px]" />
-                </button>
+                <NotificationMenu />
             </div>
         </header>
     );
