@@ -70,10 +70,11 @@ class HandleInertiaRequests extends Middleware
 
         return [
             'count' => $active->count(),
-            'items' => $active->take(4)
-                ->map(fn (Alert $alert) => AlertPresenter::present($alert))
-                ->values()
-                ->all(),
+            'items' => array_values(
+                $active->take(4)
+                    ->map(fn (Alert $alert): array => AlertPresenter::present($alert))
+                    ->all()
+            ),
         ];
     }
 }
