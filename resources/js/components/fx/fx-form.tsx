@@ -162,12 +162,12 @@ export function FxModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 className={cn(
-                    'grid-cols-[minmax(0,1fr)] rounded-[28px] border-0 bg-card p-6 shadow-[0_24px_60px_rgba(22,22,21,0.12)]',
+                    'flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-[28px] border-0 bg-card p-6 shadow-[0_24px_60px_rgba(22,22,21,0.12)]',
                     wide ? 'sm:max-w-2xl' : 'sm:max-w-md',
                     className,
                 )}
             >
-                <DialogHeader className="min-w-0 text-left">
+                <DialogHeader className="min-w-0 shrink-0 text-left">
                     <DialogTitle className="text-lg font-semibold tracking-tight">
                         {title}
                     </DialogTitle>
@@ -178,10 +178,12 @@ export function FxModal({
                     ) : null}
                 </DialogHeader>
 
-                <div className="flex min-w-0 flex-col gap-4">{children}</div>
+                <div className="-mr-2 flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain pr-2">
+                    {children}
+                </div>
 
                 {footer ? (
-                    <DialogFooter className="gap-2 sm:gap-2">
+                    <DialogFooter className="shrink-0 gap-2 border-t border-border/50 pt-4 sm:gap-2">
                         {footer}
                     </DialogFooter>
                 ) : null}

@@ -133,7 +133,7 @@ export default function Dashboard({
         {
             label: 'Alert aktif',
             value: String(active_alerts_count),
-            caption: 'perlu tindakan',
+            caption: active_alerts_count > 0 ? 'perlu tindakan' : 'semua aman',
             icon: TriangleAlert,
             tone: 'danger' as const,
             href: '/alert',
@@ -141,7 +141,7 @@ export default function Dashboard({
         {
             label: 'Pesanan',
             value: String(orders_today_count),
-            caption: formatRupiah(sales_today),
+            caption: 'hari ini',
             icon: Receipt,
             tone: 'soft' as const,
             href: '/pesanan',
@@ -257,30 +257,22 @@ export default function Dashboard({
             headTitle="Dashboard"
             description="Ringkasan kas, stok, dan margin dapur hari ini."
         >
-            {/* 1. Akses Cepat (Quick Actions Bar) */}
+            {/* 1. Akses Cepat (Quick Actions) */}
             <Reveal delay={0.03} className="w-full min-w-0">
                 <FxCard className="w-full min-w-0 p-4 sm:p-5">
-                    <div className="mb-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <span className="flex size-7 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                                <Zap className="size-4" />
-                            </span>
-                            <div>
-                                <h2 className="text-xs font-semibold text-foreground sm:text-sm">
-                                    Akses Cepat
-                                </h2>
-                                <p className="text-[10px] text-muted-foreground sm:text-[11px]">
-                                    Pintasan navigasi langsung ke modul
-                                    operasional utama
-                                </p>
-                            </div>
+                    <div className="mb-3.5 flex items-center gap-2.5">
+                        <IconCircle icon={Zap} tone="coral" size="sm" />
+                        <div>
+                            <h2 className="text-sm font-semibold">
+                                Akses Cepat
+                            </h2>
+                            <p className="text-[11px] text-muted-foreground sm:text-xs">
+                                Pintasan ke modul operasional utama
+                            </p>
                         </div>
-                        <span className="hidden text-[11px] font-medium text-muted-foreground sm:inline">
-                            Pilih modul untuk langsung bekerja
-                        </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-2.5 lg:grid-cols-6">
+                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
                         {quickActions.map((action) => {
                             const Icon = action.icon;
                             return (
@@ -288,37 +280,39 @@ export default function Dashboard({
                                     key={action.title}
                                     type="button"
                                     onClick={() => router.visit(action.href)}
-                                    className="group relative flex flex-col justify-between rounded-2xl border border-border/50 bg-secondary/40 p-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none sm:p-3"
+                                    className="group flex flex-col gap-2.5 fx-soft p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:bg-hover-soft hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                                 >
-                                    <div className="flex items-start justify-between gap-1.5">
-                                        <div className="flex size-7 items-center justify-center rounded-xl bg-card text-foreground shadow-xs transition-colors group-hover:bg-primary group-hover:text-primary-foreground sm:size-8">
-                                            <Icon className="size-3.5 sm:size-4" />
-                                        </div>
-                                        <ArrowUpRight className="size-3.5 text-muted-foreground opacity-30 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary group-hover:opacity-100" />
-                                    </div>
-                                    <div className="mt-2.5 sm:mt-3">
-                                        <p className="text-xs leading-tight font-bold text-foreground transition-colors group-hover:text-primary">
-                                            {action.title}
-                                        </p>
-                                        <p className="mt-0.5 truncate text-[10px] text-muted-foreground sm:text-[11px]">
-                                            {action.description}
-                                        </p>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <IconCircle
+                                            icon={Icon}
+                                            tone="soft"
+                                            size="sm"
+                                            className="shadow-xs transition-colors group-hover:text-primary"
+                                        />
                                         {action.badge ? (
                                             <span
                                                 className={cn(
-                                                    'mt-1.5 inline-block max-w-full truncate rounded-full px-2 py-0.5 text-[9px] font-semibold sm:mt-2 sm:text-[10px]',
+                                                    'max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-semibold',
                                                     action.badgeTone ===
                                                         'danger'
                                                         ? 'bg-danger-soft text-danger'
                                                         : action.badgeTone ===
                                                             'success'
                                                           ? 'bg-success-soft text-success'
-                                                          : 'border border-border/50 bg-card text-muted-foreground',
+                                                          : 'bg-card text-muted-foreground',
                                                 )}
                                             >
                                                 {action.badge}
                                             </span>
                                         ) : null}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
+                                            {action.title}
+                                        </p>
+                                        <p className="truncate text-[11px] text-muted-foreground sm:text-xs">
+                                            {action.description}
+                                        </p>
                                     </div>
                                 </button>
                             );
@@ -559,62 +553,38 @@ export default function Dashboard({
             {/* Top 3 Produk Paling Profitable */}
             <Reveal delay={0.08} className="w-full min-w-0">
                 <FxCard className="w-full min-w-0 p-4 sm:p-5">
-                    <div className="flex flex-col gap-2 border-b border-border/50 pb-3.5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-2.5 border-b border-border/50 pb-3.5 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2.5">
-                            <span className="flex size-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                <TrendingUp className="size-4" />
-                            </span>
+                            <IconCircle
+                                icon={TrendingUp}
+                                tone="success"
+                                size="sm"
+                            />
                             <div>
-                                <h2 className="flex items-center gap-2 text-sm font-semibold sm:text-base">
+                                <h2 className="text-sm font-semibold sm:text-base">
                                     3 Produk Paling Profitable
-                                    <span className="rounded-full bg-success-soft px-2 py-0.5 text-[10px] font-semibold text-success">
-                                        Margin Tertinggi
-                                    </span>
                                 </h2>
                                 <p className="text-[11px] text-muted-foreground sm:text-xs">
-                                    Menu penyumbang rasio margin keuntungan
-                                    terbesar untuk kas usaha
+                                    Menu dengan rasio margin keuntungan terbesar
                                 </p>
                             </div>
                         </div>
-                        <button
-                            type="button"
+                        <FxButton
+                            variant="soft"
+                            size="sm"
+                            className="self-start sm:self-auto"
                             onClick={() => router.visit('/profitabilitas')}
-                            className="group inline-flex items-center gap-1.5 self-start rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-primary hover:text-white sm:self-auto"
                         >
-                            Analisis Lengkap
-                            <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                        </button>
+                            Analisis lengkap
+                            <ArrowUpRight className="size-3.5" />
+                        </FxButton>
                     </div>
 
                     <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
                         {top_profitable_menus.length > 0 ? (
                             top_profitable_menus.map((item, idx) => {
-                                const rankColors = [
-                                    {
-                                        badge: 'bg-amber-500 text-white',
-                                        border: 'border-amber-500/30 hover:border-amber-500/60',
-                                        bg: 'bg-amber-500/5',
-                                        icon: Crown,
-                                        label: 'Juara #1 Profit',
-                                    },
-                                    {
-                                        badge: 'bg-slate-400 text-white',
-                                        border: 'border-slate-400/30 hover:border-slate-400/60',
-                                        bg: 'bg-slate-400/5',
-                                        icon: Medal,
-                                        label: 'Peringkat #2',
-                                    },
-                                    {
-                                        badge: 'bg-amber-700 text-white',
-                                        border: 'border-amber-700/30 hover:border-amber-700/60',
-                                        bg: 'bg-amber-700/5',
-                                        icon: Award,
-                                        label: 'Peringkat #3',
-                                    },
-                                ];
-                                const rank = rankColors[idx] ?? rankColors[2];
-                                const RankIcon = rank.icon;
+                                const rankIcons = [Crown, Medal, Award];
+                                const RankIcon = rankIcons[idx] ?? Award;
 
                                 return (
                                     <div
@@ -628,79 +598,69 @@ export default function Dashboard({
                                             e.key === 'Enter' &&
                                             router.visit('/profitabilitas')
                                         }
-                                        className={cn(
-                                            'group relative flex cursor-pointer flex-col justify-between rounded-2xl border p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
-                                            rank.border,
-                                            rank.bg,
-                                        )}
+                                        className="group flex h-full cursor-pointer flex-col gap-3 fx-soft p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:bg-hover-soft hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                                     >
-                                        <div>
-                                            <div className="flex items-center justify-between gap-2">
-                                                <span
-                                                    className={cn(
-                                                        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-xs',
-                                                        rank.badge,
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-xs">
+                                                <RankIcon className="size-3.5 text-primary" />
+                                                Peringkat {idx + 1}
+                                            </span>
+                                            <span className="rounded-full bg-success-soft px-2.5 py-1 text-xs font-bold text-success tabular-nums">
+                                                {formatPercent(item.margin_pct)}
+                                            </span>
+                                        </div>
+
+                                        <div className="min-w-0">
+                                            <p className="text-[11px] text-muted-foreground">
+                                                {item.category}
+                                            </p>
+                                            <h3 className="truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
+                                                {item.name}
+                                            </h3>
+                                        </div>
+
+                                        <div className="space-y-1.5 rounded-xl bg-card p-2.5 text-xs">
+                                            <div className="flex items-center justify-between text-muted-foreground">
+                                                <span>Harga jual</span>
+                                                <span className="font-semibold text-foreground tabular-nums">
+                                                    {formatRupiah(
+                                                        item.selling_price,
                                                     )}
-                                                >
-                                                    <RankIcon className="size-3" />
-                                                    {rank.label}
                                                 </span>
-                                                <span className="rounded-full bg-success-soft px-2 py-0.5 text-xs font-bold text-success tabular-nums">
+                                            </div>
+                                            <div className="flex items-center justify-between text-muted-foreground">
+                                                <span>HPP modal</span>
+                                                <span className="font-medium tabular-nums">
+                                                    {formatRupiah(
+                                                        item.current_hpp,
+                                                    )}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between border-t border-border/40 pt-1.5">
+                                                <span className="font-medium text-success">
+                                                    Untung per porsi
+                                                </span>
+                                                <span className="font-bold text-success tabular-nums">
                                                     +
-                                                    {formatPercent(
-                                                        item.margin_pct,
+                                                    {formatRupiah(
+                                                        item.margin_rupiah,
                                                     )}
                                                 </span>
                                             </div>
-
-                                            <div className="mt-3">
-                                                <p className="text-[11px] font-medium text-muted-foreground">
-                                                    {item.category}
-                                                </p>
-                                                <h3 className="line-clamp-1 text-sm font-bold text-foreground transition-colors group-hover:text-primary">
-                                                    {item.name}
-                                                </h3>
-                                            </div>
-
-                                            <div className="mt-3 space-y-1.5 rounded-xl border border-border/40 bg-card/85 p-2.5 text-xs">
-                                                <div className="flex items-center justify-between text-muted-foreground">
-                                                    <span>Harga Jual</span>
-                                                    <span className="font-semibold text-foreground tabular-nums">
-                                                        {formatRupiah(
-                                                            item.selling_price,
-                                                        )}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-muted-foreground">
-                                                    <span>HPP Modal</span>
-                                                    <span className="font-medium tabular-nums">
-                                                        {formatRupiah(
-                                                            item.current_hpp,
-                                                        )}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center justify-between border-t border-border/40 pt-1.5">
-                                                    <span className="font-medium text-success">
-                                                        Untung per Porsi
-                                                    </span>
-                                                    <span className="font-bold text-success tabular-nums">
-                                                        +
-                                                        {formatRupiah(
-                                                            item.margin_rupiah,
-                                                        )}
-                                                    </span>
-                                                </div>
-                                            </div>
                                         </div>
 
-                                        <div className="mt-3 flex items-center justify-between pt-1 text-[11px] text-muted-foreground">
-                                            <span className="font-medium text-primary group-hover:underline">
-                                                Lihat analisis margin &rarr;
-                                            </span>
-                                            <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                                                Profitable
-                                            </span>
-                                        </div>
+                                        <FxButton
+                                            variant="coral"
+                                            size="sm"
+                                            className="mt-auto w-full"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                router.visit('/profitabilitas');
+                                            }}
+                                        >
+                                            Lihat analisis margin
+                                            <ArrowUpRight className="size-3.5" />
+                                        </FxButton>
                                     </div>
                                 );
                             })
