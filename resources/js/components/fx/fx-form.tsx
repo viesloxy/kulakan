@@ -162,7 +162,7 @@ export function FxModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 className={cn(
-                    'flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-[28px] border-0 bg-card p-6 shadow-[0_24px_60px_rgba(22,22,21,0.12)]',
+                    'flex max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-[28px] border-0 bg-card p-6 shadow-[0_24px_60px_rgba(22,22,21,0.12)] supports-[height:100dvh]:max-h-[calc(100dvh-2rem)]',
                     wide ? 'sm:max-w-2xl' : 'sm:max-w-md',
                     className,
                 )}

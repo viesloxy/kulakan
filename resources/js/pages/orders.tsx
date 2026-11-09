@@ -26,6 +26,7 @@ import { FxButton } from '@/components/fx/fx-button';
 import { FxCard } from '@/components/fx/fx-card';
 import { FxModal } from '@/components/fx/fx-form';
 import { IconCircle } from '@/components/fx/fx-icon';
+import { FxTableWrap } from '@/components/fx/fx-table-wrap';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
 import { formatPercent, formatRupiah } from '@/lib/format';
@@ -826,7 +827,7 @@ export default function Orders({ orders, summary, filters, is_owner }: Props) {
                     ) : (
                         <>
                             {/* Tampilan Desktop & Tablet: Tabel Responsif */}
-                            <div className="w-full overflow-x-auto">
+                            <FxTableWrap className="w-full">
                                 <table className="w-full min-w-[760px] text-xs sm:min-w-full sm:text-sm">
                                     <thead>
                                         <tr className="bg-secondary text-left text-[11px] text-muted-foreground sm:text-xs">
@@ -1059,7 +1060,7 @@ export default function Orders({ orders, summary, filters, is_owner }: Props) {
                                         })}
                                     </tbody>
                                 </table>
-                            </div>
+                            </FxTableWrap>
 
                             {/* Pagination Controls */}
                             {orders.last_page > 1 ? (

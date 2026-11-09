@@ -222,6 +222,19 @@
     box-shadow: 0 2px 10px rgba(22, 22, 21, 0.03);
 }
 
+/*
+ * Horizontal scroll frame for wide tables (see components/fx/fx-table-wrap.tsx).
+ * Keeps momentum scrolling on touch and stops a horizontal swipe from chaining
+ * to the page behind it.
+ */
+@utility fx-scroll-x {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(22, 22, 21, 0.28) transparent;
+}
+
 @layer base {
     * {
         @apply border-border;
@@ -229,5 +242,21 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+
+    /* Make the horizontal scrollbar on data tables discoverable (mostly desktop;
+       touch devices hide it, where the edge shadow does the same job). */
+    .fx-scroll-x::-webkit-scrollbar {
+        height: 8px;
+        width: 8px;
+    }
+
+    .fx-scroll-x::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .fx-scroll-x::-webkit-scrollbar-thumb {
+        border-radius: 9999px;
+        background-color: rgba(22, 22, 21, 0.25);
     }
 }
