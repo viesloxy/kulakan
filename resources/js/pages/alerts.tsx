@@ -150,30 +150,32 @@ export default function Alerts({ alerts, counts }: Props) {
                                 return (
                                     <FxSoft
                                         key={a.id}
-                                        className="flex flex-wrap items-center gap-3 p-4"
+                                        className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
                                     >
-                                        <IconCircle
-                                            icon={cfg.icon}
-                                            tone={cfg.tone}
-                                        />
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <p className="font-semibold">
-                                                    {a.title}
+                                        <div className="flex min-w-0 items-start gap-3 sm:flex-1 sm:items-center">
+                                            <IconCircle
+                                                icon={cfg.icon}
+                                                tone={cfg.tone}
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <p className="font-semibold">
+                                                        {a.title}
+                                                    </p>
+                                                    <span className="rounded-full bg-card px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                        {cfg.label}
+                                                    </span>
+                                                </div>
+                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                    {a.description}
                                                 </p>
-                                                <span className="rounded-full bg-card px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                                                    {cfg.label}
-                                                </span>
+                                                <p className="mt-1 text-[11px] text-muted-foreground">
+                                                    AL-{a.id} ·{' '}
+                                                    {timeLabel(a.created_at)}
+                                                </p>
                                             </div>
-                                            <p className="mt-1 text-sm text-muted-foreground">
-                                                {a.description}
-                                            </p>
-                                            <p className="mt-1 text-[11px] text-muted-foreground">
-                                                AL-{a.id} ·{' '}
-                                                {timeLabel(a.created_at)}
-                                            </p>
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
                                             <FxButton
                                                 variant="soft"
                                                 onClick={() =>
