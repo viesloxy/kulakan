@@ -58,6 +58,21 @@ class OrderController extends Controller
         ]);
     }
 
+    public function checkout(): Response
+    {
+        $staticQris = $this->qris->getStoreDefaultStaticQris();
+        $merchantInfo = $this->qris->extractMerchant($staticQris);
+
+        return Inertia::render('pos-checkout', [
+            'merchant_qris' => [
+                'merchant_name' => $merchantInfo['merchant_name'],
+                'merchant_city' => $merchantInfo['merchant_city'],
+                'nmid' => $merchantInfo['nmid'],
+                'static_payload' => $staticQris,
+            ],
+        ]);
+    }
+
     public function qrisPayload(Request $request): JsonResponse
     {
         $amount = (float) $request->validate([
@@ -76,6 +91,7 @@ class OrderController extends Controller
             'qris_payload' => $dynamicPayload,
             'merchant_name' => $merchantInfo['merchant_name'],
             'merchant_city' => $merchantInfo['merchant_city'],
+            'nmid' => $merchantInfo['nmid'],
             'amount' => $amount,
             'invoice_id' => $merchantInfo['invoice_id'],
         ]);
@@ -289,7 +305,8 @@ class OrderController extends Controller
             'customer_name' => $request->string('customer_name')->trim()->toString(),
         ];
 
-        return back()
+        return redirect()
+            ->route('pos')
             ->with('success', 'Pesanan '.$order->order_number.' tersimpan. Stok bahan terpotong otomatis.')
             ->with('created_order', $createdOrder);
     }

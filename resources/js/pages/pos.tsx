@@ -1,33 +1,31 @@
 import { router } from '@inertiajs/react';
 import {
     ArrowRight,
-    Check,
     ChevronLeft,
     ChevronRight,
     Coffee,
     CupSoda,
-    Loader2,
     Minus,
     Plus,
-    Printer,
-    QrCode,
     ReceiptText,
     Sandwich,
     Search,
     Trash2,
-    Wallet,
     X,
 } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
-import { FxInput, FxModal } from '@/components/fx/fx-form';
 import { IconCircle } from '@/components/fx/fx-icon';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
 import { formatRupiah } from '@/lib/format';
+import {
+    POS_CART_STORAGE_KEY,
+    type PosCartItem,
+    type PosStoredSession,
+} from '@/pages/pos-checkout';
 
 type Category = 'Kopi' | 'Non-Kopi' | 'Makanan';
 type OrderType = 'dine-in' | 'takeaway' | 'delivery';
@@ -41,59 +39,16 @@ type PosMenu = {
     portions_available: number;
 };
 
-type CompletedOrder = {
-    id: string;
-    db_id: number;
-    total_amount: number;
-    payment_method: 'cash' | 'qris';
-    cash_received: number;
-    change: number;
-    items_count: number;
-    created_at: string;
-    customer_name: string;
-};
-
 type Props = {
     menus: PosMenu[];
     active_queue_count?: number;
     merchant_qris?: {
         merchant_name: string;
         merchant_city: string;
+        nmid?: string;
         static_payload: string;
     };
 };
-
-function formatNumberWithDots(val: number | string): string {
-    const digits = String(val).replace(/\D/g, '');
-    if (!digits) return '';
-    return Number(digits).toLocaleString('id-ID');
-}
-
-function parseDigits(str: string): number {
-    const digits = str.replace(/\D/g, '');
-    return digits ? parseInt(digits, 10) : 0;
-}
-
-function getQuickCashOptions(total: number): number[] {
-    if (total <= 0) return [];
-    const options = new Set<number>();
-    options.add(total);
-
-    const next10k = Math.ceil(total / 10000) * 10000;
-    if (next10k > total) {
-        options.add(next10k);
-    }
-
-    const commonBills = [10000, 20000, 50000, 100000, 200000, 300000, 500000];
-    for (const bill of commonBills) {
-        if (bill > total) {
-            options.add(bill);
-        }
-        if (options.size >= 5) break;
-    }
-
-    return Array.from(options).sort((a, b) => a - b).slice(0, 5);
-}
 
 const categoryIcon = { Kopi: Coffee, 'Non-Kopi': CupSoda, Makanan: Sandwich };
 const categories: Category[] = ['Kopi', 'Non-Kopi', 'Makanan'];
@@ -101,38 +56,37 @@ const categories: Category[] = ['Kopi', 'Non-Kopi', 'Makanan'];
 export default function Pos({
     menus,
     active_queue_count = 0,
-    merchant_qris,
 }: Props) {
     const [cart, setCart] = useState<Record<number, number>>({});
     const [payment, setPayment] = useState<'cash' | 'qris'>('cash');
     const [orderType, setOrderType] = useState<OrderType>('dine-in');
     const [customerName, setCustomerName] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState<'Semua' | Category>(
-        'Semua',
-    );
+    const [categoryFilter, setCategoryFilter] = useState<'Semua' | Category>('Semua');
     const [inStockOnly, setInStockOnly] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
 
-    // Modal Konfirmasi Pembayaran & QRIS Dinamis
-    const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
-    const [checkoutPaymentMethod, setCheckoutPaymentMethod] = useState<'cash' | 'qris'>('cash');
-    const [cashReceivedInput, setCashReceivedInput] = useState('');
-    const [qrisPayloadData, setQrisPayloadData] = useState<{
-        qris_payload: string;
-        merchant_name: string;
-        merchant_city: string;
-        amount: number;
-        invoice_id: string | null;
-    } | null>(null);
-    const [isLoadingQris, setIsLoadingQris] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // Modal Sukses Setelah Transaksi
-    const [successModalOpen, setSuccessModalOpen] = useState(false);
-    const [completedOrder, setCompletedOrder] = useState<CompletedOrder | null>(null);
-
-    // Idempotency key (FR-016): dibuat saat submit, dipakai ulang bila retry, dibersihkan saat sukses.
-    const idempotencyKey = useRef<string | null>(null);
+    // Pulihkan keranjang dari sessionStorage saat komponen dimuat (misal setelah klik Kembali dari Checkout)
+    useEffect(() => {
+        try {
+            const raw = sessionStorage.getItem(POS_CART_STORAGE_KEY);
+            if (raw) {
+                const parsed: PosStoredSession = JSON.parse(raw);
+                if (parsed && typeof parsed === 'object') {
+                    if (parsed.cart) setCart(parsed.cart);
+                    if (parsed.orderType) setOrderType(parsed.orderType);
+                    if (typeof parsed.customerName === 'string') {
+                        setCustomerName(parsed.customerName);
+                    }
+                    if (parsed.paymentMethod) setPayment(parsed.paymentMethod);
+                }
+            }
+        } catch {
+            // Abaikan kesalahan parsing
+        } finally {
+            setIsLoaded(true);
+        }
+    }, []);
 
     const filteredMenus = useMemo(() => {
         return menus.filter((m) => {
@@ -190,6 +144,39 @@ export default function Pos({
         [items],
     );
 
+    // Sinkronisasi perubahan keranjang ke sessionStorage
+    useEffect(() => {
+        if (!isLoaded) return;
+        try {
+            if (Object.keys(cart).length === 0) {
+                sessionStorage.removeItem(POS_CART_STORAGE_KEY);
+            } else {
+                const storedItems: PosCartItem[] = items.map(({ menu, qty }) => ({
+                    menu_id: menu.id,
+                    name: menu.name,
+                    price: Number(menu.selling_price),
+                    qty,
+                    image_url: menu.image_url,
+                    category: menu.category,
+                }));
+
+                const payload: PosStoredSession = {
+                    cart,
+                    items: storedItems,
+                    orderType,
+                    customerName,
+                    paymentMethod: payment,
+                };
+                sessionStorage.setItem(
+                    POS_CART_STORAGE_KEY,
+                    JSON.stringify(payload),
+                );
+            }
+        } catch {
+            // Abaikan kesalahan storage
+        }
+    }, [cart, items, orderType, customerName, payment, isLoaded]);
+
     function add(menu: PosMenu) {
         if (menu.portions_available <= 0) {
             toast.warning(`Stok bahan untuk ${menu.name} habis.`);
@@ -230,133 +217,46 @@ export default function Pos({
     function clearCart() {
         setCart({});
         setCustomerName('');
-    }
-
-    const parsedCashReceived = parseDigits(cashReceivedInput);
-    const cashChange = parsedCashReceived - total;
-    const isCashSufficient = parsedCashReceived >= total;
-    const quickCashOptions = useMemo(() => getQuickCashOptions(total), [total]);
-
-    async function fetchQrisPayload(amountToPay: number) {
-        setIsLoadingQris(true);
         try {
-            const res = await fetch(`/pos/qris-payload?amount=${amountToPay}`, {
-                headers: {
-                    Accept: 'application/json',
-                },
-            });
-            if (!res.ok) {
-                throw new Error('Gagal membuat payload QRIS dinamis.');
-            }
-            const data = await res.json();
-            setQrisPayloadData(data);
-        } catch (err: unknown) {
-            const msg =
-                err instanceof Error ? err.message : 'Gagal memuat QRIS.';
-            toast.error(msg);
-        } finally {
-            setIsLoadingQris(false);
+            sessionStorage.removeItem(POS_CART_STORAGE_KEY);
+        } catch {
+            // Abaikan kesalahan storage
         }
     }
 
-    function openCheckoutModal() {
+    function handleOpenCheckout() {
         if (items.length === 0) {
             toast.error('Belum ada item di pesanan.');
             return;
         }
 
-        setCheckoutPaymentMethod(payment);
+        const storedItems: PosCartItem[] = items.map(({ menu, qty }) => ({
+            menu_id: menu.id,
+            name: menu.name,
+            price: Number(menu.selling_price),
+            qty,
+            image_url: menu.image_url,
+            category: menu.category,
+        }));
 
-        if (payment === 'cash') {
-            setCashReceivedInput(formatNumberWithDots(total));
-        } else {
-            fetchQrisPayload(total);
+        const payload: PosStoredSession = {
+            cart,
+            items: storedItems,
+            orderType,
+            customerName,
+            paymentMethod: payment,
+        };
+
+        try {
+            sessionStorage.setItem(
+                POS_CART_STORAGE_KEY,
+                JSON.stringify(payload),
+            );
+        } catch {
+            // Abaikan kesalahan storage
         }
 
-        setCheckoutModalOpen(true);
-    }
-
-    function switchPaymentMethod(method: 'cash' | 'qris') {
-        setCheckoutPaymentMethod(method);
-        setPayment(method);
-        if (method === 'cash') {
-            if (!cashReceivedInput || parseDigits(cashReceivedInput) === 0) {
-                setCashReceivedInput(formatNumberWithDots(total));
-            }
-        } else if (method === 'qris') {
-            if (!qrisPayloadData || qrisPayloadData.amount !== total) {
-                fetchQrisPayload(total);
-            }
-        }
-    }
-
-    function executeOrder(method: 'cash' | 'qris') {
-        if (items.length === 0) return;
-
-        const cashReceived = method === 'cash' ? parsedCashReceived : total;
-        if (method === 'cash' && cashReceived < total) {
-            toast.error('Uang tunai yang diterima kurang dari total pembayaran.');
-            return;
-        }
-
-        if (idempotencyKey.current === null) {
-            idempotencyKey.current = (
-                globalThis.crypto?.randomUUID?.() ??
-                `ord-${Date.now()}-${Math.random().toString(36).slice(2)}`
-            ).slice(0, 64);
-        }
-
-        setIsSubmitting(true);
-
-        router.post(
-            '/pos',
-            {
-                lines: items.map(({ menu, qty }) => ({
-                    menu_id: menu.id,
-                    quantity: qty,
-                })),
-                payment_method: method,
-                cash_received: method === 'cash' ? cashReceived : null,
-                customer_name: customerName.trim() || null,
-                idempotency_key: idempotencyKey.current,
-            },
-            {
-                preserveScroll: true,
-                onSuccess: (page) => {
-                    setIsSubmitting(false);
-                    idempotencyKey.current = null;
-
-                    const flashOrder = (page.props as { flash?: { created_order?: CompletedOrder } })?.flash?.created_order;
-                    const orderData: CompletedOrder = flashOrder ?? {
-                        id: 'ORD-' + Date.now(),
-                        db_id: 0,
-                        total_amount: total,
-                        payment_method: method,
-                        cash_received: cashReceived,
-                        change: Math.max(0, cashReceived - total),
-                        items_count: totalItemsCount,
-                        created_at: new Date().toLocaleTimeString('id-ID', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                        }),
-                        customer_name: customerName.trim(),
-                    };
-
-                    setCompletedOrder(orderData);
-                    setCheckoutModalOpen(false);
-                    setSuccessModalOpen(true);
-                    setCart({});
-                    setCustomerName('');
-                    toast.success(`Pesanan ${orderData.id} berhasil disimpan!`);
-                },
-                onError: (errors) => {
-                    setIsSubmitting(false);
-                    toast.error(
-                        Object.values(errors)[0] ?? 'Gagal menyimpan pesanan.',
-                    );
-                },
-            },
-        );
+        router.visit('/pos/checkout');
     }
 
     return (
@@ -382,7 +282,7 @@ export default function Pos({
             }
         >
             <div className="grid items-start gap-5 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px]">
-                {/* Kolom Kiri: Katalog Produk & Filter (Referensi Tave POS Opsi A) */}
+                {/* Kolom Kiri: Katalog Produk & Filter */}
                 <div className="flex flex-col gap-4">
                     <Reveal delay={0.05}>
                         {/* Header Toolbar: Kategori Pills + Search & Filter Ketersediaan */}
@@ -455,82 +355,55 @@ export default function Pos({
                     {/* Grid Kartu Produk */}
                     <Reveal delay={0.1}>
                         {filteredMenus.length === 0 ? (
-                            <FxSoft className="flex flex-col items-center justify-center gap-2 rounded-3xl p-12 text-center text-muted-foreground">
-                                <Search className="size-8 text-muted-foreground/40" />
-                                <p className="text-sm font-semibold text-foreground">
-                                    Tidak ada menu yang sesuai
+                            <div className="flex flex-col items-center justify-center gap-2 rounded-3xl bg-secondary/30 p-12 text-center text-muted-foreground">
+                                <p className="text-sm font-medium">
+                                    Menu tidak ditemukan
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                     Coba ubah kata kunci pencarian atau ganti
                                     kategori filter.
                                 </p>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setSearchQuery('');
-                                        setCategoryFilter('Semua');
-                                        setInStockOnly(false);
-                                    }}
-                                    className="mt-2 text-xs font-semibold text-primary hover:underline"
-                                >
-                                    Reset semua filter
-                                </button>
-                            </FxSoft>
+                            </div>
                         ) : (
-                            <div>
-                                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <div className="flex flex-col gap-5">
+                                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-3">
                                     {paginatedMenus.map((m) => {
-                                        const Icon = categoryIcon[m.category];
+                                        const inCartQty = cart[m.id] ?? 0;
                                         const isOutOfStock =
                                             m.portions_available <= 0;
-                                        const isLowStock =
-                                            m.portions_available > 0 &&
-                                            m.portions_available <= 3;
-                                        const inCartQty = cart[m.id] ?? 0;
+                                        const Icon = categoryIcon[m.category];
 
                                         return (
                                             <FxCard
                                                 key={m.id}
-                                                className={`group relative flex flex-col justify-between overflow-hidden p-4 transition-all duration-200 ${
-                                                    inCartQty > 0
-                                                        ? 'shadow-xs ring-2 ring-primary/25'
-                                                        : ''
-                                                } ${
+                                                className={`group flex flex-col justify-between p-3.5 transition-all duration-200 ${
                                                     isOutOfStock
-                                                        ? 'opacity-60 grayscale-[30%]'
-                                                        : 'hover:-translate-y-0.5 hover:shadow-md'
+                                                        ? 'opacity-50'
+                                                        : 'hover:shadow-md'
                                                 }`}
                                             >
-                                                {/* Top Bar Kartu: Kategori & Ketersediaan Stok */}
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                {/* Bagian Atas: Kategori Badge & Ketersediaan Porsi */}
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <span className="rounded-full bg-secondary/80 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                                                         {m.category}
                                                     </span>
                                                     <span
-                                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                                                        className={`text-[11px] font-semibold ${
                                                             isOutOfStock
-                                                                ? 'bg-danger-soft text-danger'
-                                                                : isLowStock
-                                                                  ? 'bg-warning-soft text-warning-ink'
-                                                                  : 'bg-success-soft text-success'
+                                                                ? 'text-danger'
+                                                                : m.portions_available <=
+                                                                    3
+                                                                  ? 'text-amber-500'
+                                                                  : 'text-muted-foreground'
                                                         }`}
                                                     >
-                                                        <span
-                                                            className={`size-1.5 rounded-full ${
-                                                                isOutOfStock
-                                                                    ? 'bg-danger'
-                                                                    : isLowStock
-                                                                      ? 'bg-warning'
-                                                                      : 'bg-success'
-                                                            }`}
-                                                        />
                                                         {isOutOfStock
                                                             ? 'Habis'
-                                                            : `Sisa ${m.portions_available}`}
+                                                            : `${m.portions_available} porsi`}
                                                     </span>
                                                 </div>
 
-                                                {/* Foto Produk Besar (Gaya Opsi A) */}
+                                                {/* Foto Menu Produk */}
                                                 <div
                                                     onClick={() =>
                                                         !isOutOfStock && add(m)
@@ -572,50 +445,45 @@ export default function Pos({
                                                         </p>
                                                     </div>
 
-                                                    {/* Kontrol Kuantitas: Stepper (- / qty / +) jika sudah dipilih, atau tombol (+) jika belum */}
+                                                    {/* Stepper Kuantitas */}
                                                     {inCartQty > 0 ? (
-                                                        <div
-                                                            onClick={(e) =>
-                                                                e.stopPropagation()
-                                                            }
-                                                            className="flex items-center gap-1 rounded-xl bg-primary/10 p-1 text-primary ring-1 ring-primary/25"
-                                                        >
+                                                        <div className="flex items-center gap-1 rounded-full bg-secondary p-1">
                                                             <button
                                                                 type="button"
-                                                                onClick={() =>
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
                                                                     setQty(
                                                                         m.id,
                                                                         inCartQty -
                                                                             1,
-                                                                    )
-                                                                }
-                                                                className="flex size-7 items-center justify-center rounded-lg bg-card text-foreground transition-all duration-150 hover:bg-danger-soft hover:text-danger active:scale-90"
-                                                                aria-label={`Kurangi ${m.name}`}
+                                                                    );
+                                                                }}
+                                                                className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
+                                                                aria-label="Kurangi"
                                                             >
-                                                                <Minus className="size-3.5" />
+                                                                <Minus className="size-3" />
                                                             </button>
-                                                            <span className="w-5 text-center text-xs font-bold text-primary tabular-nums">
+                                                            <span className="w-5 text-center text-xs font-bold tabular-nums">
                                                                 {inCartQty}
                                                             </span>
                                                             <button
                                                                 type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setQty(
+                                                                        m.id,
+                                                                        inCartQty +
+                                                                            1,
+                                                                    );
+                                                                }}
                                                                 disabled={
-                                                                    isOutOfStock ||
-                                                                    inCartQty >=
-                                                                        m.portions_available
-                                                                }
-                                                                onClick={() =>
-                                                                    add(m)
-                                                                }
-                                                                className={`flex size-7 items-center justify-center rounded-lg bg-card text-foreground transition-all duration-150 hover:bg-hover-soft active:scale-90 ${
                                                                     inCartQty >=
                                                                     m.portions_available
-                                                                        ? 'cursor-not-allowed opacity-40'
-                                                                        : ''
-                                                                }`}
-                                                                aria-label={`Tambah ${m.name}`}
+                                                                }
+                                                                className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft disabled:opacity-30"
+                                                                aria-label="Tambah"
                                                             >
-                                                                <Plus className="size-3.5" />
+                                                                <Plus className="size-3" />
                                                             </button>
                                                         </div>
                                                     ) : (
@@ -628,12 +496,8 @@ export default function Pos({
                                                                 e.stopPropagation();
                                                                 add(m);
                                                             }}
+                                                            className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground transition-all duration-200 active:scale-95 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
                                                             aria-label={`Tambah ${m.name}`}
-                                                            className={`flex size-9 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground transition-all duration-200 hover:bg-hover-soft active:scale-95 ${
-                                                                isOutOfStock
-                                                                    ? 'cursor-not-allowed opacity-40'
-                                                                    : ''
-                                                            }`}
                                                         >
                                                             <Plus className="size-4" />
                                                         </button>
@@ -644,73 +508,30 @@ export default function Pos({
                                     })}
                                 </div>
 
-                                {/* Pagination Controls */}
+                                {/* Pagination Kontrol */}
                                 {totalPages > 1 ? (
-                                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-4">
-                                        <p className="text-xs text-muted-foreground">
-                                            Menampilkan{' '}
-                                            <span className="font-semibold text-foreground">
-                                                {startIndex + 1} -{' '}
-                                                {Math.min(
-                                                    startIndex + ITEMS_PER_PAGE,
-                                                    filteredMenus.length,
-                                                )}
-                                            </span>{' '}
-                                            dari{' '}
-                                            <span className="font-semibold text-foreground">
-                                                {filteredMenus.length}
-                                            </span>{' '}
-                                            menu
-                                        </p>
-
+                                    <div className="flex items-center justify-between border-t border-border/50 pt-3 text-xs text-muted-foreground">
+                                        <span>
+                                            Halaman {validPage} dari{' '}
+                                            {totalPages} ({filteredMenus.length}{' '}
+                                            menu)
+                                        </span>
                                         <div className="flex items-center gap-1.5">
                                             <button
                                                 type="button"
-                                                disabled={validPage <= 1}
                                                 onClick={() =>
                                                     setCurrentPage((p) =>
                                                         Math.max(1, p - 1),
                                                     )
                                                 }
-                                                className="flex size-8 items-center justify-center rounded-xl bg-secondary text-foreground transition-colors hover:bg-hover-soft disabled:cursor-not-allowed disabled:opacity-40"
+                                                disabled={validPage <= 1}
+                                                className="flex size-7 items-center justify-center rounded-lg bg-secondary text-foreground transition-colors hover:bg-hover-soft disabled:cursor-not-allowed disabled:opacity-40"
                                                 aria-label="Halaman sebelumnya"
                                             >
                                                 <ChevronLeft className="size-4" />
                                             </button>
-
-                                            <div className="flex items-center gap-1">
-                                                {Array.from(
-                                                    { length: totalPages },
-                                                    (_, i) => i + 1,
-                                                ).map((pageNum) => {
-                                                    const isActive =
-                                                        pageNum === validPage;
-                                                    return (
-                                                        <button
-                                                            key={pageNum}
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setCurrentPage(
-                                                                    pageNum,
-                                                                )
-                                                            }
-                                                            className={`flex size-8 items-center justify-center rounded-xl text-xs font-semibold transition-all duration-200 ${
-                                                                isActive
-                                                                    ? 'fx-coral font-bold shadow-xs'
-                                                                    : 'bg-secondary text-foreground hover:bg-hover-soft'
-                                                            }`}
-                                                        >
-                                                            {pageNum}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-
                                             <button
                                                 type="button"
-                                                disabled={
-                                                    validPage >= totalPages
-                                                }
                                                 onClick={() =>
                                                     setCurrentPage((p) =>
                                                         Math.min(
@@ -719,7 +540,10 @@ export default function Pos({
                                                         ),
                                                     )
                                                 }
-                                                className="flex size-8 items-center justify-center rounded-xl bg-secondary text-foreground transition-colors hover:bg-hover-soft disabled:cursor-not-allowed disabled:opacity-40"
+                                                disabled={
+                                                    validPage >= totalPages
+                                                }
+                                                className="flex size-7 items-center justify-center rounded-lg bg-secondary text-foreground transition-colors hover:bg-hover-soft disabled:cursor-not-allowed disabled:opacity-40"
                                                 aria-label="Halaman berikutnya"
                                             >
                                                 <ChevronRight className="size-4" />
@@ -732,10 +556,10 @@ export default function Pos({
                     </Reveal>
                 </div>
 
-                {/* Kolom Kanan: Detail Pesanan / Keranjang (Referensi Order Detail Opsi A) */}
+                {/* Kolom Kanan: Detail Pesanan / Keranjang */}
                 <Reveal delay={0.1}>
                     <FxCard className="sticky top-4 flex flex-col gap-4 p-5 shadow-sm">
-                        {/* Header Keranjang: Judul, Counter & Reset Button */}
+                        {/* Header Keranjang */}
                         <div className="flex items-center justify-between border-b border-border/50 pb-3">
                             <div>
                                 <h2 className="text-base font-bold tracking-tight">
@@ -757,7 +581,7 @@ export default function Pos({
                             ) : null}
                         </div>
 
-                        {/* Segmented Control Tipe Pesanan (Dine-in / Takeaway / Delivery) */}
+                        {/* Segmented Control Tipe Pesanan */}
                         <div className="grid grid-cols-3 gap-1 rounded-2xl bg-secondary/80 p-1 text-xs font-semibold">
                             {[
                                 { id: 'dine-in', label: 'Dine In' },
@@ -800,7 +624,7 @@ export default function Pos({
                             />
                         </div>
 
-                        {/* Daftar Item Pesanan */}
+                        {/* Daftar Item Pesanan di Keranjang */}
                         <div className="flex flex-col">
                             <p className="mb-2 text-xs font-semibold text-muted-foreground">
                                 Item Pesanan
@@ -907,10 +731,10 @@ export default function Pos({
                             )}
                         </div>
 
-                        {/* Rincian Pembayaran (Payment Details) */}
+                        {/* Rincian Metode Default Pembayaran di Sidebar */}
                         <div className="border-t border-border/50 pt-3">
                             <p className="mb-2 text-xs font-semibold text-muted-foreground">
-                                Metode Pembayaran
+                                Metode Pembayaran Awal
                             </p>
                             <div className="grid grid-cols-2 gap-2">
                                 {(
@@ -953,12 +777,12 @@ export default function Pos({
                             </span>
                         </FxSoft>
 
-                        {/* Tombol Eksekusi Order -> Buka Modal Konfirmasi */}
+                        {/* Tombol Eksekusi Order -> Navigasi ke Rute /pos/checkout */}
                         <FxButton
                             variant="coral"
                             size="lg"
                             disabled={items.length === 0}
-                            onClick={openCheckoutModal}
+                            onClick={handleOpenCheckout}
                             className="w-full gap-2 text-sm font-semibold shadow-sm"
                         >
                             <span>Lanjut Bayar ({formatRupiah(total)})</span>
@@ -967,399 +791,6 @@ export default function Pos({
                     </FxCard>
                 </Reveal>
             </div>
-
-            {/* Modal Konfirmasi Pembayaran Kasir */}
-            <FxModal
-                open={checkoutModalOpen}
-                onOpenChange={setCheckoutModalOpen}
-                title="Konfirmasi Pembayaran"
-                description="Pastikan nominal dan metode pembayaran sesuai sebelum memotong stok."
-                wide
-                footer={
-                    <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-                        <FxButton
-                            variant="soft"
-                            size="md"
-                            disabled={isSubmitting}
-                            onClick={() => setCheckoutModalOpen(false)}
-                        >
-                            Batal
-                        </FxButton>
-                        {checkoutPaymentMethod === 'cash' ? (
-                            <FxButton
-                                variant="coral"
-                                size="md"
-                                disabled={isSubmitting || !isCashSufficient}
-                                onClick={() => executeOrder('cash')}
-                                className="gap-2"
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <Loader2 className="size-4 animate-spin" />
-                                        <span>Menyimpan Pesanan...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span>Selesaikan Pembayaran Tunai</span>
-                                        {isCashSufficient && cashChange > 0 ? (
-                                            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-bold">
-                                                Kembalian {formatRupiah(cashChange)}
-                                            </span>
-                                        ) : null}
-                                        <ArrowRight className="size-4" />
-                                    </>
-                                )}
-                            </FxButton>
-                        ) : (
-                            <FxButton
-                                variant="coral"
-                                size="md"
-                                disabled={isSubmitting || isLoadingQris}
-                                onClick={() => executeOrder('qris')}
-                                className="gap-2"
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <Loader2 className="size-4 animate-spin" />
-                                        <span>Menyimpan Pesanan...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span>Konfirmasi Pembayaran Diterima</span>
-                                        <ArrowRight className="size-4" />
-                                    </>
-                                )}
-                            </FxButton>
-                        )}
-                    </div>
-                }
-            >
-                <div className="flex flex-col gap-4">
-                    {/* Ringkasan Singkat Pesanan */}
-                    <div className="flex items-center justify-between rounded-2xl bg-secondary/50 p-3.5 border border-border/40">
-                        <div className="flex flex-col">
-                            <span className="text-xs font-medium text-muted-foreground">
-                                Total Tagihan ({totalItemsCount} item)
-                            </span>
-                            <span className="text-xl font-bold text-foreground tabular-nums">
-                                {formatRupiah(total)}
-                            </span>
-                        </div>
-                        <div className="text-right text-xs text-muted-foreground">
-                            <span className="font-semibold text-foreground">
-                                {customerName.trim() || 'Pelanggan Umum'}
-                            </span>
-                            <p className="capitalize">
-                                {orderType === 'dine-in'
-                                    ? 'Dine In'
-                                    : orderType === 'takeaway'
-                                      ? 'Takeaway'
-                                      : 'Delivery'}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Segmented Switcher Tunai vs QRIS */}
-                    <div className="grid grid-cols-2 gap-2 rounded-2xl bg-secondary/70 p-1">
-                        <button
-                            type="button"
-                            onClick={() => switchPaymentMethod('cash')}
-                            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-all ${
-                                checkoutPaymentMethod === 'cash'
-                                    ? 'bg-card text-foreground shadow-xs'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                        >
-                            <Wallet className="size-4 text-primary" />
-                            <span>Tunai (Cash)</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => switchPaymentMethod('qris')}
-                            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-all ${
-                                checkoutPaymentMethod === 'qris'
-                                    ? 'bg-card text-foreground shadow-xs'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                        >
-                            <QrCode className="size-4 text-primary" />
-                            <span>QRIS Dinamis</span>
-                        </button>
-                    </div>
-
-                    {/* Tab Tunai */}
-                    {checkoutPaymentMethod === 'cash' ? (
-                        <div className="flex flex-col gap-3.5">
-                            {/* Input Uang Diterima */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-xs font-medium text-muted-foreground">
-                                    Nominal Uang Diterima
-                                </label>
-                                <FxInput
-                                    prefix="Rp"
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={cashReceivedInput}
-                                    onChange={(e) =>
-                                        setCashReceivedInput(
-                                            formatNumberWithDots(e.target.value),
-                                        )
-                                    }
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && isCashSufficient && !isSubmitting) {
-                                            executeOrder('cash');
-                                        }
-                                    }}
-                                    placeholder="0"
-                                    className="text-base font-bold tabular-nums"
-                                    autoFocus
-                                />
-                            </div>
-
-                            {/* Tombol Cepat Nominal Uang */}
-                            <div className="flex flex-col gap-1.5">
-                                <span className="text-[11px] font-medium text-muted-foreground">
-                                    Pilihan Nominal Cepat:
-                                </span>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {quickCashOptions.map((opt) => {
-                                        const isExact = opt === total;
-                                        const isSelected = parsedCashReceived === opt;
-                                        return (
-                                            <button
-                                                key={opt}
-                                                type="button"
-                                                onClick={() =>
-                                                    setCashReceivedInput(
-                                                        formatNumberWithDots(opt),
-                                                    )
-                                                }
-                                                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
-                                                    isSelected
-                                                        ? 'fx-coral shadow-xs'
-                                                        : 'bg-secondary text-foreground hover:bg-hover-soft'
-                                                }`}
-                                            >
-                                                {formatRupiah(opt)}
-                                                {isExact ? ' (Pas)' : ''}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            {/* Box Status Kembalian */}
-                            {parsedCashReceived > 0 ? (
-                                isCashSufficient ? (
-                                    <div className="flex items-center justify-between rounded-2xl bg-success-soft/30 p-3.5 border border-success/30">
-                                        <div className="flex items-center gap-2 text-success">
-                                            <Check className="size-4" />
-                                            <span className="text-xs font-semibold">
-                                                Kembalian Pelanggan
-                                            </span>
-                                        </div>
-                                        <span className="text-lg font-bold text-success tabular-nums">
-                                            {formatRupiah(cashChange)}
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center justify-between rounded-2xl bg-danger-soft/30 p-3.5 border border-danger/30 text-danger">
-                                        <span className="text-xs font-semibold">
-                                            Uang Masih Kurang
-                                        </span>
-                                        <span className="text-sm font-bold tabular-nums">
-                                            {formatRupiah(total - parsedCashReceived)}
-                                        </span>
-                                    </div>
-                                )
-                            ) : (
-                                <div className="rounded-xl bg-secondary/40 p-3 text-center text-xs text-muted-foreground">
-                                    Pilih opsi uang pas di atas atau ketik jumlah uang yang diserahkan pembeli.
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        /* Tab QRIS Dinamis */
-                        <div className="flex flex-col items-center gap-3">
-                            <div className="flex w-full flex-col items-center justify-center rounded-2xl bg-white p-4 shadow-sm border border-border/20 text-gray-900">
-                                {isLoadingQris ? (
-                                    <div className="flex h-[200px] w-[200px] flex-col items-center justify-center gap-2 text-gray-500">
-                                        <Loader2 className="size-8 animate-spin text-primary" />
-                                        <p className="text-xs font-medium">
-                                            Membuat QRIS Dinamis...
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <QRCodeSVG
-                                        value={
-                                            qrisPayloadData?.qris_payload ||
-                                            merchant_qris?.static_payload ||
-                                            ''
-                                        }
-                                        size={200}
-                                        level="M"
-                                        className="rounded-lg"
-                                    />
-                                )}
-                                <div className="mt-2.5 text-center">
-                                    <p className="text-xs font-bold uppercase tracking-wider text-gray-900">
-                                        {qrisPayloadData?.merchant_name ||
-                                            merchant_qris?.merchant_name ||
-                                            'BAROKAH COMPENY'}
-                                    </p>
-                                    <p className="text-[11px] text-gray-500">
-                                        NMID: ID1024362479726 •{' '}
-                                        {qrisPayloadData?.merchant_city ||
-                                            merchant_qris?.merchant_city ||
-                                            'SURABAYA'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Badge Nominal Terkunci */}
-                            <div className="flex w-full items-center justify-between rounded-xl bg-primary/10 px-3.5 py-2 text-xs font-medium text-primary border border-primary/20">
-                                <span>Nominal Terkunci Otomatis:</span>
-                                <span className="text-sm font-bold tabular-nums">
-                                    {formatRupiah(total)}
-                                </span>
-                            </div>
-
-                            {/* Checklist Verifikasi Kasir */}
-                            <div className="flex w-full flex-col gap-1.5 rounded-2xl bg-secondary/50 p-3 border border-border/40 text-[11px] text-muted-foreground">
-                                <p className="font-semibold text-foreground flex items-center gap-1.5">
-                                    <Check className="size-3.5 text-primary" />
-                                    Panduan Verifikasi Kasir:
-                                </p>
-                                <ol className="list-decimal pl-4 space-y-0.5">
-                                    <li>Minta pelanggan scan QRIS dengan mobile banking / e-wallet.</li>
-                                    <li>Pastikan nama toko di HP pelanggan tertera <strong>Barokah Compeny</strong>.</li>
-                                    <li>Pastikan status transaksi di layar HP pelanggan bernilai <strong>BERHASIL / SUKSES</strong> sebelum menekan konfirmasi di bawah.</li>
-                                </ol>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </FxModal>
-
-            {/* Modal Sukses Pembayaran */}
-            <FxModal
-                open={successModalOpen}
-                onOpenChange={(open) => {
-                    setSuccessModalOpen(open);
-                    if (!open) setCompletedOrder(null);
-                }}
-                title="Pembayaran Berhasil! 🎉"
-                description="Pesanan telah disimpan & stok bahan baku otomatis terpotong."
-                footer={
-                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <button
-                            type="button"
-                            onClick={() => router.visit('/pesanan')}
-                            className="text-xs text-muted-foreground hover:text-foreground underline text-left"
-                        >
-                            Lihat Semua Riwayat Pesanan →
-                        </button>
-                        <div className="flex items-center gap-2">
-                            <FxButton
-                                variant="soft"
-                                size="md"
-                                onClick={() => {
-                                    setSuccessModalOpen(false);
-                                    setCompletedOrder(null);
-                                }}
-                            >
-                                Transaksi Baru
-                            </FxButton>
-                            {completedOrder?.db_id ? (
-                                <FxButton
-                                    variant="coral"
-                                    size="md"
-                                    className="gap-2"
-                                    onClick={() =>
-                                        window.open(
-                                            `/pesanan/${completedOrder.db_id}/cetak?auto=1`,
-                                            '_blank',
-                                        )
-                                    }
-                                >
-                                    <Printer className="size-4" />
-                                    <span>Cetak Struk</span>
-                                </FxButton>
-                            ) : null}
-                        </div>
-                    </div>
-                }
-            >
-                {completedOrder ? (
-                    <div className="flex flex-col gap-3.5">
-                        <div className="flex items-center justify-between rounded-2xl bg-secondary/50 p-4 border border-border/40">
-                            <div>
-                                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                                    Nomor Pesanan
-                                </span>
-                                <p className="text-base font-bold text-foreground">
-                                    {completedOrder.id}
-                                </p>
-                            </div>
-                            <div className="text-right">
-                                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                                    Total Bayar
-                                </span>
-                                <p className="text-base font-bold text-primary tabular-nums">
-                                    {formatRupiah(completedOrder.total_amount)}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col divide-y divide-border/40 rounded-2xl bg-card border border-border/50 text-xs">
-                            <div className="flex items-center justify-between p-3">
-                                <span className="text-muted-foreground">Metode Pembayaran</span>
-                                <span className="font-semibold text-foreground">
-                                    {completedOrder.payment_method === 'cash'
-                                        ? 'Tunai (Cash)'
-                                        : 'QRIS Dinamis'}
-                                </span>
-                            </div>
-                            {completedOrder.payment_method === 'cash' ? (
-                                <>
-                                    <div className="flex items-center justify-between p-3">
-                                        <span className="text-muted-foreground">Uang Diterima</span>
-                                        <span className="font-semibold text-foreground tabular-nums">
-                                            {formatRupiah(completedOrder.cash_received)}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between p-3 bg-success-soft/30 font-semibold text-success">
-                                        <span>Kembalian</span>
-                                        <span className="text-sm font-bold tabular-nums">
-                                            {formatRupiah(completedOrder.change)}
-                                        </span>
-                                    </div>
-                                </>
-                            ) : null}
-                            <div className="flex items-center justify-between p-3">
-                                <span className="text-muted-foreground">Jumlah Item</span>
-                                <span className="font-semibold text-foreground">
-                                    {completedOrder.items_count} porsi
-                                </span>
-                            </div>
-                            {completedOrder.customer_name ? (
-                                <div className="flex items-center justify-between p-3">
-                                    <span className="text-muted-foreground">Pelanggan / Meja</span>
-                                    <span className="font-semibold text-foreground">
-                                        {completedOrder.customer_name}
-                                    </span>
-                                </div>
-                            ) : null}
-                            <div className="flex items-center justify-between p-3">
-                                <span className="text-muted-foreground">Waktu Transaksi</span>
-                                <span className="font-semibold text-foreground tabular-nums">
-                                    {completedOrder.created_at}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                ) : null}
-            </FxModal>
         </PageShell>
     );
 }

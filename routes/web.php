@@ -65,6 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // POS kasir: owner & staff (FR-013-017).
     Route::get('pos', [OrderController::class, 'index'])->name('pos');
+    Route::get('pos/checkout', [OrderController::class, 'checkout'])->name('pos.checkout');
     Route::post('pos', [OrderController::class, 'store'])
         ->middleware('throttle:60,1')
         ->name('pos.store');
