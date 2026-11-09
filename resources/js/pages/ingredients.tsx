@@ -4,6 +4,8 @@ import {
     Ban,
     Box,
     Check,
+    ChevronLeft,
+    ChevronRight,
     ClipboardCheck,
     Clock,
     Filter,
@@ -197,6 +199,8 @@ export default function Ingredients({ ingredients, meta }: Props) {
     const owner = isOwner(usePage().props.auth.user);
     const [query, setQuery] = useState('');
     const [lowOnly, setLowOnly] = useState(false);
+    const [pageSize, setPageSize] = useState(10);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const [createOpen, setCreateOpen] = useState(false);
     const [stockIn, setStockIn] = useState<IngredientRow | null>(null);
@@ -216,6 +220,25 @@ export default function Ingredients({ ingredients, meta }: Props) {
             }),
         [ingredients, query, lowOnly],
     );
+
+    const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+    const validPage = Math.min(Math.max(1, currentPage), totalPages);
+    const startIndex = (validPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, rows.length);
+    const paginatedRows = useMemo(
+        () => rows.slice(startIndex, endIndex),
+        [rows, startIndex, endIndex],
+    );
+
+    function handleQueryChange(val: string) {
+        setQuery(val);
+        setCurrentPage(1);
+    }
+
+    function handleLowOnlyToggle() {
+        setLowOnly((v) => !v);
+        setCurrentPage(1);
+    }
 
     function handleCreate(data: Record<string, string | number | boolean>) {
         router.post('/bahan-baku', data, {
@@ -418,14 +441,16 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                 <Search className="size-4 text-muted-foreground" />
                                 <input
                                     value={query}
-                                    onChange={(e) => setQuery(e.target.value)}
+                                    onChange={(e) =>
+                                        handleQueryChange(e.target.value)
+                                    }
                                     placeholder="Cari bahan"
                                     className="w-40 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                                 />
                             </div>
                             <button
                                 type="button"
-                                onClick={() => setLowOnly((v) => !v)}
+                                onClick={handleLowOnlyToggle}
                                 className={`inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
                                     lowOnly
                                         ? 'fx-coral shadow-sm'
@@ -514,190 +539,356 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                 </tr>
                             </thead>
                             <tbody>
-                                {rows.map((i) => {
-                                    const cfg = stateConfig[i.stock_status];
-                                    const change = Number(i.price_change_pct);
-                                    const quoteChange = Number(
-                                        i.quote_change_pct,
-                                    );
-                                    return (
-                                        <tr
-                                            key={i.id}
-                                            className="border-b border-border/60 last:border-0"
+                                {paginatedRows.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={8}
+                                            className="px-3 py-10 text-center text-sm text-muted-foreground"
                                         >
-                                            <td className="px-3 py-3">
-                                                <div className="flex items-center gap-3">
-                                                    <IconCircle
-                                                        icon={Box}
-                                                        tone="soft"
-                                                        size="sm"
-                                                    />
-                                                    <div>
-                                                        <p className="font-medium">
-                                                            {i.name}
-                                                        </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            lead time{' '}
-                                                            {i.lead_time_days}{' '}
-                                                            hari
-                                                        </p>
+                                            Tidak ada bahan baku yang sesuai
+                                            {query
+                                                ? ` dengan kata kunci "${query}"`
+                                                : ''}
+                                            {lowOnly
+                                                ? ' (filter stok menipis aktif)'
+                                                : ''}
+                                            .
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    paginatedRows.map((i) => {
+                                        const cfg = stateConfig[i.stock_status];
+                                        const change = Number(
+                                            i.price_change_pct,
+                                        );
+                                        const quoteChange = Number(
+                                            i.quote_change_pct,
+                                        );
+                                        return (
+                                            <tr
+                                                key={i.id}
+                                                className="border-b border-border/60 last:border-0"
+                                            >
+                                                <td className="px-3 py-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <IconCircle
+                                                            icon={Box}
+                                                            tone="soft"
+                                                            size="sm"
+                                                        />
+                                                        <div>
+                                                            <p className="font-medium">
+                                                                {i.name}
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                lead time{' '}
+                                                                {
+                                                                    i.lead_time_days
+                                                                }{' '}
+                                                                hari
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-3 py-3">
-                                                <span
-                                                    className={`inline-flex size-6 items-center justify-center rounded-full text-xs font-bold ${abcTone[i.abc_class]}`}
-                                                >
-                                                    {i.abc_class}
-                                                </span>
-                                            </td>
-                                            <td className="px-3 py-3 text-right tabular-nums">
-                                                {formatQty(i.current_stock)}{' '}
-                                                {unitShort[i.base_unit]}
-                                            </td>
-                                            <td className="px-3 py-3 text-right text-muted-foreground tabular-nums">
-                                                {formatQty(i.minimum_stock)}
-                                            </td>
-                                            <td className="px-3 py-3 text-right tabular-nums">
-                                                <span className="whitespace-nowrap">
-                                                    {formatRupiah(
-                                                        i.cost_per_unit,
-                                                    )}
-                                                    /{unitShort[i.base_unit]}
-                                                    {Math.abs(change) >= 0.5 ? (
-                                                        <span
-                                                            className={`ml-2 text-[11px] font-semibold ${change > 0 ? 'text-danger' : 'text-success'}`}
-                                                        >
-                                                            {change > 0
-                                                                ? '+'
-                                                                : ''}
-                                                            {formatPercent(
-                                                                change,
-                                                                1,
-                                                            )}
-                                                        </span>
-                                                    ) : null}
-                                                </span>
-                                                {quoteChange >= 1 &&
-                                                i.last_quote_price ? (
-                                                    <span className="mt-1 block text-[11px] font-semibold text-primary">
-                                                        penawaran{' '}
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <span
+                                                        className={`inline-flex size-6 items-center justify-center rounded-full text-xs font-bold ${abcTone[i.abc_class]}`}
+                                                    >
+                                                        {i.abc_class}
+                                                    </span>
+                                                </td>
+                                                <td className="px-3 py-3 text-right tabular-nums">
+                                                    {formatQty(i.current_stock)}{' '}
+                                                    {unitShort[i.base_unit]}
+                                                </td>
+                                                <td className="px-3 py-3 text-right text-muted-foreground tabular-nums">
+                                                    {formatQty(i.minimum_stock)}
+                                                </td>
+                                                <td className="px-3 py-3 text-right tabular-nums">
+                                                    <span className="whitespace-nowrap">
                                                         {formatRupiah(
-                                                            i.last_quote_price,
+                                                            i.cost_per_unit,
                                                         )}
                                                         /
-                                                        {unitShort[i.base_unit]}{' '}
-                                                        (+
-                                                        {formatPercent(
-                                                            quoteChange,
-                                                            0,
-                                                        )}
-                                                        )
+                                                        {unitShort[i.base_unit]}
+                                                        {Math.abs(change) >=
+                                                        0.5 ? (
+                                                            <span
+                                                                className={`ml-2 text-[11px] font-semibold ${change > 0 ? 'text-danger' : 'text-success'}`}
+                                                            >
+                                                                {change > 0
+                                                                    ? '+'
+                                                                    : ''}
+                                                                {formatPercent(
+                                                                    change,
+                                                                    1,
+                                                                )}
+                                                            </span>
+                                                        ) : null}
                                                     </span>
-                                                ) : null}
-                                            </td>
-                                            <td className="px-3 py-3 text-right text-muted-foreground">
-                                                {i.package_size
-                                                    ? `${formatQty(i.package_size)} ${unitShort[i.base_unit]}`
-                                                    : '-'}
-                                                {i.package_price
-                                                    ? ` · ${formatRupiah(i.package_price)}`
-                                                    : ''}
-                                            </td>
-                                            <td className="px-3 py-3">
-                                                <span
-                                                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.cls}`}
-                                                >
+                                                    {quoteChange >= 1 &&
+                                                    i.last_quote_price ? (
+                                                        <span className="mt-1 block text-[11px] font-semibold text-primary">
+                                                            penawaran{' '}
+                                                            {formatRupiah(
+                                                                i.last_quote_price,
+                                                            )}
+                                                            /
+                                                            {
+                                                                unitShort[
+                                                                    i.base_unit
+                                                                ]
+                                                            }{' '}
+                                                            (+
+                                                            {formatPercent(
+                                                                quoteChange,
+                                                                0,
+                                                            )}
+                                                            )
+                                                        </span>
+                                                    ) : null}
+                                                </td>
+                                                <td className="px-3 py-3 text-right text-muted-foreground">
+                                                    {i.package_size
+                                                        ? `${formatQty(i.package_size)} ${unitShort[i.base_unit]}`
+                                                        : '-'}
+                                                    {i.package_price
+                                                        ? ` · ${formatRupiah(i.package_price)}`
+                                                        : ''}
+                                                </td>
+                                                <td className="px-3 py-3">
                                                     <span
-                                                        className={`size-1.5 rounded-full ${cfg.dot}`}
-                                                    />
-                                                    {cfg.label}
-                                                </span>
-                                            </td>
-                                            <td className="px-3 py-3">
-                                                <div className="flex items-center justify-center gap-1">
-                                                    {owner ? (
-                                                        <FxIconButton
-                                                            title="Edit bahan"
-                                                            aria-label="Edit bahan"
-                                                            onClick={() =>
-                                                                setEdit(i)
-                                                            }
-                                                        >
-                                                            <Pencil className="size-4" />
-                                                        </FxIconButton>
-                                                    ) : null}
-                                                    {owner ? (
-                                                        <FxIconButton
-                                                            title="Stock-in pembelian"
-                                                            aria-label="Stock-in pembelian"
-                                                            onClick={() =>
-                                                                setStockIn(i)
-                                                            }
-                                                        >
-                                                            <ArrowDownToLine className="size-4" />
-                                                        </FxIconButton>
-                                                    ) : null}
-                                                    {owner ? (
-                                                        <FxIconButton
-                                                            title="Update harga penawaran"
-                                                            aria-label="Update harga penawaran"
-                                                            onClick={() =>
-                                                                setQuote(i)
-                                                            }
-                                                        >
-                                                            <Tag className="size-4" />
-                                                        </FxIconButton>
-                                                    ) : null}
-                                                    <FxIconButton
-                                                        title="Sesuaikan stok (waste/opname)"
-                                                        aria-label="Sesuaikan stok (waste/opname)"
-                                                        onClick={() =>
-                                                            setAdjust(i)
-                                                        }
+                                                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.cls}`}
                                                     >
-                                                        <SlidersHorizontal className="size-4" />
-                                                    </FxIconButton>
-                                                    <FxIconButton
-                                                        title="Riwayat harga"
-                                                        aria-label="Riwayat harga"
-                                                        onClick={() =>
-                                                            setHistory(i)
-                                                        }
-                                                    >
-                                                        <Clock className="size-4" />
-                                                    </FxIconButton>
-                                                    {owner && i.is_active ? (
+                                                        <span
+                                                            className={`size-1.5 rounded-full ${cfg.dot}`}
+                                                        />
+                                                        {cfg.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        {owner ? (
+                                                            <FxIconButton
+                                                                title="Edit bahan"
+                                                                aria-label="Edit bahan"
+                                                                onClick={() =>
+                                                                    setEdit(i)
+                                                                }
+                                                            >
+                                                                <Pencil className="size-4" />
+                                                            </FxIconButton>
+                                                        ) : null}
+                                                        {owner ? (
+                                                            <FxIconButton
+                                                                title="Stock-in pembelian"
+                                                                aria-label="Stock-in pembelian"
+                                                                onClick={() =>
+                                                                    setStockIn(
+                                                                        i,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <ArrowDownToLine className="size-4" />
+                                                            </FxIconButton>
+                                                        ) : null}
+                                                        {owner ? (
+                                                            <FxIconButton
+                                                                title="Update harga penawaran"
+                                                                aria-label="Update harga penawaran"
+                                                                onClick={() =>
+                                                                    setQuote(i)
+                                                                }
+                                                            >
+                                                                <Tag className="size-4" />
+                                                            </FxIconButton>
+                                                        ) : null}
                                                         <FxIconButton
-                                                            tone="danger"
-                                                            title="Nonaktifkan bahan"
-                                                            aria-label="Nonaktifkan bahan"
+                                                            title="Sesuaikan stok (waste/opname)"
+                                                            aria-label="Sesuaikan stok (waste/opname)"
                                                             onClick={() =>
-                                                                handleDeactivate(
-                                                                    i,
-                                                                )
+                                                                setAdjust(i)
                                                             }
                                                         >
-                                                            <Ban className="size-4" />
+                                                            <SlidersHorizontal className="size-4" />
                                                         </FxIconButton>
-                                                    ) : null}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                                        <FxIconButton
+                                                            title="Riwayat harga"
+                                                            aria-label="Riwayat harga"
+                                                            onClick={() =>
+                                                                setHistory(i)
+                                                            }
+                                                        >
+                                                            <Clock className="size-4" />
+                                                        </FxIconButton>
+                                                        {owner &&
+                                                        i.is_active ? (
+                                                            <FxIconButton
+                                                                tone="danger"
+                                                                title="Nonaktifkan bahan"
+                                                                aria-label="Nonaktifkan bahan"
+                                                                onClick={() =>
+                                                                    handleDeactivate(
+                                                                        i,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Ban className="size-4" />
+                                                            </FxIconButton>
+                                                        ) : null}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
                             </tbody>
                         </table>
                     </div>
 
-                    <FxSoft className="flex flex-wrap items-center justify-between gap-2 p-4 text-xs text-muted-foreground">
-                        <span>
-                            Menampilkan {rows.length} dari {ingredients.length}{' '}
-                            bahan.
-                        </span>
-                        <span>
+                    <FxSoft className="flex flex-col gap-3 p-4 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <span>
+                                    {rows.length === 0 ? (
+                                        'Tidak ada bahan yang ditampilkan.'
+                                    ) : (
+                                        <>
+                                            Menampilkan{' '}
+                                            <span className="font-semibold text-foreground">
+                                                {startIndex + 1}–{endIndex}
+                                            </span>{' '}
+                                            dari{' '}
+                                            <span className="font-semibold text-foreground">
+                                                {rows.length}
+                                            </span>{' '}
+                                            bahan
+                                            {rows.length !==
+                                            ingredients.length ? (
+                                                <span className="text-muted-foreground/80">
+                                                    {' '}
+                                                    (difilter dari{' '}
+                                                    {ingredients.length} total)
+                                                </span>
+                                            ) : null}
+                                            .
+                                        </>
+                                    )}
+                                </span>
+
+                                <div className="flex items-center gap-1.5 pl-0 sm:border-l sm:border-border/60 sm:pl-3">
+                                    <span className="text-[11px] text-muted-foreground">
+                                        Baris:
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        {[5, 10, 25].map((size) => (
+                                            <button
+                                                key={size}
+                                                type="button"
+                                                onClick={() => {
+                                                    setPageSize(size);
+                                                    setCurrentPage(1);
+                                                }}
+                                                className={`h-6 rounded-md px-2 text-[11px] font-semibold transition-colors ${
+                                                    pageSize === size
+                                                        ? 'bg-primary text-primary-foreground shadow-xs'
+                                                        : 'bg-secondary text-foreground hover:bg-hover-soft'
+                                                }`}
+                                            >
+                                                {size}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {totalPages > 1 ? (
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setCurrentPage((p) =>
+                                                Math.max(1, p - 1),
+                                            )
+                                        }
+                                        disabled={validPage <= 1}
+                                        className="flex h-7 items-center gap-1 rounded-lg bg-secondary px-2 font-medium text-foreground transition-colors hover:bg-hover-soft disabled:cursor-not-allowed disabled:opacity-40"
+                                        aria-label="Halaman sebelumnya"
+                                    >
+                                        <ChevronLeft className="size-3.5" />
+                                        <span className="hidden sm:inline">
+                                            Sebelumnya
+                                        </span>
+                                    </button>
+
+                                    <div className="flex items-center gap-1 px-1">
+                                        {Array.from({ length: totalPages }).map(
+                                            (_, idx) => {
+                                                const p = idx + 1;
+                                                if (
+                                                    totalPages > 7 &&
+                                                    p !== 1 &&
+                                                    p !== totalPages &&
+                                                    Math.abs(p - validPage) > 1
+                                                ) {
+                                                    if (
+                                                        p === 2 ||
+                                                        p === totalPages - 1
+                                                    ) {
+                                                        return (
+                                                            <span
+                                                                key={p}
+                                                                className="px-1 text-muted-foreground"
+                                                            >
+                                                                ...
+                                                            </span>
+                                                        );
+                                                    }
+                                                    return null;
+                                                }
+                                                return (
+                                                    <button
+                                                        key={p}
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setCurrentPage(p)
+                                                        }
+                                                        className={`flex size-7 items-center justify-center rounded-lg text-xs font-semibold transition-colors ${
+                                                            validPage === p
+                                                                ? 'bg-primary text-primary-foreground shadow-xs'
+                                                                : 'bg-secondary text-foreground hover:bg-hover-soft'
+                                                        }`}
+                                                    >
+                                                        {p}
+                                                    </button>
+                                                );
+                                            },
+                                        )}
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setCurrentPage((p) =>
+                                                Math.min(totalPages, p + 1),
+                                            )
+                                        }
+                                        disabled={validPage >= totalPages}
+                                        className="flex h-7 items-center gap-1 rounded-lg bg-secondary px-2 font-medium text-foreground transition-colors hover:bg-hover-soft disabled:cursor-not-allowed disabled:opacity-40"
+                                        aria-label="Halaman berikutnya"
+                                    >
+                                        <span className="hidden sm:inline">
+                                            Selanjutnya
+                                        </span>
+                                        <ChevronRight className="size-3.5" />
+                                    </button>
+                                </div>
+                            ) : null}
+                        </div>
+
+                        <div className="border-t border-border/40 pt-2 text-[11px] text-muted-foreground/80">
                             WAC = Weighted Average Cost dari pembelian terakhir.
-                        </span>
+                        </div>
                     </FxSoft>
                 </FxCard>
             </Reveal>
