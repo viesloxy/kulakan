@@ -16,21 +16,47 @@ class ProfitabilityController extends Controller
 
     public function index(Request $request): Response
     {
-        $menus = Menu::orderBy('name')->get();
+        $menus = Menu::with('recipe.items.ingredient')->orderBy('name')->get();
 
-        $rows = $menus->map(fn (Menu $menu) => [
-            'id' => $menu->id,
-            'name' => $menu->name,
-            'category' => $menu->category ?? 'Kopi',
-            'selling_price' => $menu->selling_price,
-            'current_hpp' => bcadd(Number::str($menu->current_hpp), '0', 2),
-            'margin_rupiah' => bcsub(Number::str($menu->selling_price), Number::str($menu->current_hpp), 2),
-            'margin_pct' => bcadd(Number::str($menu->margin_pct), '0', 2),
-            'status' => $menu->status,
-            'projected_hpp' => $menu->projected_hpp !== null ? bcadd(Number::str($menu->projected_hpp), '0', 2) : null,
-            'projected_margin_pct' => $menu->projected_margin_pct !== null ? bcadd(Number::str($menu->projected_margin_pct), '0', 2) : null,
-            'projected_status' => $menu->projected_status,
-        ])->values();
+        $rows = $menus->map(function (Menu $menu) {
+            $currentHpp = bcadd(Number::str($menu->current_hpp), '0', 2);
+            $recipeItems = $menu->recipe?->items->map(function ($item) use ($currentHpp) {
+                $ing = $item->ingredient;
+                $costPerUnit = $ing ? $ing->cost_per_unit : '0';
+                $effectiveQty = $this->costing->effectiveQty((string) $item->quantity_needed, (string) $item->waste_factor);
+                $itemCost = bcmul($effectiveQty, Number::str($costPerUnit), 4);
+                $costPct = bccomp($currentHpp, '0', 2) > 0
+                    ? bcmul(bcdiv($itemCost, $currentHpp, 4), '100', 1)
+                    : '0';
+
+                return [
+                    'ingredient_id' => $item->ingredient_id,
+                    'ingredient_name' => $ing?->name ?? 'Bahan Tidak Diketahui',
+                    'quantity_needed' => (string) $item->quantity_needed,
+                    'base_unit' => $ing?->base_unit ?? 'gram',
+                    'waste_factor' => (string) $item->waste_factor,
+                    'cost_per_unit' => bcadd(Number::str($costPerUnit), '0', 2),
+                    'item_cost' => bcadd($itemCost, '0', 2),
+                    'cost_pct' => $costPct,
+                ];
+            })->values() ?? collect();
+
+            return [
+                'id' => $menu->id,
+                'name' => $menu->name,
+                'category' => $menu->category ?? 'Kopi',
+                'selling_price' => $menu->selling_price,
+                'overhead' => bcadd(Number::str($menu->overhead), '0', 2),
+                'current_hpp' => $currentHpp,
+                'margin_rupiah' => bcsub(Number::str($menu->selling_price), Number::str($menu->current_hpp), 2),
+                'margin_pct' => bcadd(Number::str($menu->margin_pct), '0', 2),
+                'status' => $menu->status,
+                'projected_hpp' => $menu->projected_hpp !== null ? bcadd(Number::str($menu->projected_hpp), '0', 2) : null,
+                'projected_margin_pct' => $menu->projected_margin_pct !== null ? bcadd(Number::str($menu->projected_margin_pct), '0', 2) : null,
+                'projected_status' => $menu->projected_status,
+                'recipe_items' => $recipeItems,
+            ];
+        })->values();
 
         $counts = ['profitable' => 0, 'watchlist' => 0, 'loss' => 0];
         foreach ($menus as $menu) {
