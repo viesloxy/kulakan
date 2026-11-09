@@ -29,13 +29,13 @@ class MenuController extends Controller
     {
         $menus = Menu::with('recipe.items.ingredient')->orderBy('name')->get();
 
-        $ingredients = Ingredient::where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'base_unit'])
+        $ingredients = Ingredient::orderBy('name')
+            ->get(['id', 'name', 'base_unit', 'is_active'])
             ->map(fn (Ingredient $i) => [
                 'id' => $i->id,
                 'name' => $i->name,
                 'base_unit' => $i->base_unit,
+                'is_active' => (bool) $i->is_active,
             ])->values();
 
         return Inertia::render('menus', [
@@ -151,6 +151,7 @@ class MenuController extends Controller
                     'cost_per_unit' => bcadd(Number::str($item->ingredient->cost_per_unit), '0', 4),
                     'effective_qty' => bcadd($effective, '0', 3),
                     'line_cost' => $this->roundMoney($lineCost),
+                    'is_active' => (bool) ($item->ingredient->is_active ?? true),
                 ];
             }
         }

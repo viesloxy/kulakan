@@ -17,6 +17,7 @@ import {
     Pencil,
     PenLine,
     Plus,
+    RotateCcw,
     Search,
     ShieldAlert,
     SlidersHorizontal,
@@ -93,6 +94,7 @@ type IngredientRow = {
     quote_change_pct: string;
     price_history: PriceHistoryRow[];
     adjustment_history?: StockAdjustmentRow[];
+    dependent_menus?: string[];
 };
 
 type Props = {
@@ -200,6 +202,7 @@ export default function Ingredients({ ingredients, meta }: Props) {
     const owner = isOwner(usePage().props.auth.user);
     const [query, setQuery] = useState('');
     const [lowOnly, setLowOnly] = useState(false);
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
     const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -209,6 +212,17 @@ export default function Ingredients({ ingredients, meta }: Props) {
     const [history, setHistory] = useState<IngredientRow | null>(null);
     const [adjust, setAdjust] = useState<IngredientRow | null>(null);
     const [edit, setEdit] = useState<IngredientRow | null>(null);
+    const [deactivateTarget, setDeactivateTarget] = useState<IngredientRow | null>(null);
+    const [cascadeMenus, setCascadeMenus] = useState(false);
+
+    const activeCount = useMemo(
+        () => ingredients.filter((i) => i.is_active).length,
+        [ingredients],
+    );
+    const inactiveCount = useMemo(
+        () => ingredients.filter((i) => !i.is_active).length,
+        [ingredients],
+    );
 
     const rows = useMemo(
         () =>
@@ -217,9 +231,16 @@ export default function Ingredients({ ingredients, meta }: Props) {
                     .toLowerCase()
                     .includes(query.toLowerCase());
                 const low = i.stock_status !== 'safe';
-                return matches && (!lowOnly || low);
+                const matchesLow = !lowOnly || low;
+                const matchesStatus =
+                    statusFilter === 'all'
+                        ? true
+                        : statusFilter === 'active'
+                          ? i.is_active
+                          : !i.is_active;
+                return matches && matchesLow && matchesStatus;
             }),
-        [ingredients, query, lowOnly],
+        [ingredients, query, lowOnly, statusFilter],
     );
 
     const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
@@ -344,10 +365,32 @@ export default function Ingredients({ ingredients, meta }: Props) {
         });
     }
 
-    function handleDeactivate(target: IngredientRow) {
-        router.delete(`/bahan-baku/${target.id}`, {
+    function handleRestore(target: IngredientRow) {
+        router.post(
+            `/bahan-baku/${target.id}/restore`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () =>
+                    toast.success(`Bahan ${target.name} diaktifkan kembali.`),
+                onError: (errors) =>
+                    toast.error(
+                        Object.values(errors)[0] ?? 'Gagal mengaktifkan bahan.',
+                    ),
+            },
+        );
+    }
+
+    function confirmDeactivate() {
+        if (!deactivateTarget) return;
+        router.delete(`/bahan-baku/${deactivateTarget.id}`, {
+            data: { cascade_menus: cascadeMenus },
             preserveScroll: true,
-            onSuccess: () => toast.success('Bahan dinonaktifkan'),
+            onSuccess: () => {
+                toast.success('Bahan dinonaktifkan.');
+                setDeactivateTarget(null);
+                setCascadeMenus(false);
+            },
             onError: (errors) =>
                 toast.error(
                     Object.values(errors)[0] ?? 'Gagal menonaktifkan bahan.',
@@ -434,9 +477,58 @@ export default function Ingredients({ ingredients, meta }: Props) {
             <Reveal delay={0.1}>
                 <FxCard className="flex flex-col gap-4 p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                        <h2 className="text-base font-semibold">
-                            Daftar bahan
-                        </h2>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <h2 className="text-base font-semibold">
+                                Daftar bahan
+                            </h2>
+                            <div className="flex items-center rounded-full bg-secondary p-1 text-xs font-semibold">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setStatusFilter('all');
+                                        setCurrentPage(1);
+                                    }}
+                                    className={cn(
+                                        'rounded-full px-3 py-1.5 transition-colors',
+                                        statusFilter === 'all'
+                                            ? 'bg-card text-foreground shadow-xs'
+                                            : 'text-muted-foreground hover:text-foreground',
+                                    )}
+                                >
+                                    Semua ({ingredients.length})
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setStatusFilter('active');
+                                        setCurrentPage(1);
+                                    }}
+                                    className={cn(
+                                        'rounded-full px-3 py-1.5 transition-colors',
+                                        statusFilter === 'active'
+                                            ? 'bg-card text-foreground shadow-xs'
+                                            : 'text-muted-foreground hover:text-foreground',
+                                    )}
+                                >
+                                    Aktif ({activeCount})
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setStatusFilter('inactive');
+                                        setCurrentPage(1);
+                                    }}
+                                    className={cn(
+                                        'rounded-full px-3 py-1.5 transition-colors',
+                                        statusFilter === 'inactive'
+                                            ? 'bg-card text-foreground shadow-xs'
+                                            : 'text-muted-foreground hover:text-foreground',
+                                    )}
+                                >
+                                    Nonaktif ({inactiveCount})
+                                </button>
+                            </div>
+                        </div>
                         <div className="flex flex-wrap items-center gap-2">
                             <div className="flex h-10 items-center gap-2 fx-soft px-4">
                                 <Search className="size-4 text-muted-foreground" />
@@ -658,14 +750,21 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                                         : ''}
                                                 </td>
                                                 <td className="px-3 py-3">
-                                                    <span
-                                                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.cls}`}
-                                                    >
+                                                    {!i.is_active ? (
+                                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-500/10 px-2.5 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                                            <span className="size-1.5 rounded-full bg-slate-400" />
+                                                            Nonaktif
+                                                        </span>
+                                                    ) : (
                                                         <span
-                                                            className={`size-1.5 rounded-full ${cfg.dot}`}
-                                                        />
-                                                        {cfg.label}
-                                                    </span>
+                                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.cls}`}
+                                                        >
+                                                            <span
+                                                                className={`size-1.5 rounded-full ${cfg.dot}`}
+                                                            />
+                                                            {cfg.label}
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-3 py-3">
                                                     <div className="flex items-center justify-center gap-1">
@@ -728,13 +827,25 @@ export default function Ingredients({ ingredients, meta }: Props) {
                                                                 tone="danger"
                                                                 title="Nonaktifkan bahan"
                                                                 aria-label="Nonaktifkan bahan"
-                                                                onClick={() =>
-                                                                    handleDeactivate(
-                                                                        i,
-                                                                    )
-                                                                }
+                                                                onClick={() => {
+                                                                    setCascadeMenus(false);
+                                                                    setDeactivateTarget(i);
+                                                                }}
                                                             >
                                                                 <Ban className="size-4" />
+                                                            </FxIconButton>
+                                                        ) : null}
+                                                        {owner &&
+                                                        !i.is_active ? (
+                                                            <FxIconButton
+                                                                title="Aktifkan kembali"
+                                                                aria-label="Aktifkan kembali"
+                                                                className="hover:bg-emerald-600 hover:text-white"
+                                                                onClick={() =>
+                                                                    handleRestore(i)
+                                                                }
+                                                            >
+                                                                <RotateCcw className="size-4" />
                                                             </FxIconButton>
                                                         ) : null}
                                                     </div>
@@ -943,6 +1054,94 @@ export default function Ingredients({ ingredients, meta }: Props) {
                     onClose={() => setEdit(null)}
                     onSubmit={handleUpdate}
                 />
+            ) : null}
+
+            {deactivateTarget ? (
+                <FxModal
+                    open
+                    onOpenChange={(o) => {
+                        if (!o) {
+                            setDeactivateTarget(null);
+                            setCascadeMenus(false);
+                        }
+                    }}
+                    title={`Nonaktifkan Bahan: ${deactivateTarget.name}`}
+                    description="Konfirmasi penonaktifan bahan baku."
+                    footer={
+                        <>
+                            <FxButton
+                                variant="soft"
+                                onClick={() => {
+                                    setDeactivateTarget(null);
+                                    setCascadeMenus(false);
+                                }}
+                            >
+                                Batal
+                            </FxButton>
+                            <FxButton
+                                variant="dark"
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={confirmDeactivate}
+                            >
+                                Nonaktifkan Bahan
+                            </FxButton>
+                        </>
+                    }
+                >
+                    <div className="flex flex-col gap-4 text-sm">
+                        <div className="flex items-start gap-3 rounded-2xl bg-amber-500/10 p-4 text-amber-700 dark:text-amber-400">
+                            <TriangleAlert className="mt-0.5 size-5 shrink-0" />
+                            <div className="flex flex-col gap-1 leading-relaxed">
+                                <span className="font-semibold">
+                                    Peringatan Penonaktifan Bahan
+                                </span>
+                                <span>
+                                    Menonaktifkan bahan baku akan menghentikan ketersediaan bahan ini untuk menu terkait. Riwayat stok dan mutasi sebelumnya tetap tersimpan secara aman.
+                                </span>
+                            </div>
+                        </div>
+
+                        {deactivateTarget.dependent_menus &&
+                        deactivateTarget.dependent_menus.length > 0 ? (
+                            <div className="flex flex-col gap-3 rounded-2xl border border-border/70 p-4">
+                                <p className="font-medium text-foreground">
+                                    Bahan ini saat ini aktif digunakan pada menu:
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {deactivateTarget.dependent_menus.map((m) => (
+                                        <span
+                                            key={m}
+                                            className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-foreground"
+                                        >
+                                            {m}
+                                        </span>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Menu di atas tidak akan dapat dipesan di POS kasir selama bahan ini dinonaktifkan.
+                                </p>
+
+                                <label className="mt-2 flex items-start gap-2.5 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={cascadeMenus}
+                                        onChange={(e) =>
+                                            setCascadeMenus(e.target.checked)
+                                        }
+                                        className="mt-0.5 rounded border-border"
+                                    />
+                                    <span className="text-xs font-medium text-foreground">
+                                        Nonaktifkan juga menu terkait di atas secara otomatis
+                                    </span>
+                                </label>
+                            </div>
+                        ) : (
+                            <p className="text-xs text-muted-foreground">
+                                Bahan ini tidak sedang digunakan oleh menu aktif mana pun.
+                            </p>
+                        )}
+                    </div>
+                </FxModal>
             ) : null}
         </PageShell>
     );

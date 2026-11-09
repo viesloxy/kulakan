@@ -110,6 +110,10 @@ class CostingService
         $minimum = null;
 
         foreach ($items as $item) {
+            if ($item->ingredient === null || ! $item->ingredient->is_active) {
+                return 0;
+            }
+
             $perPortion = bcdiv(
                 $this->effectiveQty((string) $item->quantity_needed, (string) $item->waste_factor),
                 (string) $yield,
