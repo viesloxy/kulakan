@@ -6,7 +6,6 @@ import {
     Coffee,
     Delete,
     Loader2,
-    Printer,
     QrCode,
     ReceiptText,
     RefreshCw,
@@ -155,7 +154,6 @@ export default function PosCheckout({ merchant_qris }: Props) {
 
     const [checkoutPaymentMethod, setCheckoutPaymentMethod] = useState<'cash' | 'qris'>('cash');
     const [cashReceivedInput, setCashReceivedInput] = useState('');
-    const [printReceipt, setPrintReceipt] = useState(true);
     const [qrisTimeLeft, setQrisTimeLeft] = useState(300);
     const [qrisPayloadData, setQrisPayloadData] = useState<{
         qris_payload: string;
@@ -445,18 +443,6 @@ export default function PosCheckout({ merchant_qris }: Props) {
                         customer_name: customerName.trim(),
                     };
 
-                    // Auto-print thermal receipt jika checkbox dicentang
-                    const safeDbId = parseInt(String(orderData.db_id), 10);
-                    if (printReceipt && Number.isInteger(safeDbId) && safeDbId > 0) {
-                        const link = document.createElement('a');
-                        link.href = `/pesanan/${safeDbId}/cetak?auto=1`;
-                        link.target = '_blank';
-                        link.rel = 'noopener noreferrer';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    }
-
                     toast.success(`Pesanan ${orderData.id} berhasil disimpan!`, {
                         description: `Metode ${method === 'cash' ? 'Tunai' : 'QRIS'}, total ${formatRupiah(total)}. Kembalian: ${formatRupiah(orderData.change)}.`,
                     });
@@ -468,7 +454,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                         // Abaikan
                     }
 
-                    // Kembali ke kasir untuk transaksi baru
+                    // Langsung kembali ke kasir untuk transaksi baru
                     router.visit('/pos');
                 },
                 onError: (errors) => {
@@ -877,21 +863,14 @@ export default function PosCheckout({ merchant_qris }: Props) {
 
                                     {/* Opsi & Tombol Eksekusi Pembayaran Tunai */}
                                     <div className="flex flex-col justify-between gap-4 rounded-2xl bg-secondary/30 p-4 border border-border/50">
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input
-                                                type="checkbox"
-                                                checked={printReceipt}
-                                                onChange={(e) =>
-                                                    setPrintReceipt(
-                                                        e.target.checked,
-                                                    )
-                                                }
-                                                className="size-4 rounded text-primary focus:ring-primary"
-                                            />
-                                            <span className="text-xs font-semibold text-foreground">
-                                                Cetak Struk Konsumen
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-xs font-bold text-foreground">
+                                                Verifikasi Pembayaran
                                             </span>
-                                        </label>
+                                            <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                                Pastikan uang fisik yang diterima dari pelanggan sesuai sebelum menekan konfirmasi.
+                                            </p>
+                                        </div>
 
                                         <div className="flex flex-col gap-1.5 mt-auto">
                                             <FxButton
@@ -913,10 +892,9 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <Printer className="size-4" />
+                                                        <Check className="size-4" />
                                                         <span>
-                                                            Konfirmasi Bayar & Cetak
-                                                            Struk
+                                                            Konfirmasi Bayar
                                                         </span>
                                                     </>
                                                 )}
