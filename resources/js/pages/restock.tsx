@@ -36,7 +36,6 @@ import {
     FxSelect,
     FxTextarea,
 } from '@/components/fx/fx-form';
-import { FxTableWrap } from '@/components/fx/fx-table-wrap';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
 import { formatRupiah } from '@/lib/format';
@@ -800,7 +799,7 @@ export default function Restock({
             description="Masukkan kas, sistem menyusun rencana belanja sesuai urgensi dan kelas ABC."
         >
             <Reveal delay={0.05}>
-                <div className="grid gap-5 lg:grid-cols-[1fr_1.4fr]">
+                <div className="grid gap-5 lg:grid-cols-[1fr_1.4fr] lg:items-start">
                     <FxCard className="min-w-0 p-5">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -1050,23 +1049,23 @@ export default function Restock({
                                 {plan.items.length} bahan
                             </span>
                         </div>
-                        <FxTableWrap>
+                        <div className="max-h-[460px] overflow-x-auto overflow-y-auto rounded-xl border border-border/60">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="bg-secondary text-left text-xs text-muted-foreground">
-                                        <th className="rounded-l-xl px-3 py-2.5 font-medium">
+                                    <tr className="text-left text-xs text-muted-foreground">
+                                        <th className="sticky top-0 z-10 bg-secondary px-3 py-2.5 font-medium shadow-xs">
                                             Bahan
                                         </th>
-                                        <th className="px-3 py-2.5 font-medium">
+                                        <th className="sticky top-0 z-10 bg-secondary px-3 py-2.5 font-medium shadow-xs">
                                             Kelas
                                         </th>
-                                        <th className="px-3 py-2.5 text-right font-medium">
+                                        <th className="sticky top-0 z-10 bg-secondary px-3 py-2.5 text-right font-medium shadow-xs">
                                             Beli
                                         </th>
-                                        <th className="px-3 py-2.5 text-right font-medium">
+                                        <th className="sticky top-0 z-10 bg-secondary px-3 py-2.5 text-right font-medium shadow-xs">
                                             Estimasi
                                         </th>
-                                        <th className="rounded-r-xl px-3 py-2.5 font-medium">
+                                        <th className="sticky top-0 z-10 bg-secondary px-3 py-2.5 font-medium shadow-xs">
                                             Label
                                         </th>
                                     </tr>
@@ -1121,7 +1120,7 @@ export default function Restock({
                                     })}
                                 </tbody>
                             </table>
-                        </FxTableWrap>
+                        </div>
 
                         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                             <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">

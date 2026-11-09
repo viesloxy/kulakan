@@ -8,6 +8,7 @@ use App\Http\Requests\Ingredient\StoreIngredientRequest;
 use App\Http\Requests\Ingredient\UpdateIngredientQuoteRequest;
 use App\Http\Requests\Ingredient\UpdateIngredientRequest;
 use App\Models\Ingredient;
+use App\Models\Menu;
 use App\Models\PriceHistory;
 use App\Models\StockMovement;
 use App\Services\AlertService;
@@ -18,6 +19,7 @@ use App\Support\Number;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,7 +34,9 @@ class IngredientController extends Controller
 
     public function index(Request $request): Response
     {
-        $ingredients = Ingredient::orderBy('name')->get();
+        $ingredients = Ingredient::with(['recipeIngredients.recipe.menu' => function ($q) {
+            $q->select('id', 'name', 'is_active');
+        }])->orderBy('name')->get();
 
         $abc = collect($this->restock->buildParams())
             ->mapWithKeys(fn (array $p) => [$p['ingredient_id'] => $p['abc_class']]);
@@ -128,11 +132,42 @@ class IngredientController extends Controller
         return back()->with('success', 'Bahan '.$ingredient->name.' diperbarui.');
     }
 
-    public function destroy(Ingredient $ingredient): RedirectResponse
+    public function destroy(Request $request, Ingredient $ingredient): RedirectResponse
     {
-        $ingredient->forceFill(['is_active' => false])->save();
+        $cascade = $request->boolean('cascade_menus');
 
-        return back()->with('success', 'Bahan '.$ingredient->name.' dinonaktifkan.');
+        DB::transaction(function () use ($ingredient, $cascade) {
+            $ingredient->forceFill(['is_active' => false])->save();
+
+            if ($cascade) {
+                $menuIds = $ingredient->recipeIngredients()
+                    ->with('recipe')
+                    ->get()
+                    ->pluck('recipe.menu_id')
+                    ->filter()
+                    ->unique();
+
+                Menu::whereIn('id', $menuIds)->update(['is_active' => false]);
+            }
+        });
+
+        $this->alerts->syncAll();
+
+        $msg = 'Bahan '.$ingredient->name.' dinonaktifkan.';
+        if ($cascade) {
+            $msg .= ' Menu terkait juga telah dinonaktifkan otomatis.';
+        }
+
+        return back()->with('success', $msg);
+    }
+
+    public function restore(Ingredient $ingredient): RedirectResponse
+    {
+        $ingredient->forceFill(['is_active' => true])->save();
+
+        $this->alerts->syncAll();
+
+        return back()->with('success', 'Bahan '.$ingredient->name.' diaktifkan kembali.');
     }
 
     public function stockIn(StockInIngredientRequest $request, Ingredient $ingredient): RedirectResponse
@@ -224,6 +259,15 @@ class IngredientController extends Controller
         $cost = Number::str($ingredient->cost_per_unit);
         $quote = $ingredient->last_quote_price !== null ? Number::str($ingredient->last_quote_price) : null;
 
+        $dependentMenus = $ingredient->relationLoaded('recipeIngredients')
+            ? $ingredient->recipeIngredients
+                ->filter(fn ($ri) => $ri->recipe?->menu && (bool) $ri->recipe->menu->is_active)
+                ->map(fn ($ri) => $ri->recipe->menu->name)
+                ->unique()
+                ->values()
+                ->all()
+            : [];
+
         return [
             'id' => $ingredient->id,
             'name' => $ingredient->name,
@@ -236,7 +280,8 @@ class IngredientController extends Controller
             'package_price' => $ingredient->package_price,
             'lead_time_days' => $ingredient->lead_time_days,
             'moq_packages' => $ingredient->moq_packages,
-            'is_active' => $ingredient->is_active,
+            'is_active' => (bool) $ingredient->is_active,
+            'dependent_menus' => $dependentMenus,
             'abc_class' => $abcClass,
             'stock_status' => $this->stockStatus($stock, $minimum),
             'price_change_pct' => $lastPurchase !== null && $lastPurchase->old_value !== null

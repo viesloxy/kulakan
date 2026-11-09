@@ -285,6 +285,8 @@ class OrderController extends Controller
                 ->implode(', ');
 
             return back()->withErrors(['order' => 'Stok tidak cukup: '.$detail.'. Pesanan tidak disimpan.']);
+        } catch (\InvalidArgumentException $e) {
+            return back()->withErrors(['order' => $e->getMessage()]);
         }
 
         $this->alerts->syncAll();

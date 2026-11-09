@@ -179,6 +179,11 @@ class InventoryService
                     $shortages = [];
                     foreach ($needs as $ingredientId => $needed) {
                         $ingredient = $ingredients[$ingredientId];
+
+                        if (! $ingredient->is_active) {
+                            throw new \InvalidArgumentException('Bahan baku "'.$ingredient->name.'" sedang dinonaktifkan.');
+                        }
+
                         $available = Number::str($ingredient->current_stock);
 
                         if (bccomp($available, $needed, 6) < 0) {

@@ -43,6 +43,7 @@ type BomRow = {
     cost_per_unit: string;
     effective_qty: string;
     line_cost: string;
+    is_active?: boolean;
 };
 
 type MenuRow = {
@@ -65,7 +66,12 @@ type MenuRow = {
     bom: BomRow[];
 };
 
-type IngredientOption = { id: number; name: string; base_unit: BaseUnit };
+type IngredientOption = {
+    id: number;
+    name: string;
+    base_unit: BaseUnit;
+    is_active?: boolean;
+};
 
 type Props = { menus: MenuRow[]; ingredients: IngredientOption[] };
 
@@ -496,118 +502,153 @@ export default function Menus({ menus, ingredients }: Props) {
                                     ) : null}
                                 </FxSoft>
                             ) : (
-                                <FxTableWrap className="w-full max-w-full rounded-xl">
-                                    <table className="w-full min-w-[420px] text-sm">
-                                        <thead>
-                                            <tr className="bg-secondary text-left text-xs text-muted-foreground">
-                                                <th className="rounded-l-xl px-3 py-2.5 font-medium">
-                                                    Bahan
-                                                </th>
-                                                <th className="px-3 py-2.5 text-right font-medium">
-                                                    Qty/porsi
-                                                </th>
-                                                <th className="px-3 py-2.5 text-right font-medium">
-                                                    Waste
-                                                </th>
-                                                <th className="px-3 py-2.5 text-right font-medium">
-                                                    Qty efektif
-                                                </th>
-                                                <th className="rounded-r-xl px-3 py-2.5 text-right font-medium">
-                                                    Biaya
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {selected.bom.map((r) => (
-                                                <tr
-                                                    key={r.ingredient_id}
-                                                    className="border-b border-border/60 last:border-0"
-                                                >
-                                                    <td className="px-3 py-3">
-                                                        <p className="font-medium">
-                                                            {r.ingredient_name}
-                                                        </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {formatRupiah(
-                                                                r.cost_per_unit,
-                                                            )}
-                                                            /
+                                <div className="flex flex-col gap-2.5">
+                                    {selected.bom.some(
+                                        (b) => b.is_active === false,
+                                    ) ? (
+                                        <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 p-3 text-xs font-medium text-amber-600 dark:text-amber-400">
+                                            <Info className="size-4 shrink-0" />
+                                            <span>
+                                                Menu ini menggunakan bahan baku
+                                                yang dinonaktifkan dan saat ini
+                                                tidak dapat dipesan di POS
+                                                kasir.
+                                            </span>
+                                        </div>
+                                    ) : null}
+                                    <FxTableWrap className="w-full max-w-full rounded-xl">
+                                        <table className="w-full min-w-[420px] text-sm">
+                                            <thead>
+                                                <tr className="bg-secondary text-left text-xs text-muted-foreground">
+                                                    <th className="rounded-l-xl px-3 py-2.5 font-medium">
+                                                        Bahan
+                                                    </th>
+                                                    <th className="px-3 py-2.5 text-right font-medium">
+                                                        Qty/porsi
+                                                    </th>
+                                                    <th className="px-3 py-2.5 text-right font-medium">
+                                                        Waste
+                                                    </th>
+                                                    <th className="px-3 py-2.5 text-right font-medium">
+                                                        Qty efektif
+                                                    </th>
+                                                    <th className="rounded-r-xl px-3 py-2.5 text-right font-medium">
+                                                        Biaya
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {selected.bom.map((r) => (
+                                                    <tr
+                                                        key={r.ingredient_id}
+                                                        className="border-b border-border/60 last:border-0"
+                                                    >
+                                                        <td className="px-3 py-3">
+                                                            <div className="flex items-center gap-1.5 font-medium">
+                                                                <span>
+                                                                    {
+                                                                        r.ingredient_name
+                                                                    }
+                                                                </span>
+                                                                {r.is_active ===
+                                                                false ? (
+                                                                    <span className="rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                                                                        Nonaktif
+                                                                    </span>
+                                                                ) : null}
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {formatRupiah(
+                                                                    r.cost_per_unit,
+                                                                )}
+                                                                /
+                                                                {
+                                                                    unitShort[
+                                                                        r
+                                                                            .base_unit
+                                                                    ]
+                                                                }
+                                                            </p>
+                                                        </td>
+                                                        <td className="px-3 py-3 text-right tabular-nums">
+                                                            {fmtQty(
+                                                                r.quantity_needed,
+                                                            )}{' '}
                                                             {
                                                                 unitShort[
                                                                     r.base_unit
                                                                 ]
                                                             }
-                                                        </p>
-                                                    </td>
-                                                    <td className="px-3 py-3 text-right tabular-nums">
-                                                        {fmtQty(
-                                                            r.quantity_needed,
-                                                        )}{' '}
-                                                        {unitShort[r.base_unit]}
-                                                    </td>
-                                                    <td className="px-3 py-3 text-right tabular-nums">
-                                                        {formatPercent(
-                                                            Number(
-                                                                r.waste_factor,
-                                                            ) * 100,
-                                                            0,
-                                                        )}
-                                                    </td>
-                                                    <td className="px-3 py-3 text-right tabular-nums">
-                                                        {fmtQty(
-                                                            r.effective_qty,
-                                                        )}{' '}
-                                                        {unitShort[r.base_unit]}
+                                                        </td>
+                                                        <td className="px-3 py-3 text-right tabular-nums">
+                                                            {formatPercent(
+                                                                Number(
+                                                                    r.waste_factor,
+                                                                ) * 100,
+                                                                0,
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3 py-3 text-right tabular-nums">
+                                                            {fmtQty(
+                                                                r.effective_qty,
+                                                            )}{' '}
+                                                            {
+                                                                unitShort[
+                                                                    r.base_unit
+                                                                ]
+                                                            }
+                                                        </td>
+                                                        <td className="px-3 py-3 text-right tabular-nums">
+                                                            {formatRupiah(
+                                                                r.line_cost,
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="border-b border-border/60">
+                                                    <td
+                                                        className="px-3 py-3 text-muted-foreground"
+                                                        colSpan={4}
+                                                    >
+                                                        Subtotal bahan
                                                     </td>
                                                     <td className="px-3 py-3 text-right tabular-nums">
                                                         {formatRupiah(
-                                                            r.line_cost,
+                                                            selected.subtotal,
                                                         )}
                                                     </td>
                                                 </tr>
-                                            ))}
-                                            <tr className="border-b border-border/60">
-                                                <td
-                                                    className="px-3 py-3 text-muted-foreground"
-                                                    colSpan={4}
-                                                >
-                                                    Subtotal bahan
-                                                </td>
-                                                <td className="px-3 py-3 text-right tabular-nums">
-                                                    {formatRupiah(
-                                                        selected.subtotal,
-                                                    )}
-                                                </td>
-                                            </tr>
-                                            <tr className="border-b border-border/60">
-                                                <td
-                                                    className="px-3 py-3 text-muted-foreground"
-                                                    colSpan={4}
-                                                >
-                                                    Overhead standar per porsi
-                                                </td>
-                                                <td className="px-3 py-3 text-right tabular-nums">
-                                                    {formatRupiah(
-                                                        selected.overhead,
-                                                    )}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td
-                                                    className="px-3 py-3 font-semibold"
-                                                    colSpan={4}
-                                                >
-                                                    HPP
-                                                </td>
-                                                <td className="px-3 py-3 text-right font-bold tabular-nums">
-                                                    {formatRupiah(
-                                                        selected.current_hpp,
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </FxTableWrap>
+                                                <tr className="border-b border-border/60">
+                                                    <td
+                                                        className="px-3 py-3 text-muted-foreground"
+                                                        colSpan={4}
+                                                    >
+                                                        Overhead standar per
+                                                        porsi
+                                                    </td>
+                                                    <td className="px-3 py-3 text-right tabular-nums">
+                                                        {formatRupiah(
+                                                            selected.overhead,
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td
+                                                        className="px-3 py-3 font-semibold"
+                                                        colSpan={4}
+                                                    >
+                                                        HPP
+                                                    </td>
+                                                    <td className="px-3 py-3 text-right font-bold tabular-nums">
+                                                        {formatRupiah(
+                                                            selected.current_hpp,
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </FxTableWrap>
+                                </div>
                             )}
 
                             {hasProjection ? (
@@ -1084,6 +1125,11 @@ function BomModal({
     );
 
     const used = rows.map((r) => r.ingredient_id);
+    const hasInactive = rows.some((r) => {
+        const ing = ingredients.find((i) => i.id === r.ingredient_id);
+        return ing && ing.is_active === false;
+    });
+
     const previewCost = rows.reduce((sum, r) => {
         const ing = ingredients.find((i) => i.id === r.ingredient_id);
         if (!ing) return sum;
@@ -1163,6 +1209,16 @@ function BomModal({
             }
         >
             <div className="flex flex-col gap-3">
+                {hasInactive ? (
+                    <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 p-3 text-xs font-medium text-amber-600 dark:text-amber-400">
+                        <Info className="size-4 shrink-0" />
+                        <span>
+                            Resep ini mengandung bahan baku yang dinonaktifkan.
+                            Menu ini tidak dapat dijual di POS sampai bahan
+                            diganti atau diaktifkan kembali.
+                        </span>
+                    </div>
+                ) : null}
                 {rows.map((row, index) => {
                     const ing = ingredients.find(
                         (i) => i.id === row.ingredient_id,
@@ -1189,10 +1245,18 @@ function BomModal({
                                             <option key={opt.id} value={opt.id}>
                                                 {opt.name} (
                                                 {unitShort[opt.base_unit]})
+                                                {opt.is_active === false
+                                                    ? ' [NONAKTIF]'
+                                                    : ''}
                                             </option>
                                         ))}
                                     </FxSelect>
                                 </FxField>
+                                {ing && ing.is_active === false ? (
+                                    <p className="mt-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                                        Bahan nonaktif — perlu diganti
+                                    </p>
+                                ) : null}
                             </div>
                             <div className="sm:col-span-3">
                                 <FxField label={`Qty (${unitShort[unit]})`}>

@@ -448,6 +448,13 @@ export default function PosCheckout({ merchant_qris }: Props) {
                     setIsSubmitting(false);
                     idempotencyKey.current = null;
 
+                    // Bersihkan keranjang di sessionStorage karena transaksi sukses
+                    try {
+                        sessionStorage.removeItem(POS_CART_STORAGE_KEY);
+                    } catch {
+                        // Abaikan
+                    }
+
                     const flashOrder = (
                         page.props as {
                             flash?: { created_order?: CompletedOrder };
@@ -474,13 +481,6 @@ export default function PosCheckout({ merchant_qris }: Props) {
                             description: `Metode ${method === 'cash' ? 'Tunai' : 'QRIS'}, total ${formatRupiah(total)}. Kembalian: ${formatRupiah(orderData.change)}.`,
                         },
                     );
-
-                    // Bersihkan keranjang di sessionStorage karena transaksi sukses
-                    try {
-                        sessionStorage.removeItem(POS_CART_STORAGE_KEY);
-                    } catch {
-                        // Abaikan
-                    }
 
                     // Langsung kembali ke kasir untuk transaksi baru
                     router.visit('/pos');

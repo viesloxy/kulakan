@@ -31,6 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('bahan-baku', [IngredientController::class, 'store'])->middleware('throttle:30,1')->name('ingredients.store');
         Route::put('bahan-baku/{ingredient}', [IngredientController::class, 'update'])->middleware('throttle:30,1')->name('ingredients.update');
         Route::delete('bahan-baku/{ingredient}', [IngredientController::class, 'destroy'])->middleware('throttle:30,1')->name('ingredients.destroy');
+        Route::post('bahan-baku/{ingredient}/restore', [IngredientController::class, 'restore'])->middleware('throttle:30,1')->name('ingredients.restore');
         Route::post('bahan-baku/{ingredient}/stock-in', [IngredientController::class, 'stockIn'])->middleware('throttle:30,1')->name('ingredients.stock-in');
         Route::post('bahan-baku/{ingredient}/quote', [IngredientController::class, 'quote'])->middleware('throttle:30,1')->name('ingredients.quote');
 

@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
     ChevronLeft,
@@ -54,6 +54,13 @@ const categoryIcon = { Kopi: Coffee, 'Non-Kopi': CupSoda, Makanan: Sandwich };
 const categories: Category[] = ['Kopi', 'Non-Kopi', 'Makanan'];
 
 export default function Pos({ menus, active_queue_count = 0 }: Props) {
+    const pageProps = usePage<{
+        flash?: {
+            created_order?: unknown;
+            success?: string;
+        };
+    }>().props;
+
     const [cart, setCart] = useState<Record<number, number>>({});
     const [payment, setPayment] = useState<'cash' | 'qris'>('cash');
     const [orderType, setOrderType] = useState<OrderType>('dine-in');
@@ -65,9 +72,18 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
     const [inStockOnly, setInStockOnly] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // Pulihkan keranjang dari sessionStorage saat komponen dimuat (misal setelah klik Kembali dari Checkout)
+    // Pulihkan keranjang dari sessionStorage saat komponen dimuat (misal setelah klik Kembali dari Checkout),
+    // atau reset keranjang jika baru saja menyelesaikan Konfirmasi Bayar (flash.created_order).
     useEffect(() => {
         try {
+            if (pageProps.flash?.created_order) {
+                sessionStorage.removeItem(POS_CART_STORAGE_KEY);
+                setCart({});
+                setCustomerName('');
+                setIsLoaded(true);
+                return;
+            }
+
             const raw = sessionStorage.getItem(POS_CART_STORAGE_KEY);
             if (raw) {
                 const parsed: PosStoredSession = JSON.parse(raw);
@@ -79,13 +95,16 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                     }
                     if (parsed.paymentMethod) setPayment(parsed.paymentMethod);
                 }
+            } else {
+                setCart({});
+                setCustomerName('');
             }
         } catch {
             // Abaikan kesalahan parsing
         } finally {
             setIsLoaded(true);
         }
-    }, []);
+    }, [pageProps.flash?.created_order]);
 
     const filteredMenus = useMemo(() => {
         return menus.filter((m) => {
