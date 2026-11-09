@@ -92,9 +92,9 @@ class QrisService
 
         $merchantData = $this->extractMerchant($staticQris);
 
-        $merchantData['invoice_id'] = $newInvoiceId
-            ?? $merchantData['invoice_id']
-            ?? $this->generateInvoiceId();
+        $merchantData['invoice_id'] = ($newInvoiceId !== null && $newInvoiceId !== '')
+            ? $newInvoiceId
+            : ($merchantData['invoice_id'] !== '' ? $merchantData['invoice_id'] : $this->generateInvoiceId());
 
         return $this->generate($merchantData, $amount);
     }
@@ -159,7 +159,7 @@ class QrisService
     /**
      * Parse string QRIS menjadi array asosiatif key-value tag EMVCo.
      *
-     * @return array<string, string>
+     * @return array<array-key, string>
      */
     public function parse(string $qris): array
     {
@@ -355,7 +355,7 @@ class QrisService
     }
 
     /**
-     * @return array<string, string>
+     * @return array<array-key, string>
      */
     private function parseSubfields(string $subfield): array
     {

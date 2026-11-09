@@ -68,7 +68,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('pos', [OrderController::class, 'store'])
         ->middleware('throttle:60,1')
         ->name('pos.store');
-    Route::post('pos/qris-payload', [OrderController::class, 'qrisPayload'])
+    Route::match(['get', 'post'], 'pos/qris-payload', [OrderController::class, 'qrisPayload'])
         ->middleware('throttle:60,1')
         ->name('pos.qris-payload');
 

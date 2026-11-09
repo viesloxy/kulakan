@@ -31,9 +31,9 @@ class ProfitabilityController extends Controller
 
                 return [
                     'ingredient_id' => $item->ingredient_id,
-                    'ingredient_name' => $ing?->name ?? 'Bahan Tidak Diketahui',
+                    'ingredient_name' => $ing->name,
                     'quantity_needed' => (string) $item->quantity_needed,
-                    'base_unit' => $ing?->base_unit ?? 'gram',
+                    'base_unit' => $ing->base_unit,
                     'waste_factor' => (string) $item->waste_factor,
                     'cost_per_unit' => bcadd(Number::str($costPerUnit), '0', 2),
                     'item_cost' => bcadd($itemCost, '0', 2),

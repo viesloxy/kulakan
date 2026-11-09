@@ -3,7 +3,7 @@
 use App\Services\QrisService;
 
 it('dapat mengekstrak data merchant dari string QRIS statis', function () {
-    $service = new QrisService();
+    $service = new QrisService;
     $staticQris = $service->getStoreDefaultStaticQris();
 
     $merchant = $service->extractMerchant($staticQris);
@@ -15,7 +15,7 @@ it('dapat mengekstrak data merchant dari string QRIS statis', function () {
 });
 
 it('dapat mengonversi QRIS statis menjadi Dynamic QRIS ber-nominal pasti dengan CRC valid', function () {
-    $service = new QrisService();
+    $service = new QrisService;
     $staticQris = $service->getStoreDefaultStaticQris();
     $amount = 45000;
     $invoiceId = 'ORD-20261109-001';
