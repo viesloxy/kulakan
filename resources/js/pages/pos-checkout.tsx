@@ -134,10 +134,28 @@ function getDenominationBreakdown(change: number): string {
 }
 
 function formatIndonesianDateTime(date: Date): string {
-    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const days = [
+        'Minggu',
+        'Senin',
+        'Selasa',
+        'Rabu',
+        'Kamis',
+        'Jumat',
+        'Sabtu',
+    ];
     const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Agu',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des',
     ];
     const dayName = days[date.getDay()];
     const day = date.getDate();
@@ -149,10 +167,14 @@ function formatIndonesianDateTime(date: Date): string {
 }
 
 export default function PosCheckout({ merchant_qris }: Props) {
-    const [storedSession, setStoredSession] = useState<PosStoredSession | null>(null);
+    const [storedSession, setStoredSession] = useState<PosStoredSession | null>(
+        null,
+    );
     const [isCartLoaded, setIsCartLoaded] = useState(false);
 
-    const [checkoutPaymentMethod, setCheckoutPaymentMethod] = useState<'cash' | 'qris'>('cash');
+    const [checkoutPaymentMethod, setCheckoutPaymentMethod] = useState<
+        'cash' | 'qris'
+    >('cash');
     const [cashReceivedInput, setCashReceivedInput] = useState('');
     const [qrisTimeLeft, setQrisTimeLeft] = useState(300);
     const [qrisPayloadData, setQrisPayloadData] = useState<{
@@ -182,7 +204,11 @@ export default function PosCheckout({ merchant_qris }: Props) {
             const raw = sessionStorage.getItem(POS_CART_STORAGE_KEY);
             if (raw) {
                 const parsed: PosStoredSession = JSON.parse(raw);
-                if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+                if (
+                    parsed &&
+                    Array.isArray(parsed.items) &&
+                    parsed.items.length > 0
+                ) {
                     setStoredSession(parsed);
                     const initMethod = parsed.paymentMethod || 'cash';
                     setCheckoutPaymentMethod(initMethod);
@@ -213,11 +239,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
     );
 
     const total = useMemo(
-        () =>
-            items.reduce(
-                (sum, x) => sum + Number(x.price) * x.qty,
-                0,
-            ),
+        () => items.reduce((sum, x) => sum + Number(x.price) * x.qty, 0),
         [items],
     );
 
@@ -251,7 +273,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
     // Ambil payload QRIS saat beralih ke QRIS jika belum ada
     useEffect(() => {
         if (checkoutPaymentMethod === 'qris' && total > 0 && !qrisPayloadData) {
-            fetchQrisPayload(total);
+            void fetchQrisPayload(total);
         }
     }, [checkoutPaymentMethod, total, qrisPayloadData]);
 
@@ -264,14 +286,14 @@ export default function PosCheckout({ merchant_qris }: Props) {
         } else if (method === 'qris') {
             setQrisTimeLeft(300);
             if (!qrisPayloadData || qrisPayloadData.amount !== total) {
-                fetchQrisPayload(total);
+                void fetchQrisPayload(total);
             }
         }
     }
 
     function refreshQris() {
         setQrisTimeLeft(300);
-        fetchQrisPayload(total);
+        void fetchQrisPayload(total);
         toast.info('QRIS berhasil diperbarui.');
     }
 
@@ -392,7 +414,9 @@ export default function PosCheckout({ merchant_qris }: Props) {
 
         const cashReceived = method === 'cash' ? parsedCashReceived : total;
         if (method === 'cash' && cashReceived < total) {
-            toast.error('Uang tunai yang diterima kurang dari total pembayaran.');
+            toast.error(
+                'Uang tunai yang diterima kurang dari total pembayaran.',
+            );
             return;
         }
 
@@ -443,9 +467,12 @@ export default function PosCheckout({ merchant_qris }: Props) {
                         customer_name: customerName.trim(),
                     };
 
-                    toast.success(`Pesanan ${orderData.id} berhasil disimpan!`, {
-                        description: `Metode ${method === 'cash' ? 'Tunai' : 'QRIS'}, total ${formatRupiah(total)}. Kembalian: ${formatRupiah(orderData.change)}.`,
-                    });
+                    toast.success(
+                        `Pesanan ${orderData.id} berhasil disimpan!`,
+                        {
+                            description: `Metode ${method === 'cash' ? 'Tunai' : 'QRIS'}, total ${formatRupiah(total)}. Kembalian: ${formatRupiah(orderData.change)}.`,
+                        },
+                    );
 
                     // Bersihkan keranjang di sessionStorage karena transaksi sukses
                     try {
@@ -493,15 +520,16 @@ export default function PosCheckout({ merchant_qris }: Props) {
                         <h3 className="text-base font-bold text-foreground">
                             Belum Ada Item di Keranjang
                         </h3>
-                        <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                            Silakan kembali ke kasir untuk memilih menu terlebih dahulu sebelum melakukan pembayaran.
+                        <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+                            Silakan kembali ke kasir untuk memilih menu terlebih
+                            dahulu sebelum melakukan pembayaran.
                         </p>
                     </div>
                     <FxButton
                         variant="coral"
                         size="md"
                         onClick={handleCancelPayment}
-                        className="gap-2 mt-2"
+                        className="mt-2 gap-2"
                     >
                         <ArrowLeft className="size-4" />
                         <span>Kembali ke Kasir</span>
@@ -529,24 +557,24 @@ export default function PosCheckout({ merchant_qris }: Props) {
         >
             <div className="flex flex-col gap-4">
                 {/* Top Control Bar Minimalis (Tanpa nama kasir, status koneksi, atau nomor order) */}
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-secondary/80 p-3 sm:px-4 border border-border/50">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/50 bg-secondary/80 p-3 sm:px-4">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold shadow-xs">
+                        <div className="flex size-9 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground shadow-xs">
                             <Coffee className="size-5" />
                         </div>
                         <div>
-                            <span className="font-extrabold text-sm tracking-tight text-foreground">
+                            <span className="text-sm font-extrabold tracking-tight text-foreground">
                                 Kulakan POS
                             </span>
-                            <p className="text-[11px] text-muted-foreground font-medium">
+                            <p className="text-[11px] font-medium text-muted-foreground">
                                 Terminal Kasir
                             </p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2 rounded-full bg-card px-3.5 py-1.5 border border-border/50 shadow-2xs">
-                            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <div className="flex items-center gap-2 rounded-full border border-border/50 bg-card px-3.5 py-1.5 shadow-2xs">
+                            <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
                             <span className="text-xs font-semibold text-foreground">
                                 {orderType === 'dine-in'
                                     ? 'Dine In'
@@ -558,7 +586,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                     : ''}
                             </span>
                         </div>
-                        <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 border border-border/50 text-xs font-medium text-muted-foreground tabular-nums shadow-2xs">
+                        <div className="hidden items-center gap-1.5 rounded-full border border-border/50 bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground tabular-nums shadow-2xs sm:flex">
                             <Clock className="size-3.5 text-primary" />
                             <span>{formatIndonesianDateTime(currentTime)}</span>
                         </div>
@@ -567,7 +595,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                     <FxButton
                         variant="soft"
                         size="sm"
-                        className="gap-1.5 font-semibold text-xs"
+                        className="gap-1.5 text-xs font-semibold"
                         onClick={handleCancelPayment}
                     >
                         <ArrowLeft className="size-3.5" />
@@ -605,8 +633,8 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                     key={item.menu_id}
                                     className="flex items-center justify-between gap-3 rounded-xl border border-border/40 bg-secondary/30 p-2.5 transition-colors"
                                 >
-                                    <div className="flex items-center gap-2.5 min-w-0">
-                                        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-card font-bold text-xs text-foreground shadow-2xs">
+                                    <div className="flex min-w-0 items-center gap-2.5">
+                                        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-card text-xs font-bold text-foreground shadow-2xs">
                                             {item.qty}x
                                         </span>
                                         <div className="min-w-0">
@@ -628,7 +656,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                         </div>
 
                         {/* Kotak Ringkasan & Total Tagihan (Nett) */}
-                        <div className="border-t border-border/50 pt-3 flex flex-col gap-2.5">
+                        <div className="flex flex-col gap-2.5 border-t border-border/50 pt-3">
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                                 <span>Subtotal ({totalItemsCount} Item)</span>
                                 <span className="font-semibold text-foreground tabular-nums">
@@ -636,9 +664,9 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                 </span>
                             </div>
 
-                            <div className="flex items-center justify-between rounded-2xl bg-secondary/80 p-4 border border-border/60">
+                            <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-secondary/80 p-4">
                                 <div>
-                                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                                    <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                                         Total Tagihan
                                     </span>
                                     <p className="text-[11px] text-muted-foreground">
@@ -656,37 +684,37 @@ export default function PosCheckout({ merchant_qris }: Props) {
                     <div className="flex flex-col gap-4">
                         {/* Segmented Switcher Metode Pembayaran */}
                         <div className="flex flex-col gap-1.5">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                            <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                                 Pilih Metode Pembayaran
                             </span>
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     type="button"
                                     onClick={() => switchPaymentMethod('cash')}
-                                    className={`flex h-12 items-center justify-center gap-2 rounded-2xl text-xs font-bold transition-all shadow-xs ${
+                                    className={`flex h-12 items-center justify-center gap-2 rounded-2xl text-xs font-bold shadow-xs transition-all ${
                                         checkoutPaymentMethod === 'cash'
-                                            ? 'bg-foreground text-background dark:bg-card dark:text-foreground ring-2 ring-primary/40'
+                                            ? 'bg-foreground text-background ring-2 ring-primary/40 dark:bg-card dark:text-foreground'
                                             : 'bg-secondary text-foreground hover:bg-hover-soft'
                                     }`}
                                 >
                                     <Wallet className="size-4 text-primary" />
                                     <span>TUNAI / CASH</span>
-                                    <span className="rounded-md bg-white/15 dark:bg-black/20 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                                    <span className="rounded-md bg-white/15 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground dark:bg-black/20">
                                         F1
                                     </span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => switchPaymentMethod('qris')}
-                                    className={`flex h-12 items-center justify-center gap-2 rounded-2xl text-xs font-bold transition-all shadow-xs ${
+                                    className={`flex h-12 items-center justify-center gap-2 rounded-2xl text-xs font-bold shadow-xs transition-all ${
                                         checkoutPaymentMethod === 'qris'
-                                            ? 'bg-foreground text-background dark:bg-card dark:text-foreground ring-2 ring-primary/40'
+                                            ? 'bg-foreground text-background ring-2 ring-primary/40 dark:bg-card dark:text-foreground'
                                             : 'bg-secondary text-foreground hover:bg-hover-soft'
                                     }`}
                                 >
                                     <QrCode className="size-4 text-primary" />
                                     <span>QRIS INSTAN</span>
-                                    <span className="rounded-md bg-white/15 dark:bg-black/20 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                                    <span className="rounded-md bg-white/15 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground dark:bg-black/20">
                                         F2
                                     </span>
                                 </button>
@@ -698,11 +726,11 @@ export default function PosCheckout({ merchant_qris }: Props) {
                             /* ================= ALUR TUNAI / CASH ================= */
                             <div className="flex flex-col gap-4">
                                 {/* Dual Card: Uang Diterima & Kembalian Pelanggan */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                     {/* Card 1: Uang Diterima */}
-                                    <div className="flex flex-col justify-between rounded-2xl bg-secondary/50 p-4 border border-border/60">
+                                    <div className="flex flex-col justify-between rounded-2xl border border-border/60 bg-secondary/50 p-4">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                                            <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                                                 Uang Diterima (Cash Tendered)
                                             </span>
                                             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
@@ -710,7 +738,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                             </span>
                                         </div>
                                         <div className="my-2.5">
-                                            <span className="text-2xl sm:text-3xl font-black text-foreground tabular-nums">
+                                            <span className="text-2xl font-black text-foreground tabular-nums sm:text-3xl">
                                                 Rp {cashReceivedInput || '0'}
                                             </span>
                                         </div>
@@ -724,21 +752,21 @@ export default function PosCheckout({ merchant_qris }: Props) {
 
                                     {/* Card 2: Kembalian Pelanggan */}
                                     <div
-                                        className={`flex flex-col justify-between rounded-2xl p-4 border transition-colors ${
+                                        className={`flex flex-col justify-between rounded-2xl border p-4 transition-colors ${
                                             isCashSufficient
-                                                ? 'bg-success-soft/20 border-success/30'
-                                                : 'bg-danger-soft/20 border-danger/30'
+                                                ? 'border-success/30 bg-success-soft/20'
+                                                : 'border-danger/30 bg-danger-soft/20'
                                         }`}
                                     >
                                         <div className="flex items-center justify-between">
-                                            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                                            <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                                                 Kembalian Pelanggan
                                             </span>
                                             <span
                                                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                                                     isCashSufficient
-                                                        ? 'bg-success text-success-foreground'
-                                                        : 'bg-danger text-danger-foreground'
+                                                        ? 'text-success-foreground bg-success'
+                                                        : 'text-danger-foreground bg-danger'
                                                 }`}
                                             >
                                                 {isCashSufficient
@@ -748,7 +776,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                         </div>
                                         <div className="my-2.5">
                                             <span
-                                                className={`text-2xl sm:text-3xl font-black tabular-nums ${
+                                                className={`text-2xl font-black tabular-nums sm:text-3xl ${
                                                     isCashSufficient
                                                         ? 'text-success'
                                                         : 'text-danger'
@@ -762,7 +790,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                                       )}
                                             </span>
                                         </div>
-                                        <span className="text-[11px] text-muted-foreground truncate">
+                                        <span className="truncate text-[11px] text-muted-foreground">
                                             {isCashSufficient
                                                 ? `Rekomendasi Uang: ${getDenominationBreakdown(cashChange)}`
                                                 : `Kurang ${formatRupiah(total - parsedCashReceived)}`}
@@ -772,10 +800,10 @@ export default function PosCheckout({ merchant_qris }: Props) {
 
                                 {/* Row Pilihan Cepat Nominal Uang (Fast Cash) */}
                                 <div className="flex flex-col gap-1.5">
-                                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                                    <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                                         Pilihan Cepat Nominal Uang (Fast Cash)
                                     </span>
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                                         {fastCashChips.map((chip, idx) => {
                                             const isSelected =
                                                 parsedCashReceived ===
@@ -791,10 +819,10 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                                             ),
                                                         )
                                                     }
-                                                    className={`flex flex-col items-center justify-center rounded-2xl p-2.5 text-center transition-all border ${
+                                                    className={`flex flex-col items-center justify-center rounded-2xl border p-2.5 text-center transition-all ${
                                                         isSelected
-                                                            ? 'fx-coral shadow-sm border-transparent'
-                                                            : 'bg-secondary/60 hover:bg-hover-soft border-border/50 text-foreground'
+                                                            ? 'border-transparent fx-coral shadow-sm'
+                                                            : 'border-border/50 bg-secondary/60 text-foreground hover:bg-hover-soft'
                                                     }`}
                                                 >
                                                     <span className="text-[10px] font-medium opacity-80">
@@ -812,10 +840,10 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                 </div>
 
                                 {/* Keypad Sentuh Kasir & Opsi Eksekusi */}
-                                <div className="grid grid-cols-1 sm:grid-cols-[1.2fr_1fr] gap-3 items-stretch">
+                                <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-[1.2fr_1fr]">
                                     {/* Keypad Sentuh Kasir */}
                                     <div className="flex flex-col gap-1.5">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                                        <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                                             Keypad Sentuh Kasir
                                         </span>
                                         <div className="grid grid-cols-3 gap-1.5">
@@ -838,7 +866,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                                     onClick={() =>
                                                         handleKeypadInput(digit)
                                                     }
-                                                    className="flex h-12 items-center justify-center rounded-xl bg-secondary font-bold text-base text-foreground transition-all active:scale-95 hover:bg-hover-soft shadow-2xs"
+                                                    className="flex h-12 items-center justify-center rounded-xl bg-secondary text-base font-bold text-foreground shadow-2xs transition-all hover:bg-hover-soft active:scale-95"
                                                 >
                                                     {digit}
                                                 </button>
@@ -846,7 +874,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                             <button
                                                 type="button"
                                                 onClick={handleKeypadBackspace}
-                                                className="flex h-12 items-center justify-center rounded-xl bg-secondary font-bold text-base text-foreground transition-all active:scale-95 hover:bg-danger-soft hover:text-danger shadow-2xs"
+                                                className="flex h-12 items-center justify-center rounded-xl bg-secondary text-base font-bold text-foreground shadow-2xs transition-all hover:bg-danger-soft hover:text-danger active:scale-95"
                                                 aria-label="Hapus satu angka"
                                             >
                                                 <Delete className="size-5" />
@@ -855,24 +883,26 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                         <button
                                             type="button"
                                             onClick={handleKeypadClear}
-                                            className="mt-1 text-center text-xs font-semibold text-muted-foreground hover:text-danger transition-colors py-1"
+                                            className="mt-1 py-1 text-center text-xs font-semibold text-muted-foreground transition-colors hover:text-danger"
                                         >
                                             Bersihkan Input (C)
                                         </button>
                                     </div>
 
                                     {/* Opsi & Tombol Eksekusi Pembayaran Tunai */}
-                                    <div className="flex flex-col justify-between gap-4 rounded-2xl bg-secondary/30 p-4 border border-border/50">
+                                    <div className="flex flex-col justify-between gap-4 rounded-2xl border border-border/50 bg-secondary/30 p-4">
                                         <div className="flex flex-col gap-1">
                                             <span className="text-xs font-bold text-foreground">
                                                 Verifikasi Pembayaran
                                             </span>
-                                            <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                                Pastikan uang fisik yang diterima dari pelanggan sesuai sebelum menekan konfirmasi.
+                                            <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                                Pastikan uang fisik yang
+                                                diterima dari pelanggan sesuai
+                                                sebelum menekan konfirmasi.
                                             </p>
                                         </div>
 
-                                        <div className="flex flex-col gap-1.5 mt-auto">
+                                        <div className="mt-auto flex flex-col gap-1.5">
                                             <FxButton
                                                 variant="coral"
                                                 size="lg"
@@ -883,12 +913,14 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                                 onClick={() =>
                                                     executeOrder('cash')
                                                 }
-                                                className="w-full py-6 text-sm font-bold shadow-md gap-2"
+                                                className="w-full gap-2 py-6 text-sm font-bold shadow-md"
                                             >
                                                 {isSubmitting ? (
                                                     <>
                                                         <Loader2 className="size-4 animate-spin" />
-                                                        <span>Memproses...</span>
+                                                        <span>
+                                                            Memproses...
+                                                        </span>
                                                     </>
                                                 ) : (
                                                     <>
@@ -901,7 +933,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                             </FxButton>
                                             <span className="text-center text-[11px] text-muted-foreground">
                                                 Tekan{' '}
-                                                <kbd className="px-1 py-0.5 bg-secondary rounded text-[10px] font-mono">
+                                                <kbd className="rounded bg-secondary px-1 py-0.5 font-mono text-[10px]">
                                                     [Enter]
                                                 </kbd>{' '}
                                                 untuk eksekusi
@@ -912,35 +944,39 @@ export default function PosCheckout({ merchant_qris }: Props) {
                             </div>
                         ) : (
                             /* ================= ALUR QRIS INSTAN ================= */
-                            <div className="grid grid-cols-1 sm:grid-cols-[340px_1fr] gap-4 items-stretch">
+                            <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-[340px_1fr]">
                                 {/* Kartu Standee QRIS Resmi Khas Indonesia dengan Frame Pinggiran Merah */}
-                                <div className="flex flex-col items-center rounded-3xl bg-white p-5 shadow-md border-2 border-red-500/30 text-gray-900 w-full max-w-[340px] mx-auto">
+                                <div className="mx-auto flex w-full max-w-[340px] flex-col items-center rounded-3xl border-2 border-red-500/30 bg-white p-5 text-gray-900 shadow-md">
                                     {/* Header Standee: Logo QRIS & Logo GPN Merah */}
-                                    <div className="flex w-full items-center justify-between border-b border-gray-100 pb-2.5 mb-2.5">
+                                    <div className="mb-2.5 flex w-full items-center justify-between border-b border-gray-100 pb-2.5">
                                         <div className="flex items-center gap-1.5">
-                                            <span className="rounded-md bg-red-600 px-2 py-0.5 text-[11px] font-black text-white tracking-wider">
+                                            <span className="rounded-md bg-red-600 px-2 py-0.5 text-[11px] font-black tracking-wider text-white">
                                                 QRIS
                                             </span>
-                                            <span className="text-[9px] font-semibold text-gray-600 leading-tight">
+                                            <span className="text-[9px] leading-tight font-semibold text-gray-600">
                                                 QR Code Standar
                                                 <br />
                                                 Pembayaran Nasional
                                             </span>
                                         </div>
-                                        <div className="flex size-7 items-center justify-center rounded-full bg-red-600 text-white font-black text-[9px] shadow-2xs">
+                                        <div className="flex size-7 items-center justify-center rounded-full bg-red-600 text-[9px] font-black text-white shadow-2xs">
                                             GPN
                                         </div>
                                     </div>
 
                                     {/* Nama Toko & NMID */}
-                                    <div className="text-center my-1">
-                                        <p className="text-xs font-black uppercase tracking-wider text-gray-900">
+                                    <div className="my-1 text-center">
+                                        <p className="text-xs font-black tracking-wider text-gray-900 uppercase">
                                             {qrisPayloadData?.merchant_name ||
                                                 merchant_qris?.merchant_name ||
                                                 'BAROKAH COMPENY'}
                                         </p>
-                                        <p className="text-[10px] text-gray-500 font-semibold font-mono">
-                                            NMID: {qrisPayloadData?.nmid || merchant_qris?.nmid || 'ID1024362479726'} •{' '}
+                                        <p className="font-mono text-[10px] font-semibold text-gray-500">
+                                            NMID:{' '}
+                                            {qrisPayloadData?.nmid ||
+                                                merchant_qris?.nmid ||
+                                                'ID1024362479726'}{' '}
+                                            •{' '}
                                             {qrisPayloadData?.merchant_city ||
                                                 merchant_qris?.merchant_city ||
                                                 'SURABAYA'}
@@ -948,7 +984,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                     </div>
 
                                     {/* QR Code SVG Dinamis */}
-                                    <div className="my-3 flex size-[200px] items-center justify-center rounded-2xl bg-white p-2 border border-gray-200/80 shadow-2xs">
+                                    <div className="my-3 flex size-[200px] items-center justify-center rounded-2xl border border-gray-200/80 bg-white p-2 shadow-2xs">
                                         {isLoadingQris ? (
                                             <div className="flex flex-col items-center justify-center gap-2 text-gray-500">
                                                 <Loader2 className="size-8 animate-spin text-red-600" />
@@ -970,8 +1006,8 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                     </div>
 
                                     {/* Total Nominal QRIS Terkunci */}
-                                    <div className="w-full rounded-xl bg-gray-100 p-2 text-center border border-gray-200/60 mb-2.5">
-                                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                                    <div className="mb-2.5 w-full rounded-xl border border-gray-200/60 bg-gray-100 p-2 text-center">
+                                        <span className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">
                                             Total Nominal QRIS
                                         </span>
                                         <p className="text-lg font-black text-gray-900 tabular-nums">
@@ -981,16 +1017,17 @@ export default function PosCheckout({ merchant_qris }: Props) {
 
                                     {/* Logo Jaringan Pembayaran */}
                                     <div className="text-center text-[9px] font-medium text-gray-400">
-                                        BCA • Mandiri • GoPay • OVO • ShopeePay • Dana
+                                        BCA • Mandiri • GoPay • OVO • ShopeePay
+                                        • Dana
                                     </div>
                                 </div>
 
                                 {/* Panel Status Menunggu & Tombol Konfirmasi Diterima (Tanpa acquirer ref) */}
-                                <div className="flex flex-col justify-between gap-4 rounded-3xl bg-secondary/30 p-5 border border-border/50">
+                                <div className="flex flex-col justify-between gap-4 rounded-3xl border border-border/50 bg-secondary/30 p-5">
                                     <div className="flex flex-col gap-3">
                                         <div className="flex items-center gap-2">
-                                            <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
-                                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                            <span className="size-2 animate-pulse rounded-full bg-amber-500" />
+                                            <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                                                 Status Menunggu
                                             </span>
                                             <span className="ml-auto rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
@@ -998,7 +1035,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                             </span>
                                         </div>
 
-                                        <div className="flex items-start gap-3 rounded-2xl bg-card p-3.5 border border-border/50">
+                                        <div className="flex items-start gap-3 rounded-2xl border border-border/50 bg-card p-3.5">
                                             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                                                 <QrCode className="size-5" />
                                             </div>
@@ -1006,23 +1043,23 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                                 <p className="text-xs font-bold text-foreground">
                                                     Menunggu Pembayaran...
                                                 </p>
-                                                <p className="text-[11px] text-muted-foreground mt-0.5">
-                                                    Arahkan layar ke pelanggan untuk
-                                                    scan menggunakan m-Banking atau
-                                                    e-Wallet.
+                                                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                                    Arahkan layar ke pelanggan
+                                                    untuk scan menggunakan
+                                                    m-Banking atau e-Wallet.
                                                 </p>
                                             </div>
                                         </div>
 
                                         {/* Countdown Timer */}
-                                        <div className="flex items-center justify-between rounded-2xl bg-card p-3.5 border border-border/50">
+                                        <div className="flex items-center justify-between rounded-2xl border border-border/50 bg-card p-3.5">
                                             <span className="text-xs font-semibold text-muted-foreground">
                                                 Masa Berlaku Kode:
                                             </span>
                                             <span
                                                 className={`text-base font-black tabular-nums ${
                                                     qrisTimeLeft < 60
-                                                        ? 'text-danger animate-pulse'
+                                                        ? 'animate-pulse text-danger'
                                                         : 'text-primary'
                                                 }`}
                                             >
@@ -1032,7 +1069,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                     </div>
 
                                     {/* Action Buttons QRIS */}
-                                    <div className="flex flex-col gap-2 mt-auto">
+                                    <div className="mt-auto flex flex-col gap-2">
                                         <FxButton
                                             variant="coral"
                                             size="lg"
@@ -1040,7 +1077,7 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                                 isSubmitting || isLoadingQris
                                             }
                                             onClick={() => executeOrder('qris')}
-                                            className="w-full py-6 text-sm font-bold shadow-md gap-2"
+                                            className="w-full gap-2 py-6 text-sm font-bold shadow-md"
                                         >
                                             {isSubmitting ? (
                                                 <>
@@ -1050,7 +1087,9 @@ export default function PosCheckout({ merchant_qris }: Props) {
                                             ) : (
                                                 <>
                                                     <Check className="size-4" />
-                                                    <span>Konfirmasi Diterima</span>
+                                                    <span>
+                                                        Konfirmasi Diterima
+                                                    </span>
                                                 </>
                                             )}
                                         </FxButton>

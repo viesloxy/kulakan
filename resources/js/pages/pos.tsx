@@ -53,16 +53,15 @@ type Props = {
 const categoryIcon = { Kopi: Coffee, 'Non-Kopi': CupSoda, Makanan: Sandwich };
 const categories: Category[] = ['Kopi', 'Non-Kopi', 'Makanan'];
 
-export default function Pos({
-    menus,
-    active_queue_count = 0,
-}: Props) {
+export default function Pos({ menus, active_queue_count = 0 }: Props) {
     const [cart, setCart] = useState<Record<number, number>>({});
     const [payment, setPayment] = useState<'cash' | 'qris'>('cash');
     const [orderType, setOrderType] = useState<OrderType>('dine-in');
     const [customerName, setCustomerName] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState<'Semua' | Category>('Semua');
+    const [categoryFilter, setCategoryFilter] = useState<'Semua' | Category>(
+        'Semua',
+    );
     const [inStockOnly, setInStockOnly] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
 
@@ -151,14 +150,16 @@ export default function Pos({
             if (Object.keys(cart).length === 0) {
                 sessionStorage.removeItem(POS_CART_STORAGE_KEY);
             } else {
-                const storedItems: PosCartItem[] = items.map(({ menu, qty }) => ({
-                    menu_id: menu.id,
-                    name: menu.name,
-                    price: Number(menu.selling_price),
-                    qty,
-                    image_url: menu.image_url,
-                    category: menu.category,
-                }));
+                const storedItems: PosCartItem[] = items.map(
+                    ({ menu, qty }) => ({
+                        menu_id: menu.id,
+                        name: menu.name,
+                        price: Number(menu.selling_price),
+                        qty,
+                        image_url: menu.image_url,
+                        category: menu.category,
+                    }),
+                );
 
                 const payload: PosStoredSession = {
                     cart,
@@ -450,7 +451,9 @@ export default function Pos({
                                                         <div className="flex items-center gap-1 rounded-full bg-secondary p-1">
                                                             <button
                                                                 type="button"
-                                                                onClick={(e) => {
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
                                                                     e.stopPropagation();
                                                                     setQty(
                                                                         m.id,
@@ -468,7 +471,9 @@ export default function Pos({
                                                             </span>
                                                             <button
                                                                 type="button"
-                                                                onClick={(e) => {
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
                                                                     e.stopPropagation();
                                                                     setQty(
                                                                         m.id,
@@ -496,7 +501,7 @@ export default function Pos({
                                                                 e.stopPropagation();
                                                                 add(m);
                                                             }}
-                                                            className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground transition-all duration-200 active:scale-95 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                                                            className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground transition-all duration-200 hover:bg-primary hover:text-primary-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                                                             aria-label={`Tambah ${m.name}`}
                                                         >
                                                             <Plus className="size-4" />
