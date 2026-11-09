@@ -282,7 +282,7 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                 </FxButton>
             }
         >
-            <div className="grid items-start gap-5 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px]">
+            <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px]">
                 {/* Kolom Kiri: Katalog Produk & Filter */}
                 <div className="flex flex-col gap-4">
                     <Reveal delay={0.05}>
@@ -315,7 +315,7 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
 
                             {/* Search Bar & In-Stock Toggle */}
                             <div className="flex items-center gap-2">
-                                <div className="flex h-9 w-full items-center gap-2 rounded-full bg-secondary/80 px-3 transition-colors focus-within:bg-secondary focus-within:ring-2 focus-within:ring-primary/20 sm:w-56">
+                                <div className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-full bg-secondary/80 px-3 transition-colors focus-within:bg-secondary focus-within:ring-2 focus-within:ring-primary/20 sm:w-56 sm:flex-none">
                                     <Search className="size-3.5 shrink-0 text-muted-foreground" />
                                     <input
                                         type="text"
@@ -367,7 +367,7 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                             </div>
                         ) : (
                             <div className="flex flex-col gap-5">
-                                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-3">
+                                <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-3 sm:gap-3.5">
                                     {paginatedMenus.map((m) => {
                                         const inCartQty = cart[m.id] ?? 0;
                                         const isOutOfStock =
@@ -377,7 +377,7 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                                         return (
                                             <FxCard
                                                 key={m.id}
-                                                className={`group flex flex-col justify-between p-3.5 transition-all duration-200 ${
+                                                className={`group flex h-full flex-col justify-between p-3.5 transition-all duration-200 ${
                                                     isOutOfStock
                                                         ? 'opacity-50'
                                                         : 'hover:shadow-md'
@@ -428,85 +428,79 @@ export default function Pos({ menus, active_queue_count = 0 }: Props) {
                                                 </div>
 
                                                 {/* Bagian Bawah: Nama, Harga, & Stepper Kontrol Kuantitas */}
-                                                <div className="flex items-end justify-between gap-2 pt-1">
-                                                    <div
+                                                <div className="mt-2.5 shrink-0">
+                                                    <p
                                                         onClick={() =>
                                                             !isOutOfStock &&
                                                             add(m)
                                                         }
-                                                        className="min-w-0 flex-1 cursor-pointer"
+                                                        title={m.name}
+                                                        className="cursor-pointer truncate font-semibold text-foreground transition-colors group-hover:text-primary"
                                                     >
-                                                        <p className="truncate font-semibold text-foreground transition-colors group-hover:text-primary">
-                                                            {m.name}
-                                                        </p>
-                                                        <p className="mt-0.5 text-sm font-bold text-foreground tabular-nums">
+                                                        {m.name}
+                                                    </p>
+                                                    <div className="mt-1 flex items-center justify-between gap-2">
+                                                        <p className="min-w-0 truncate text-sm font-bold text-foreground tabular-nums">
                                                             {formatRupiah(
                                                                 m.selling_price,
                                                             )}
                                                         </p>
-                                                    </div>
 
-                                                    {/* Stepper Kuantitas */}
-                                                    {inCartQty > 0 ? (
-                                                        <div className="flex items-center gap-1 rounded-full bg-secondary p-1">
+                                                        {/* Stepper Kuantitas */}
+                                                        {inCartQty > 0 ? (
+                                                            <div className="flex shrink-0 items-center gap-0.5 rounded-full bg-secondary p-1">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        setQty(
+                                                                            m.id,
+                                                                            inCartQty -
+                                                                                1,
+                                                                        )
+                                                                    }
+                                                                    className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
+                                                                    aria-label="Kurangi"
+                                                                >
+                                                                    <Minus className="size-3" />
+                                                                </button>
+                                                                <span className="w-4 text-center text-xs font-bold tabular-nums">
+                                                                    {inCartQty}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        setQty(
+                                                                            m.id,
+                                                                            inCartQty +
+                                                                                1,
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        inCartQty >=
+                                                                        m.portions_available
+                                                                    }
+                                                                    className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft disabled:opacity-30"
+                                                                    aria-label="Tambah"
+                                                                >
+                                                                    <Plus className="size-3" />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
                                                             <button
                                                                 type="button"
-                                                                onClick={(
-                                                                    e,
-                                                                ) => {
-                                                                    e.stopPropagation();
-                                                                    setQty(
-                                                                        m.id,
-                                                                        inCartQty -
-                                                                            1,
-                                                                    );
-                                                                }}
-                                                                className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft"
-                                                                aria-label="Kurangi"
-                                                            >
-                                                                <Minus className="size-3" />
-                                                            </button>
-                                                            <span className="w-5 text-center text-xs font-bold tabular-nums">
-                                                                {inCartQty}
-                                                            </span>
-                                                            <button
-                                                                type="button"
-                                                                onClick={(
-                                                                    e,
-                                                                ) => {
-                                                                    e.stopPropagation();
-                                                                    setQty(
-                                                                        m.id,
-                                                                        inCartQty +
-                                                                            1,
-                                                                    );
-                                                                }}
                                                                 disabled={
-                                                                    inCartQty >=
-                                                                    m.portions_available
+                                                                    isOutOfStock
                                                                 }
-                                                                className="flex size-6 items-center justify-center rounded-full bg-card transition-colors hover:bg-hover-soft disabled:opacity-30"
-                                                                aria-label="Tambah"
+                                                                onClick={() =>
+                                                                    add(m)
+                                                                }
+                                                                className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-foreground transition-all duration-200 hover:bg-primary hover:text-primary-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                                                                aria-label={`Tambah ${m.name}`}
                                                             >
-                                                                <Plus className="size-3" />
+                                                                <Plus className="size-4" />
                                                             </button>
-                                                        </div>
-                                                    ) : (
-                                                        <button
-                                                            type="button"
-                                                            disabled={
-                                                                isOutOfStock
-                                                            }
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                add(m);
-                                                            }}
-                                                            className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground transition-all duration-200 hover:bg-primary hover:text-primary-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-                                                            aria-label={`Tambah ${m.name}`}
-                                                        >
-                                                            <Plus className="size-4" />
-                                                        </button>
-                                                    )}
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </FxCard>
                                         );
