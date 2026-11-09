@@ -36,7 +36,6 @@ import {
     FxSelect,
     FxTextarea,
 } from '@/components/fx/fx-form';
-import { FxTableWrap } from '@/components/fx/fx-table-wrap';
 import Reveal from '@/components/motion/reveal';
 import PageShell from '@/components/page-shell';
 import { formatRupiah } from '@/lib/format';
