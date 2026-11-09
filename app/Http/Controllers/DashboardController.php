@@ -87,6 +87,25 @@ class DashboardController extends Controller
 
         [$cashBudget, $restock] = $this->restockSummary();
 
+        $topProfitableMenus = Menu::where('is_active', true)
+            ->whereNotNull('current_hpp')
+            ->where('selling_price', '>', 0)
+            ->orderByDesc('margin_pct')
+            ->limit(3)
+            ->get()
+            ->map(fn (Menu $menu): array => [
+                'id' => $menu->id,
+                'name' => $menu->name,
+                'category' => $menu->category ?? 'Kopi',
+                'selling_price' => (int) $menu->selling_price,
+                'current_hpp' => (int) $menu->current_hpp,
+                'margin_rupiah' => (int) bcsub(Number::str($menu->selling_price), Number::str($menu->current_hpp), 0),
+                'margin_pct' => (float) $menu->margin_pct,
+                'status' => $menu->status,
+                'image_url' => $menu->image_url,
+            ])
+            ->values();
+
         return Inertia::render('dashboard', [
             'greeting_name' => $this->displayName($request->user()?->name),
             'inventory_value' => (int) $inventoryValue,
@@ -98,6 +117,7 @@ class DashboardController extends Controller
             'wallets' => ['cash' => $cashToday, 'qris' => $qrisToday],
             'cash_budget' => $cashBudget,
             'restock' => $restock,
+            'top_profitable_menus' => $topProfitableMenus,
             'chart' => $chart,
             'recent_orders' => $recentOrders,
             'daily_report' => $dailyReport,
