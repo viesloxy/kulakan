@@ -29,6 +29,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { FxButton } from '@/components/fx/fx-button';
 import { FxCard, FxSoft } from '@/components/fx/fx-card';
+import { FxTableWrap } from '@/components/fx/fx-table-wrap';
 import {
     FxField,
     FxInput,
@@ -799,7 +800,7 @@ export default function Restock({
             description="Masukkan kas, sistem menyusun rencana belanja sesuai urgensi dan kelas ABC."
         >
             <Reveal delay={0.05}>
-                <div className="grid gap-5 lg:grid-cols-[1fr_1.4fr] lg:items-start">
+                <div className="grid gap-5 pb-36 lg:grid-cols-[1fr_1.4fr] lg:items-start">
                     <FxCard className="min-w-0 p-5">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -1049,7 +1050,10 @@ export default function Restock({
                                 {plan.items.length} bahan
                             </span>
                         </div>
-                        <div className="max-h-[460px] overflow-x-auto overflow-y-auto rounded-xl border border-border/60">
+                        <FxTableWrap
+                            className="rounded-xl border border-border/60"
+                            viewportClassName="max-h-[460px] overflow-y-auto"
+                        >
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="text-left text-xs text-muted-foreground">
@@ -1120,7 +1124,7 @@ export default function Restock({
                                     })}
                                 </tbody>
                             </table>
-                        </div>
+                        </FxTableWrap>
 
                         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                             <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">

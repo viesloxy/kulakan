@@ -229,7 +229,7 @@
  */
 @utility fx-scroll-x {
     overflow-x: auto;
-    overscroll-behavior-x: contain;
+    overscroll-behavior: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: rgba(22, 22, 21, 0.28) transparent;

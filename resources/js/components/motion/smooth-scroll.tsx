@@ -10,6 +10,7 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
                 lerp: 0.09,
                 smoothWheel: true,
                 wheelMultiplier: 0.9,
+                allowNestedScroll: true,
             }}
         >
             {children}
