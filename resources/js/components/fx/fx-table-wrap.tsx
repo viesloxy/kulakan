@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useLenis } from 'lenis/react';
 import { cn } from '@/lib/utils';
 
 type FxTableWrapProps = {
@@ -27,6 +28,54 @@ export function FxTableWrap({
 }: FxTableWrapProps) {
     const ref = useRef<HTMLDivElement>(null);
     const [edges, setEdges] = useState({ left: false, right: false });
+    const lenis = useLenis();
+
+    // Explicit scroll chaining: when the table reaches bottom/top boundaries,
+    // continue forwarding scroll momentum to the page (Lenis or window).
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) {
+            return;
+        }
+
+        const onWheel = (e: WheelEvent) => {
+            if (e.deltaY === 0) {
+                return;
+            }
+
+            const maxScroll = el.scrollHeight - el.clientHeight;
+            if (maxScroll <= 0) {
+                return;
+            }
+
+            const isDown = e.deltaY > 0;
+            const atBottom = el.scrollTop >= maxScroll - 1;
+            const atTop = el.scrollTop <= 1;
+
+            if (isDown && atBottom) {
+                if (lenis) {
+                    lenis.scrollTo(lenis.targetScroll + e.deltaY, {
+                        programmatic: false,
+                    });
+                } else {
+                    window.scrollBy({ top: e.deltaY, behavior: 'smooth' });
+                }
+            } else if (!isDown && atTop) {
+                if (lenis) {
+                    lenis.scrollTo(lenis.targetScroll + e.deltaY, {
+                        programmatic: false,
+                    });
+                } else {
+                    window.scrollBy({ top: e.deltaY, behavior: 'smooth' });
+                }
+            }
+        };
+
+        el.addEventListener('wheel', onWheel, { passive: true });
+        return () => {
+            el.removeEventListener('wheel', onWheel);
+        };
+    }, [lenis]);
 
     useEffect(() => {
         const el = ref.current;
