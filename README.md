@@ -32,7 +32,7 @@ Kulakan menjawab pertanyaan kritis pemilik usaha:
 > _"Dengan sisa kas Rp X, bahan baku apa yang paling mendesak dibeli tanpa bikin bangkrut?"_  
 > _"Menu mana yang paling laku tapi diam-diam merugi karena harga bahan naik?"_
 
-> 🏆 Dibangun untuk **GTNIC 2026** (_Garda Tech National Innovation Competition_), Kategori **Web Development**, Sub-tema: _Accelerating Digital Transformation for Business and SMEs_.
+> 🏆 Dibangun oleh **Tim Pemburu Doksli Sertif Juara** untuk **GTNIC 2026** (_Garda Tech National Innovation Competition_), Kategori **Web Development**, Sub-tema: _Accelerating Digital Transformation for Business and SMEs_.
 
 ---
 
@@ -48,6 +48,7 @@ Kulakan menjawab pertanyaan kritis pemilik usaha:
 - [Panduan Instalasi Lokal](#-panduan-instalasi-lokal-development)
 - [Konfigurasi Environment Penting](#-konfigurasi-environment-penting)
 - [Pengujian & Verifikasi Kualitas](#-pengujian--verifikasi-kualitas)
+- [Tim Pengembang](#-tim-pengembang)
 - [Lisensi & Hak Cipta](#-lisensi--hak-cipta)
 
 ---
@@ -59,10 +60,10 @@ Aplikasi saat ini telah aktif di lingkungan semi-publik untuk keperluan demonstr
 - 🔗 **URL Live**: [https://kulakan.web.id/](https://kulakan.web.id/)
 - 👥 **Akun Demo (Siap Pakai)**:
 
-| Peran (Role)                | Email               | Password   | Hak Akses Utama                                                                                               |
-| :-------------------------- | :------------------ | :--------- | :------------------------------------------------------------------------------------------------------------ |
-| **Pemilik (Owner)**         | `owner@kulakan.com` | `password` | Akses penuh: Dashboard finansial, margin menu, restock planner, resep/BOM, audit pembatalan, dan kelola staf. |
-| **Kasir / Barista (Staff)** | `staff@kulakan.com` | `password` | Akses operasional: POS Kasir, riwayat pesanan (antrean dapur), cetak struk, dan pencatatan waste bahan.       |
+| Peran (Role) | Email               | Password   | Hak Akses Utama                                                                                               |
+| :----------- | :------------------ | :--------- | :------------------------------------------------------------------------------------------------------------ |
+| **Owner**    | `owner@kulakan.com` | `password` | Akses penuh: Dashboard finansial, margin menu, restock planner, resep/BOM, audit pembatalan, dan kelola staf. |
+| **Staff**    | `staff@kulakan.com` | `password` | Akses operasional: POS Kasir, riwayat pesanan (antrean dapur), cetak struk, dan pencatatan waste bahan.       |
 
 ---
 
@@ -132,24 +133,24 @@ Aplikasi saat ini telah aktif di lingkungan semi-publik untuk keperluan demonstr
 
 Seluruh halaman dirender sebagai komponen React melalui **Inertia.js** — bukan REST API terpisah. Tabel berikut memetakan URL, hak akses per peran, dan fungsi utama tiap halaman.
 
-| #   | Halaman                    | Rute (`/`)                  | Akses          | Fungsi Utama                                                                                     |
-| :-- | :------------------------- | :-------------------------- | :------------- | :----------------------------------------------------------------------------------------------- |
-| 1   | Landing Page               | `/`                         | Publik         | Halaman pemasaran: masalah, kapabilitas, cara kerja, dan FAQ.                                     |
-| 2   | Masuk                      | `/login`                    | Publik         | Autentikasi via email + kata sandi (dan passkey opsional).                                        |
-| 3   | Dashboard                  | `/dashboard`                | Pemilik        | Ringkasan kas, nilai persediaan, penjualan 7 hari, dan alert aktif.                               |
-| 4   | Bahan Baku                 | `/bahan-baku`               | Pemilik, Kasir | Daftar stok, mutasi, riwayat harga, dan penyesuaian/waste.                                        |
-| 5   | Menu & Resep               | `/menu`                     | Pemilik, Kasir | Katalog menu, resep (BOM), HPP, dan analisis margin.                                              |
-| 6   | POS Kasir                  | `/pos`                      | Pemilik, Kasir | Antarmuka kasir: pilih menu, susun keranjang, hitung total.                                       |
-| 7   | Pembayaran Kasir           | `/pos/checkout`             | Pemilik, Kasir | Metode bayar (Tunai/QRIS), kembalian, verifikasi, dan cetak struk.                                |
-| 8   | Pesanan                    | `/pesanan`                  | Pemilik, Kasir | Antrean dapur (`preparing` → `ready` → `completed`), riwayat, dan void.                            |
-| 9   | Profitabilitas             | `/profitabilitas`           | Pemilik        | Klasifikasi margin (Profitable/Watchlist/Loss) dan matriks profit vs popularitas.                 |
-| 10  | Restock Planner            | `/restock`                  | Pemilik        | Simulasi belanja berbasis anggaran kas dan status siklus restock.                                 |
-| 11  | Detail Rencana Belanja     | `/restock/plans/{plan}`     | Pemilik        | Rincian rekomendasi, realisasi belanja, PO (WhatsApp/Email), dan audit trail.                     |
-| 12  | Alert                      | `/alert`                    | Pemilik        | Peringatan stok menipis dan kenaikan harga bahan baku.                                            |
-| 13  | Pengguna                   | `/pengguna`                 | Pemilik        | Kelola akun staf & owner, reset, nonaktifkan (soft delete), proteksi _sole owner_.                |
-| 14  | Pengaturan                 | `/settings/profile`         | Pemilik, Kasir | Profil, keamanan (kata sandi/passkey), dan tampilan (terang/gelap).                               |
+| #   | Halaman                | Rute (`/`)              | Akses        | Fungsi Utama                                                                       |
+| :-- | :--------------------- | :---------------------- | :----------- | :--------------------------------------------------------------------------------- |
+| 1   | Landing Page           | `/`                     | Publik       | Halaman pemasaran: masalah, kapabilitas, cara kerja, dan FAQ.                      |
+| 2   | Masuk                  | `/login`                | Publik       | Autentikasi via email + kata sandi (dan passkey opsional).                         |
+| 3   | Dashboard              | `/dashboard`            | Owner        | Ringkasan kas, nilai persediaan, penjualan 7 hari, dan alert aktif.                |
+| 4   | Bahan Baku             | `/bahan-baku`           | Owner, Staff | Daftar stok, mutasi, riwayat harga, dan penyesuaian/waste.                         |
+| 5   | Menu & Resep           | `/menu`                 | Owner, Staff | Katalog menu, resep (BOM), HPP, dan analisis margin.                               |
+| 6   | POS Kasir              | `/pos`                  | Owner, Staff | Antarmuka kasir: pilih menu, susun keranjang, hitung total.                        |
+| 7   | Pembayaran Kasir       | `/pos/checkout`         | Owner, Staff | Metode bayar (Tunai/QRIS), kembalian, verifikasi, dan cetak struk.                 |
+| 8   | Pesanan                | `/pesanan`              | Owner, Staff | Antrean dapur (`preparing` → `ready` → `completed`), riwayat, dan void.            |
+| 9   | Profitabilitas         | `/profitabilitas`       | Owner        | Klasifikasi margin (Profitable/Watchlist/Loss) dan matriks profit vs popularitas.  |
+| 10  | Restock Planner        | `/restock`              | Owner        | Simulasi belanja berbasis anggaran kas dan status siklus restock.                  |
+| 11  | Detail Rencana Belanja | `/restock/plans/{plan}` | Owner        | Rincian rekomendasi, realisasi belanja, PO (WhatsApp/Email), dan audit trail.      |
+| 12  | Alert                  | `/alert`                | Owner        | Peringatan stok menipis dan kenaikan harga bahan baku.                             |
+| 13  | Pengguna               | `/pengguna`             | Owner        | Kelola akun staf & owner, reset, nonaktifkan (soft delete), proteksi _sole owner_. |
+| 14  | Pengaturan             | `/settings/profile`     | Owner, Staff | Profil, keamanan (kata sandi/passkey), dan tampilan (terang/gelap).                |
 
-> **Catatan hak akses:** halaman bertanda **Pemilik** diimplementasikan di grup rute `middleware('role:owner')` sehingga akun **Kasir** menerima **HTTP 403**. Rute mutasi (POST/PUT/PATCH/DELETE) juga diproteksi `role:owner` + rate limiter — mis. `POST /pos`, `POST /restock/plans`, `POST /bahan-baku/{id}/stock-in`, dan `PATCH /pesanan/{order}/status`.
+> **Catatan hak akses:** halaman bertanda **Owner** diimplementasikan di grup rute `middleware('role:owner')` sehingga akun **Staff** menerima **HTTP 403**. Rute mutasi (POST/PUT/PATCH/DELETE) juga diproteksi `role:owner` + rate limiter — mis. `POST /pos`, `POST /restock/plans`, `POST /bahan-baku/{id}/stock-in`, dan `PATCH /pesanan/{order}/status`.
 
 ---
 
@@ -165,51 +166,51 @@ Pratinjau berikut diambil langsung dari aplikasi yang berjalan menggunakan data 
 
 <img src="public/images/screenshots/02-login.png" alt="Halaman Masuk Kulakan" width="100%">
 
-### 3. Dashboard — `/dashboard` _(Pemilik)_
+### 3. Dashboard — `/dashboard` _(Owner)_
 
 <img src="public/images/screenshots/03-dashboard.png" alt="Dashboard Kulakan" width="100%">
 
-### 4. Bahan Baku — `/bahan-baku` _(Pemilik, Kasir)_
+### 4. Bahan Baku — `/bahan-baku` _(Owner, Staff)_
 
 <img src="public/images/screenshots/04-bahan-baku.png" alt="Halaman Bahan Baku" width="100%">
 
-### 5. Menu & Resep — `/menu` _(Pemilik, Kasir)_
+### 5. Menu & Resep — `/menu` _(Owner, Staff)_
 
 <img src="public/images/screenshots/05-menu.png" alt="Halaman Menu dan Resep" width="100%">
 
-### 6. POS Kasir — `/pos` _(Pemilik, Kasir)_
+### 6. POS Kasir — `/pos` _(Owner, Staff)_
 
 <img src="public/images/screenshots/06-pos.png" alt="Halaman POS Kasir" width="100%">
 
-### 7. Pembayaran Kasir — `/pos/checkout` _(Pemilik, Kasir)_
+### 7. Pembayaran Kasir — `/pos/checkout` _(Owner, Staff)_
 
 <img src="public/images/screenshots/12-pos-checkout.png" alt="Halaman Pembayaran Kasir" width="100%">
 
-### 8. Pesanan (Antrean Dapur) — `/pesanan` _(Pemilik, Kasir)_
+### 8. Pesanan (Antrean Dapur) — `/pesanan` _(Owner, Staff)_
 
 <img src="public/images/screenshots/07-pesanan.png" alt="Halaman Pesanan" width="100%">
 
-### 9. Profitabilitas — `/profitabilitas` _(Pemilik)_
+### 9. Profitabilitas — `/profitabilitas` _(Owner)_
 
 <img src="public/images/screenshots/08-profitabilitas.png" alt="Halaman Profitabilitas" width="100%">
 
-### 10. Restock Planner — `/restock` _(Pemilik)_
+### 10. Restock Planner — `/restock` _(Owner)_
 
 <img src="public/images/screenshots/09-restock.png" alt="Halaman Restock Planner" width="100%">
 
-### 11. Detail Rencana Belanja — `/restock/plans/{plan}` _(Pemilik)_
+### 11. Detail Rencana Belanja — `/restock/plans/{plan}` _(Owner)_
 
 <img src="public/images/screenshots/13-restock-detail.png" alt="Detail Rencana Belanja" width="100%">
 
-### 12. Alert — `/alert` _(Pemilik)_
+### 12. Alert — `/alert` _(Owner)_
 
 <img src="public/images/screenshots/10-alert.png" alt="Halaman Alert" width="100%">
 
-### 13. Pengguna — `/pengguna` _(Pemilik)_
+### 13. Pengguna — `/pengguna` _(Owner)_
 
 <img src="public/images/screenshots/11-pengguna.png" alt="Halaman Pengguna" width="100%">
 
-### 14. Pengaturan — `/settings/profile` _(Pemilik, Kasir)_
+### 14. Pengaturan — `/settings/profile` _(Owner, Staff)_
 
 <img src="public/images/screenshots/14-settings-profile.png" alt="Halaman Pengaturan Profil" width="100%">
 
@@ -217,18 +218,18 @@ Pratinjau berikut diambil langsung dari aplikasi yang berjalan menggunakan data 
 
 ## 🛠️ Tech Stack
 
-| Lapisan                      | Teknologi                                                                                                | Keterangan                                                     |
-| :--------------------------- | :------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- |
-| **Backend Framework**        | [Laravel 13](https://laravel.com/) (PHP 8.3+)                                                            | Arsitektur aplikasi modern, service layer untuk logika bisnis. |
-| **Frontend Framework**       | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)                           | Single page application yang type-safe.                        |
-| **Monolith Bridge**          | [Inertia.js 3.x](https://inertiajs.com/)                                                                 | Pengalaman SPA tanpa boilerplate REST terpisah.                |
-| **Routing & Type-Safety**    | [Laravel Wayfinder](https://github.com/laravel/wayfinder)                                                | Rute Laravel di-generate menjadi helper TypeScript yang aman.  |
-| **Autentikasi**              | [Laravel Fortify](https://laravel.com/docs/fortify) + [Passkeys](https://github.com/laravel/passkeys)     | Login email/kata sandi, verifikasi, dan passkey (WebAuthn).    |
-| **UI Styling & System**      | [Tailwind CSS 4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)                       | _Finexy Design System_ (`fx-*` tokens) & mode terang/gelap.     |
-| **Ikon, Chart & Animasi**    | [Lucide](https://lucide.dev/) + [Recharts](https://recharts.org/) + [Motion](https://motion.dev/)         | Ikon konsisten, grafik finansial, dan transisi halus.          |
-| **Database**                 | [PostgreSQL 16](https://www.postgresql.org/)                                                             | RDBMS ACID dengan foreign key & check constraint.              |
-| **Precision Math**           | PHP `ext-bcmath` + helper `App\Support\Number`                                                           | Kalkulasi moneter & WAC desimal tanpa _floating point error_.  |
-| **Testing & Quality**        | [Pest 5](https://pestphp.com/) + [PHPStan](https://phpstan.org/) + [Pint](https://laravel.com/docs/pint) | Unit/feature test otomatis, analisa statis, dan PSR-12.        |
+| Lapisan                   | Teknologi                                                                                                | Keterangan                                                     |
+| :------------------------ | :------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- |
+| **Backend Framework**     | [Laravel 13](https://laravel.com/) (PHP 8.3+)                                                            | Arsitektur aplikasi modern, service layer untuk logika bisnis. |
+| **Frontend Framework**    | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)                           | Single page application yang type-safe.                        |
+| **Monolith Bridge**       | [Inertia.js 3.x](https://inertiajs.com/)                                                                 | Pengalaman SPA tanpa boilerplate REST terpisah.                |
+| **Routing & Type-Safety** | [Laravel Wayfinder](https://github.com/laravel/wayfinder)                                                | Rute Laravel di-generate menjadi helper TypeScript yang aman.  |
+| **Autentikasi**           | [Laravel Fortify](https://laravel.com/docs/fortify) + [Passkeys](https://github.com/laravel/passkeys)    | Login email/kata sandi, verifikasi, dan passkey (WebAuthn).    |
+| **UI Styling & System**   | [Tailwind CSS 4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)                       | _Finexy Design System_ (`fx-*` tokens) & mode terang/gelap.    |
+| **Ikon, Chart & Animasi** | [Lucide](https://lucide.dev/) + [Recharts](https://recharts.org/) + [Motion](https://motion.dev/)        | Ikon konsisten, grafik finansial, dan transisi halus.          |
+| **Database**              | [PostgreSQL 16](https://www.postgresql.org/)                                                             | RDBMS ACID dengan foreign key & check constraint.              |
+| **Precision Math**        | PHP `ext-bcmath` + helper `App\Support\Number`                                                           | Kalkulasi moneter & WAC desimal tanpa _floating point error_.  |
+| **Testing & Quality**     | [Pest 5](https://pestphp.com/) + [PHPStan](https://phpstan.org/) + [Pint](https://laravel.com/docs/pint) | Unit/feature test otomatis, analisa statis, dan PSR-12.        |
 
 ---
 
@@ -320,13 +321,13 @@ Aplikasi dapat diakses di browser melalui: `http://localhost:8000`
 
 Salin `.env.example` menjadi `.env`, lalu sesuaikan nilai berikut:
 
-| Variabel                 | Nilai contoh              | Keterangan                                                                                |
-| :----------------------- | :------------------------ | :---------------------------------------------------------------------------------------- |
-| `APP_URL`                | `http://localhost:8000`   | Basis URL aplikasi.                                                                       |
-| `DB_CONNECTION`          | `pgsql`                   | Driver database (PostgreSQL).                                                             |
-| `DB_HOST` / `DB_PORT`    | `127.0.0.1` / `5433`      | Port host `5433` dipetakan ke container Postgres 16 (lihat `docker-compose.yml`).         |
-| `DB_DATABASE`            | `kulakan`                 | Nama database.                                                                            |
-| `DB_USERNAME` / `DB_PASSWORD` | `postgres` / `secret` | Kredensial default lingkungan pengembangan.                                               |
+| Variabel                      | Nilai contoh            | Keterangan                                                                        |
+| :---------------------------- | :---------------------- | :-------------------------------------------------------------------------------- |
+| `APP_URL`                     | `http://localhost:8000` | Basis URL aplikasi.                                                               |
+| `DB_CONNECTION`               | `pgsql`                 | Driver database (PostgreSQL).                                                     |
+| `DB_HOST` / `DB_PORT`         | `127.0.0.1` / `5433`    | Port host `5433` dipetakan ke container Postgres 16 (lihat `docker-compose.yml`). |
+| `DB_DATABASE`                 | `kulakan`               | Nama database.                                                                    |
+| `DB_USERNAME` / `DB_PASSWORD` | `postgres` / `secret`   | Kredensial default lingkungan pengembangan.                                       |
 
 Data contoh (akun demo, katalog kedai kopi, riwayat penjualan, dan alert) dibuat oleh seeder standar melalui `php artisan migrate --seed` (`DatabaseSeeder` → `DemoSeeder`).
 
@@ -355,7 +356,22 @@ npm run types:check
 
 ---
 
+## 👥 Tim Pengembang
+
+Proyek **Kulakan** dikembangkan oleh tim **Pemburu Doksli Sertif Juara** untuk GTNIC 2026:
+
+| #   | Nama Lengkap                     | Institusi             |
+| :-- | :------------------------------- | :-------------------- |
+| 1   | **Vito Aditya**                  | Universitas Airlangga |
+| 2   | **Luthfi Alan Perdana**          | Universitas Airlangga |
+| 3   | **Brillian Arhaburrizqi Kusuma** | Universitas Airlangga |
+
+> ℹ️ **Kulakan** adalah nama produk/aplikasi, sedangkan **Pemburu Doksli Sertif Juara** adalah nama tim peserta GTNIC 2026.
+
+---
+
 ## 📄 Lisensi & Hak Cipta
 
-Dikembangkan oleh Tim Kulakan untuk **Garda Tech National Innovation Competition (GTNIC) 2026**.  
-Didistribusikan di bawah lisensi [MIT License](LICENSE).
+Hak cipta © 2026 **Tim Pemburu Doksli Sertif Juara** (Vito Aditya, Luthfi Alan Perdana, Brillian Arhaburrizqi Kusuma).
+
+Proyek ini dikembangkan untuk **Garda Tech National Innovation Competition (GTNIC) 2026** dan didistribusikan di bawah [MIT License](LICENSE).
