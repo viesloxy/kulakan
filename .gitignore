@@ -47,3 +47,15 @@ yarn-error.log
 # Internal team docs (local only, not pushed)
 /docs
 /brand
+
+# Submission artifacts (proposal + demo video), local only, not pushed
+/submission
+/submission_build
+/serve.log
+
+# Seeder demo khusus submission (video), local only, not pushed
+/database/seeders/VideoDemoSeeder.php
+
+# Local agent tooling artifacts
+/.pi-subagents
+

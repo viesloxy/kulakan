@@ -17,10 +17,10 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Laravel-13.x-FF2D20?style=flat&logo=laravel&logoColor=white" alt="Laravel 13">
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react&logoColor=black" alt="React 19">
-  <img src="https://img.shields.io/badge/Inertia.js-2.x-9553E9?style=flat&logo=inertia&logoColor=white" alt="Inertia.js 2">
+  <img src="https://img.shields.io/badge/Inertia.js-3.x-9553E9?style=flat&logo=inertia&logoColor=white" alt="Inertia.js 3">
   <img src="https://img.shields.io/badge/Tailwind_CSS-4.x-38B2AC?style=flat&logo=tailwind-css&logoColor=white" alt="Tailwind CSS 4">
   <img src="https://img.shields.io/badge/PostgreSQL-16-336791?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL 16">
-  <img src="https://img.shields.io/badge/Pest_Testing-3.x-F55247?style=flat&logo=pest&logoColor=white" alt="Pest">
+  <img src="https://img.shields.io/badge/Pest_Testing-5.x-F55247?style=flat&logo=pest&logoColor=white" alt="Pest 5">
 </p>
 
 ---
@@ -33,6 +33,22 @@ Kulakan menjawab pertanyaan kritis pemilik usaha:
 > _"Menu mana yang paling laku tapi diam-diam merugi karena harga bahan naik?"_
 
 > 🏆 Dibangun untuk **GTNIC 2026** (_Garda Tech National Innovation Competition_), Kategori **Web Development**, Sub-tema: _Accelerating Digital Transformation for Business and SMEs_.
+
+---
+
+## 📑 Daftar Isi
+
+- [Live Demo & Akses Publik](#-live-demo--akses-publik)
+- [Masalah & Solusi Nyata](#-masalah--solusi-nyata)
+- [Fitur & Kapabilitas Utama](#-fitur--kapabilitas-utama)
+- [Peta Halaman & Rute](#-peta-halaman--rute)
+- [Galeri Antarmuka (Preview Semua Halaman)](#-galeri-antarmuka-preview-semua-halaman)
+- [Tech Stack](#-tech-stack)
+- [Struktur Repositori](#-struktur-repositori)
+- [Panduan Instalasi Lokal](#-panduan-instalasi-lokal-development)
+- [Konfigurasi Environment Penting](#-konfigurasi-environment-penting)
+- [Pengujian & Verifikasi Kualitas](#-pengujian--verifikasi-kualitas)
+- [Lisensi & Hak Cipta](#-lisensi--hak-cipta)
 
 ---
 
@@ -112,18 +128,107 @@ Aplikasi saat ini telah aktif di lingkungan semi-publik untuk keperluan demonstr
 
 ---
 
+## 🗺️ Peta Halaman & Rute
+
+Seluruh halaman dirender sebagai komponen React melalui **Inertia.js** — bukan REST API terpisah. Tabel berikut memetakan URL, hak akses per peran, dan fungsi utama tiap halaman.
+
+| #   | Halaman                    | Rute (`/`)                  | Akses          | Fungsi Utama                                                                                     |
+| :-- | :------------------------- | :-------------------------- | :------------- | :----------------------------------------------------------------------------------------------- |
+| 1   | Landing Page               | `/`                         | Publik         | Halaman pemasaran: masalah, kapabilitas, cara kerja, dan FAQ.                                     |
+| 2   | Masuk                      | `/login`                    | Publik         | Autentikasi via email + kata sandi (dan passkey opsional).                                        |
+| 3   | Dashboard                  | `/dashboard`                | Pemilik        | Ringkasan kas, nilai persediaan, penjualan 7 hari, dan alert aktif.                               |
+| 4   | Bahan Baku                 | `/bahan-baku`               | Pemilik, Kasir | Daftar stok, mutasi, riwayat harga, dan penyesuaian/waste.                                        |
+| 5   | Menu & Resep               | `/menu`                     | Pemilik, Kasir | Katalog menu, resep (BOM), HPP, dan analisis margin.                                              |
+| 6   | POS Kasir                  | `/pos`                      | Pemilik, Kasir | Antarmuka kasir: pilih menu, susun keranjang, hitung total.                                       |
+| 7   | Pembayaran Kasir           | `/pos/checkout`             | Pemilik, Kasir | Metode bayar (Tunai/QRIS), kembalian, verifikasi, dan cetak struk.                                |
+| 8   | Pesanan                    | `/pesanan`                  | Pemilik, Kasir | Antrean dapur (`preparing` → `ready` → `completed`), riwayat, dan void.                            |
+| 9   | Profitabilitas             | `/profitabilitas`           | Pemilik        | Klasifikasi margin (Profitable/Watchlist/Loss) dan matriks profit vs popularitas.                 |
+| 10  | Restock Planner            | `/restock`                  | Pemilik        | Simulasi belanja berbasis anggaran kas dan status siklus restock.                                 |
+| 11  | Detail Rencana Belanja     | `/restock/plans/{plan}`     | Pemilik        | Rincian rekomendasi, realisasi belanja, PO (WhatsApp/Email), dan audit trail.                     |
+| 12  | Alert                      | `/alert`                    | Pemilik        | Peringatan stok menipis dan kenaikan harga bahan baku.                                            |
+| 13  | Pengguna                   | `/pengguna`                 | Pemilik        | Kelola akun staf & owner, reset, nonaktifkan (soft delete), proteksi _sole owner_.                |
+| 14  | Pengaturan                 | `/settings/profile`         | Pemilik, Kasir | Profil, keamanan (kata sandi/passkey), dan tampilan (terang/gelap).                               |
+
+> **Catatan hak akses:** halaman bertanda **Pemilik** diimplementasikan di grup rute `middleware('role:owner')` sehingga akun **Kasir** menerima **HTTP 403**. Rute mutasi (POST/PUT/PATCH/DELETE) juga diproteksi `role:owner` + rate limiter — mis. `POST /pos`, `POST /restock/plans`, `POST /bahan-baku/{id}/stock-in`, dan `PATCH /pesanan/{order}/status`.
+
+---
+
+## 🖼️ Galeri Antarmuka (Preview Semua Halaman)
+
+Pratinjau berikut diambil langsung dari aplikasi yang berjalan menggunakan data contoh UMKM kedai kopi.
+
+### 1. Landing Page — `/`
+
+<img src="public/images/screenshots/01-welcome.png" alt="Landing Page Kulakan" width="100%">
+
+### 2. Halaman Masuk — `/login`
+
+<img src="public/images/screenshots/02-login.png" alt="Halaman Masuk Kulakan" width="100%">
+
+### 3. Dashboard — `/dashboard` _(Pemilik)_
+
+<img src="public/images/screenshots/03-dashboard.png" alt="Dashboard Kulakan" width="100%">
+
+### 4. Bahan Baku — `/bahan-baku` _(Pemilik, Kasir)_
+
+<img src="public/images/screenshots/04-bahan-baku.png" alt="Halaman Bahan Baku" width="100%">
+
+### 5. Menu & Resep — `/menu` _(Pemilik, Kasir)_
+
+<img src="public/images/screenshots/05-menu.png" alt="Halaman Menu dan Resep" width="100%">
+
+### 6. POS Kasir — `/pos` _(Pemilik, Kasir)_
+
+<img src="public/images/screenshots/06-pos.png" alt="Halaman POS Kasir" width="100%">
+
+### 7. Pembayaran Kasir — `/pos/checkout` _(Pemilik, Kasir)_
+
+<img src="public/images/screenshots/12-pos-checkout.png" alt="Halaman Pembayaran Kasir" width="100%">
+
+### 8. Pesanan (Antrean Dapur) — `/pesanan` _(Pemilik, Kasir)_
+
+<img src="public/images/screenshots/07-pesanan.png" alt="Halaman Pesanan" width="100%">
+
+### 9. Profitabilitas — `/profitabilitas` _(Pemilik)_
+
+<img src="public/images/screenshots/08-profitabilitas.png" alt="Halaman Profitabilitas" width="100%">
+
+### 10. Restock Planner — `/restock` _(Pemilik)_
+
+<img src="public/images/screenshots/09-restock.png" alt="Halaman Restock Planner" width="100%">
+
+### 11. Detail Rencana Belanja — `/restock/plans/{plan}` _(Pemilik)_
+
+<img src="public/images/screenshots/13-restock-detail.png" alt="Detail Rencana Belanja" width="100%">
+
+### 12. Alert — `/alert` _(Pemilik)_
+
+<img src="public/images/screenshots/10-alert.png" alt="Halaman Alert" width="100%">
+
+### 13. Pengguna — `/pengguna` _(Pemilik)_
+
+<img src="public/images/screenshots/11-pengguna.png" alt="Halaman Pengguna" width="100%">
+
+### 14. Pengaturan — `/settings/profile` _(Pemilik, Kasir)_
+
+<img src="public/images/screenshots/14-settings-profile.png" alt="Halaman Pengaturan Profil" width="100%">
+
+---
+
 ## 🛠️ Tech Stack
 
-| Lapisan                      | Teknologi                                                                                                | Keterangan                                                |
-| :--------------------------- | :------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
-| **Backend Framework**        | [Laravel 13](https://laravel.com/) (PHP 8.3+)                                                            | Modern Laravel application architecture                   |
-| **Frontend Framework**       | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)                           | Type-safe single page application                         |
-| **Monolith Bridge**          | [Inertia.js 2.x](https://inertiajs.com/)                                                                 | Seamless SPA experience without separate REST boilerplate |
-| **UI Styling & System**      | [Tailwind CSS 4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)                       | Neo-brutalist Fx Design System & dark/light mode          |
-| **Animasi & Interaktivitas** | [Motion](https://motion.dev/) (Framer Motion)                                                            | Transisi halus dan feedback visual                        |
-| **Database**                 | [PostgreSQL 16](https://www.postgresql.org/)                                                             | ACID-compliant relational DB with foreign key cascades    |
-| **Precision Math**           | PHP `ext-bcmath`                                                                                         | Kalkulasi moneter & WAC desimal tanpa floating point      |
-| **Testing & Quality**        | [Pest 3](https://pestphp.com/) + [PHPStan](https://phpstan.org/) + [Pint](https://laravel.com/docs/pint) | Automated unit/feature tests & PSR-12 code style          |
+| Lapisan                      | Teknologi                                                                                                | Keterangan                                                     |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- |
+| **Backend Framework**        | [Laravel 13](https://laravel.com/) (PHP 8.3+)                                                            | Arsitektur aplikasi modern, service layer untuk logika bisnis. |
+| **Frontend Framework**       | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)                           | Single page application yang type-safe.                        |
+| **Monolith Bridge**          | [Inertia.js 3.x](https://inertiajs.com/)                                                                 | Pengalaman SPA tanpa boilerplate REST terpisah.                |
+| **Routing & Type-Safety**    | [Laravel Wayfinder](https://github.com/laravel/wayfinder)                                                | Rute Laravel di-generate menjadi helper TypeScript yang aman.  |
+| **Autentikasi**              | [Laravel Fortify](https://laravel.com/docs/fortify) + [Passkeys](https://github.com/laravel/passkeys)     | Login email/kata sandi, verifikasi, dan passkey (WebAuthn).    |
+| **UI Styling & System**      | [Tailwind CSS 4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)                       | _Finexy Design System_ (`fx-*` tokens) & mode terang/gelap.     |
+| **Ikon, Chart & Animasi**    | [Lucide](https://lucide.dev/) + [Recharts](https://recharts.org/) + [Motion](https://motion.dev/)         | Ikon konsisten, grafik finansial, dan transisi halus.          |
+| **Database**                 | [PostgreSQL 16](https://www.postgresql.org/)                                                             | RDBMS ACID dengan foreign key & check constraint.              |
+| **Precision Math**           | PHP `ext-bcmath` + helper `App\Support\Number`                                                           | Kalkulasi moneter & WAC desimal tanpa _floating point error_.  |
+| **Testing & Quality**        | [Pest 5](https://pestphp.com/) + [PHPStan](https://phpstan.org/) + [Pint](https://laravel.com/docs/pint) | Unit/feature test otomatis, analisa statis, dan PSR-12.        |
 
 ---
 
@@ -144,13 +249,19 @@ app/
 resources/
 ├── js/
 │   ├── components/          # Komponen UI (FxCard, FxButton, Modal, Stepper, Shell)
-│   └── pages/               # Halaman Inertia (dashboard, pos, orders, restock, ingredients, menus)
+│   └── pages/               # Halaman Inertia: dashboard, ingredients, menus, pos,
+│                            #   pos-checkout, orders, profitability, restock,
+│                            #   restock-plan-detail, alerts, pengguna, welcome
 └── views/
     ├── app.blade.php        # Root Blade template
     └── receipt.blade.php    # Template struk thermal kasir
 database/
 ├── migrations/              # Skema tabel relasional & check constraints
-└── seeders/                 # Demo seeder UMKM (kedai kopi siap pakai)
+└── seeders/                 # Demo seeder UMKM (DatabaseSeeder → DemoSeeder)
+public/
+└── images/
+    ├── *.svg, *.png, *.jpg  # Logo & gambar landing page
+    └── screenshots/         # Pratinjau antarmuka untuk README (per halaman)
 ```
 
 ---
@@ -202,6 +313,24 @@ php artisan serve
 ```
 
 Aplikasi dapat diakses di browser melalui: `http://localhost:8000`
+
+---
+
+## ⚙️ Konfigurasi Environment Penting
+
+Salin `.env.example` menjadi `.env`, lalu sesuaikan nilai berikut:
+
+| Variabel                 | Nilai contoh              | Keterangan                                                                                |
+| :----------------------- | :------------------------ | :---------------------------------------------------------------------------------------- |
+| `APP_URL`                | `http://localhost:8000`   | Basis URL aplikasi.                                                                       |
+| `DB_CONNECTION`          | `pgsql`                   | Driver database (PostgreSQL).                                                             |
+| `DB_HOST` / `DB_PORT`    | `127.0.0.1` / `5433`      | Port host `5433` dipetakan ke container Postgres 16 (lihat `docker-compose.yml`).         |
+| `DB_DATABASE`            | `kulakan`                 | Nama database.                                                                            |
+| `DB_USERNAME` / `DB_PASSWORD` | `postgres` / `secret` | Kredensial default lingkungan pengembangan.                                               |
+
+Data contoh (akun demo, katalog kedai kopi, riwayat penjualan, dan alert) dibuat oleh seeder standar melalui `php artisan migrate --seed` (`DatabaseSeeder` → `DemoSeeder`).
+
+> 🔒 Untuk lingkungan produksi, wajib mengganti `DB_PASSWORD`, menetapkan `APP_ENV=production` dan `APP_DEBUG=false`, serta menghasilkan `APP_KEY` baru (`php artisan key:generate`).
 
 ---
 
